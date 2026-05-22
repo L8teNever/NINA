@@ -177,6 +177,20 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #45464d;
         }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 5px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 9999px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
     </style>
 </head>
 
@@ -612,9 +626,26 @@
         }
 
         function setLang(lang) {
-            // Redirect to the language route
-            const currentHash = window.location.hash;
-            window.location.href = `/${lang}/${currentHash}`;
+            // Close dropdown
+            const dropdown = document.getElementById('lang-dropdown');
+            dropdown.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
+            
+            // Fade out main content slightly for smooth transition
+            const mainContent = document.querySelector('main');
+            mainContent.style.transition = 'opacity 0.2s ease-in-out';
+            mainContent.style.opacity = '0';
+            
+            setTimeout(() => {
+                currentLang = lang;
+                updateLangUI();
+                
+                // Update URL via History API instead of reloading
+                const currentHash = window.location.hash;
+                window.history.pushState({}, '', `/${lang}/${currentHash}`);
+                
+                // Fade back in
+                mainContent.style.opacity = '1';
+            }, 200);
         }
 
         function updateLangUI() {
