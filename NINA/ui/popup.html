@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NINA</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body id="popup">
+
+  <div class="header-card">
+    <div class="brand"><h1>NINA</h1></div>
+    <button class="text-btn" id="popup-reset">Reset</button>
+  </div>
+
+  <div class="m3-section" id="section-speed">
+    <div class="section-header">
+      <div class="header-info">
+        <span class="section-label">Wiedergabe</span>
+        <span class="current-value-small" id="popup-speed-display">1.00×</span>
+      </div>
+      <div class="expand-icon">▼</div>
+    </div>
+    <div class="slider-row">
+      <input type="range" id="popup-slider" min="0.25" max="10" step="0.05" value="1" style="--pct: 10%;" />
+    </div>
+    <div class="advanced-content">
+      <div class="action-row">
+        <button class="m3-btn icon-btn" id="popup-down">−</button>
+        <button class="m3-btn icon-btn" id="popup-up">+</button>
+      </div>
+      <div class="chip-grid" id="popup-presets">
+        <button class="m3-btn chip" data-speed="0.5">0.5×</button>
+        <button class="m3-btn chip active" data-speed="1">1.0×</button>
+        <button class="m3-btn chip" data-speed="1.5">1.5×</button>
+        <button class="m3-btn chip" data-speed="2.0">2.0×</button>
+        <button class="m3-btn chip" data-speed="3.0">3.0×</button>
+        <button class="m3-btn chip" data-speed="5.0">5.0×</button>
+        <button class="m3-btn chip" data-speed="10">10×</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="m3-section" id="section-volume">
+    <div class="section-header">
+      <div class="header-info">
+        <span class="section-label">Audio Boost</span>
+        <span class="current-value-small green" id="popup-vol-display">100%</span>
+      </div>
+      <div class="expand-icon">▼</div>
+    </div>
+    <div class="slider-row">
+      <input type="range" id="popup-vol-slider" min="0" max="6" step="0.05" value="1" style="--vpct: 16.6%;" />
+    </div>
+    <div class="advanced-content">
+      <div class="action-row">
+        <button class="m3-btn icon-btn vol-accent" id="popup-vol-down">−</button>
+        <button class="m3-btn icon-btn vol-accent" id="popup-vol-up">+</button>
+      </div>
+      <button class="m3-btn chip vol-accent" id="popup-vol-reset" style="width: 100%; margin-top: 12px;">↺ Reset auf 100%</button>
+    </div>
+  </div>
+
+  <div class="toggle-card">
+    <h3>Auto-Skip Intros</h3>
+    <label class="m3-switch">
+      <input type="checkbox" id="popup-autoskip-btn" checked>
+      <span class="switch-track"></span>
+    </label>
+  </div>
+
+  <div class="m3-section" id="section-autolike">
+    <div class="section-header">
+      <div class="header-info">
+        <span class="section-label">Auto-Like (YT)</span>
+        <span class="current-value-small" id="autolike-display">10%</span>
+      </div>
+      <div class="expand-icon">▼</div>
+    </div>
+    <div class="advanced-content">
+      <div class="autolike-row">
+        <span class="autolike-label">Aktiviert</span>
+        <label class="m3-switch">
+          <input type="checkbox" id="popup-autolike-btn" checked>
+          <span class="switch-track"></span>
+        </label>
+      </div>
+      <div class="autolike-threshold-label">
+        Nach <strong id="autolike-threshold-text">10</strong>% liken
+      </div>
+      <input type="range" id="popup-autolike-slider" min="1" max="100" step="1" value="10" style="--pct:10%;" />
+    </div>
+  </div>
+
+  <div class="m3-section" id="section-status">
+    <div class="section-header">
+      <div class="header-info">
+        <span class="section-label">Status</span>
+        <span class="current-value-small" id="status-badge">— prüfe …</span>
+      </div>
+      <div class="expand-icon">▼</div>
+    </div>
+    <div class="advanced-content">
+      <div id="status-report" class="status-report"></div>
+      <div class="action-row" style="margin-top:12px;">
+        <button class="m3-btn" id="status-recheck" style="flex:1;">Erneut prüfen</button>
+        <button class="m3-btn" id="status-functest" style="flex:1;">Funktionstest</button>
+      </div>
+      <div id="test-report" class="status-report" style="margin-top:10px;"></div>
+    </div>
+  </div>
+
+  <div class="m3-section" id="section-legend" style="margin-top: 4px;">
+    <div class="section-header">
+      <div class="header-info">
+        <span class="section-label">SponsorBlock</span>
+        <span class="current-value-small" style="font-size: 11px; opacity: 0.7;">Farbübersicht</span>
+      </div>
+      <div class="expand-icon">▼</div>
+    </div>
+    <div class="advanced-content">
+      <div class="sb-legend-item"><span class="sb-legend-dot" style="background:#00d400; color:#00d400;"></span><span>Werbung (Sponsor)</span></div>
+      <div class="sb-legend-item"><span class="sb-legend-dot" style="background:#ffff00; color:#ffff00;"></span><span>Eigenwerbung</span></div>
+      <div class="sb-legend-item"><span class="sb-legend-dot" style="background:#cc00ff; color:#cc00ff;"></span><span>Interaktionsaufforderung</span></div>
+      <div class="sb-legend-item"><span class="sb-legend-dot" style="background:#00ffff; color:#00ffff;"></span><span>Intro</span></div>
+      <div class="sb-legend-item"><span class="sb-legend-dot" style="background:#0202ed; color:#0202ed;"></span><span>Outro</span></div>
+      <div class="sb-legend-item"><span class="sb-legend-dot" style="background:#008fd6; color:#008fd6;"></span><span>Vorschau</span></div>
+      <div class="sb-legend-item"><span class="sb-legend-dot" style="background:#ff9900; color:#ff9900;"></span><span>Musik (Off-Topic)</span></div>
+      <div class="sb-legend-item"><span class="sb-legend-dot" style="background:#7300FF; color:#7300FF;"></span><span>Füller</span></div>
+    </div>
+  </div>
+
+  <p class="hint">Tippe oben für mehr Optionen</p>
+
+  <script src="popup.js"></script>
+</body>
+</html>

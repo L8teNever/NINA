@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@400;500&display=swap');
+
+  :root {
+    --m3-surface:                #141218;
+    --m3-surface-container:      #211f26;
+    --m3-surface-container-high: #2b2930;
+    --m3-primary:                #d0bcff;
+    --m3-on-primary:             #381e72;
+    --m3-secondary:              #ccc2dc;
+    --m3-outline:                #938f99;
+    --m3-success:                #b4eeb4;
+    --m3-error:                  #f2b8b5;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 1280px; height: 800px;
+    font-family: 'Google Sans', 'Roboto', sans-serif;
+    color: #e6e1e5;
+    background: radial-gradient(ellipse at 25% 30%, #2d1e4a 0%, #14101e 60%, #0a0710 100%);
+    overflow: hidden;
+  }
+
+  .stage {
+    width: 1280px; height: 800px;
+    display: grid;
+    grid-template-columns: 1fr 420px;
+    gap: 32px;
+    padding: 56px 56px 56px 72px;
+  }
+
+  /* ── Left: marketing block ─────────────────────────────────────── */
+  .left { display: flex; flex-direction: column; justify-content: center; gap: 28px; }
+
+  .logo {
+    font-size: 88px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    background: linear-gradient(120deg, #d0bcff 0%, #b4eeb4 60%, #ffd1f0 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    line-height: 1;
+  }
+  .tagline {
+    font-size: 24px;
+    color: var(--m3-secondary);
+    font-weight: 500;
+    letter-spacing: 0.5px;
+  }
+  .features { display: flex; flex-direction: column; gap: 14px; margin-top: 8px; }
+  .feature {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 20px;
+    background: rgba(33, 31, 38, 0.6);
+    border: 1px solid rgba(208, 188, 255, 0.18);
+    border-radius: 20px;
+    font-size: 17px;
+    font-weight: 500;
+    color: #e6e1e5;
+    backdrop-filter: blur(8px);
+    width: max-content;
+    max-width: 100%;
+  }
+  .feature .ico { font-size: 22px; }
+  .feature .accent { color: var(--m3-primary); font-weight: 700; margin: 0 2px; }
+  .feature .accent-green { color: var(--m3-success); font-weight: 700; }
+
+  /* ── Right: side panel mockup ──────────────────────────────────── */
+  .panel {
+    align-self: center;
+    width: 380px;
+    background: var(--m3-surface);
+    border: 1px solid rgba(147,143,153,0.4);
+    border-radius: 28px;
+    padding: 14px;
+    display: flex; flex-direction: column; gap: 8px;
+    box-shadow:
+      0 20px 60px rgba(0,0,0,0.55),
+      0 0 0 1px rgba(208,188,255,0.08),
+      0 0 80px rgba(208,188,255,0.15);
+  }
+
+  .sp-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px;
+    background: var(--m3-surface-container);
+    border-radius: 28px;
+  }
+  .sp-title    { font-size: 16px; font-weight: 700; color: var(--m3-primary); }
+  .sp-subtitle { font-size: 11px; color: var(--m3-outline); margin-top: 3px; }
+  .text-btn {
+    background: none;
+    border: 1px solid rgba(147,143,153,0.4);
+    border-radius: 20px;
+    color: var(--m3-error);
+    font-size: 12px; font-weight: 500;
+    padding: 6px 14px;
+  }
+
+  .m3-section {
+    background: var(--m3-surface-container-high);
+    border-radius: 28px;
+  }
+  .m3-section.collapsed { background: var(--m3-surface-container); }
+
+  .section-header {
+    padding: 18px 20px 8px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .section-header-collapsed { padding: 18px 20px; }
+  .header-info { display: flex; align-items: baseline; gap: 10px; }
+  .section-label { font-size: 12px; font-weight: 500; color: var(--m3-outline); }
+  .current-value { font-size: 18px; font-weight: 700; color: var(--m3-primary); }
+  .current-value.green { color: var(--m3-success); }
+  .current-value.ok    { color: var(--m3-success); font-size: 14px; }
+  .expand-icon { color: var(--m3-outline); font-size: 11px; transform: rotate(180deg); }
+  .expand-icon.collapsed { transform: rotate(0); }
+
+  .slider-row { padding: 4px 20px 16px; }
+  .slider {
+    width: 100%; height: 44px;
+    border-radius: 22px;
+    background: linear-gradient(to right,
+      var(--m3-primary) 0%, var(--m3-primary) 21.5%,
+      var(--m3-surface-container) 21.5%);
+    position: relative;
+  }
+  .slider.vol {
+    background: linear-gradient(to right,
+      var(--m3-success) 0%, var(--m3-success) 25%,
+      var(--m3-surface-container) 25%);
+  }
+  .slider::after {
+    content: ""; position: absolute;
+    top: 6px; bottom: 6px;
+    width: 4px; border-radius: 2px; background: #fff;
+  }
+  .slider.speed::after  { left: calc(21.5% - 2px); }
+  .slider.vol::after    { left: calc(25% - 2px); }
+
+  .toggle-card {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 20px;
+    background: var(--m3-surface-container);
+    border-radius: 28px;
+  }
+  .toggle-card h3 { font-size: 14px; font-weight: 500; color: var(--m3-outline); }
+  .toggle-card small { display: block; font-size: 11px; color: var(--m3-outline); opacity: 0.7; margin-top: 3px; }
+  .switch {
+    width: 52px; height: 32px;
+    background: var(--m3-primary);
+    border-radius: 32px;
+    position: relative;
+  }
+  .switch::after {
+    content: ""; position: absolute;
+    height: 24px; width: 24px;
+    top: 4px; right: 4px;
+    background: var(--m3-on-primary);
+    border-radius: 50%;
+  }
+
+  .status-row {
+    background: var(--m3-surface-container);
+    border-radius: 28px;
+    padding: 18px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <div class="left">
+    <div class="logo">NINA</div>
+    <div class="tagline">Speed · Audio-Boost · Auto-Skip · Auto-Like</div>
+    <div class="features">
+      <div class="feature"><span class="ico">🎬</span>Wiedergabe bis <span class="accent">10×</span> — Joyn, YouTube, Netflix, Disney+</div>
+      <div class="feature"><span class="ico">🔊</span>Audio-Boost bis <span class="accent-green">600 %</span> via WebAudio</div>
+      <div class="feature"><span class="ico">⏭</span>Auto-Skip von Intros &amp; Werbung</div>
+      <div class="feature"><span class="ico">👍</span>Auto-Like nach <span class="accent">X %</span> auf YouTube — frei einstellbar</div>
+      <div class="feature"><span class="ico">🚫</span>SponsorBlock-Marker &amp; Dislike-Zähler</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="sp-header">
+      <div>
+        <div class="sp-title">NINA</div>
+        <div class="sp-subtitle">Speed · Volume · Auto-Skip · Auto-Like</div>
+      </div>
+      <button class="text-btn">Reset</button>
+    </div>
+
+    <div class="m3-section">
+      <div class="section-header">
+        <div class="header-info">
+          <span class="section-label">Wiedergabe</span>
+          <span class="current-value">2.00×</span>
+        </div>
+        <div class="expand-icon">▼</div>
+      </div>
+      <div class="slider-row"><div class="slider speed"></div></div>
+    </div>
+
+    <div class="m3-section">
+      <div class="section-header">
+        <div class="header-info">
+          <span class="section-label">Audio Boost</span>
+          <span class="current-value green">150%</span>
+        </div>
+        <div class="expand-icon">▼</div>
+      </div>
+      <div class="slider-row"><div class="slider vol"></div></div>
+    </div>
+
+    <div class="toggle-card">
+      <div>
+        <h3>Auto-Skip</h3>
+        <small>Überspringt Intros &amp; Werbung</small>
+      </div>
+      <div class="switch"></div>
+    </div>
+
+    <div class="m3-section collapsed">
+      <div class="section-header section-header-collapsed">
+        <div class="header-info">
+          <span class="section-label">Auto-Like (YouTube)</span>
+          <span class="current-value">10%</span>
+        </div>
+        <div class="expand-icon collapsed">▼</div>
+      </div>
+    </div>
+
+    <div class="status-row">
+      <span class="section-label">Status</span>
+      <span class="current-value ok">✓ Alles OK</span>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

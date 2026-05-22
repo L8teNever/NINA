@@ -1,0 +1,1445 @@
+<!DOCTYPE html>
+<html class="dark" lang="de">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Start | Android 16 Desktop</title>
+    <!-- Tailwind CSS laden -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <!-- Premium Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&amp;display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:wght@100..1000&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-low": "#1a1c1e",
+                        "on-tertiary-fixed": "#1e192b",
+                        "on-primary-fixed": "#111a36",
+                        "surface-bright": "#37393b",
+                        "on-primary": "#272f4d",
+                        "on-background": "#e2e2e5",
+                        "on-error-container": "#ffdad6",
+                        "secondary-container": "#3f4564",
+                        "on-surface": "#e2e2e5",
+                        "inverse-on-surface": "#2f3133",
+                        "surface-tint": "#bdc5ea",
+                        "inverse-surface": "#e2e2e5",
+                        "surface-container-highest": "#333537",
+                        "secondary-fixed-dim": "#bfc4ea",
+                        "surface-container-lowest": "#0c0e10",
+                        "tertiary-fixed": "#e8def8",
+                        "on-secondary": "#292f4c",
+                        "error-container": "#93000a",
+                        "background": "#121416",
+                        "inverse-primary": "#555d7d",
+                        "primary": "#f7f6ff",
+                        "tertiary-fixed-dim": "#ccc2dc",
+                        "secondary-fixed": "#dde1ff",
+                        "tertiary": "#fbf4ff",
+                        "tertiary-container": "#e0d6f0",
+                        "on-secondary-fixed": "#131a36",
+                        "outline-variant": "#45464d",
+                        "secondary": "#bfc4ea",
+                        "on-secondary-fixed-variant": "#3f4564",
+                        "primary-fixed-dim": "#bdc5ea",
+                        "primary-fixed": "#dce1ff",
+                        "on-surface-variant": "#c6c6ce",
+                        "on-secondary-container": "#aeb3d8",
+                        "on-error": "#690005",
+                        "surface-container-high": "#282a2c",
+                        "surface": "#121416",
+                        "on-primary-fixed-variant": "#3d4564",
+                        "on-tertiary-fixed-variant": "#4a4458",
+                        "surface-dim": "#121416",
+                        "on-primary-container": "#565e7e",
+                        "surface-container": "#1e2022",
+                        "on-tertiary": "#332d41",
+                        "on-tertiary-container": "#635c72",
+                        "error": "#ffb4ab",
+                        "surface-variant": "#333537",
+                        "primary-container": "#d1d9ff",
+                        "outline": "#909098"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "label-sm": ["Plus Jakarta Sans"],
+                        "display-hero-mobile": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "label-lg": ["Plus Jakarta Sans"],
+                        "display-hero": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "label-sm": ["11px", { "lineHeight": "16px", "fontWeight": "600" }],
+                        "display-hero-mobile": ["80px", { "lineHeight": "72px", "fontWeight": "800" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "500" }],
+                        "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.1em", "fontWeight": "700" }],
+                        "display-hero": ["120px", { "lineHeight": "110px", "letterSpacing": "-0.04em", "fontWeight": "800" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+                    }
+                },
+            },
+        }
+    </script>
+
+    <style>
+        body {
+            background: radial-gradient(circle at 50% 50%, #1a2a26 0%, #121416 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .bento-card {
+            backdrop-filter: blur(16px);
+            box-shadow: 0 24px 40px -10px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+        }
+
+        .bento-card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 32px 50px -12px rgba(0, 0, 0, 0.45);
+        }
+
+        .ambient-glow {
+            filter: blur(80px);
+            z-index: -1;
+            transition: transform 0.2s cubic-bezier(0.1, 0.8, 0.3, 1), opacity 0.5s ease;
+        }
+
+        /* Variable Roboto Flex Uhrzeits-Klassen - flache, unaufdringliche Optik */
+        .clock-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Roboto Flex', sans-serif;
+            font-weight: 1000;
+            font-variation-settings: "wdth" 100, "GRAD" 100;
+            line-height: 1;
+            user-select: none;
+        }
+
+        .digit-group {
+            display: flex;
+        }
+
+        .digit {
+            font-variant-numeric: tabular-nums;
+            display: inline-block;
+            text-align: center;
+            width: 1.05ch;
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+        }
+
+        .digit.changing {
+            transform: scale(0.92) translateY(12px);
+            opacity: 0.4;
+        }
+
+        .separator {
+            width: 0.5ch;
+            text-align: center;
+            font-weight: 300;
+            display: inline-block;
+        }
+
+        /* Wetter-Animationen */
+        @keyframes rotate-sun {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes float-cloud {
+
+            0%,
+            100% {
+                transform: translateY(0px) translateX(0px);
+            }
+
+            50% {
+                transform: translateY(-4px) translateX(2px);
+            }
+        }
+
+        @keyframes fall-rain {
+            0% {
+                transform: translateY(-10px) opacity: 0;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(10px) opacity: 0;
+            }
+        }
+
+        @keyframes blink-colon {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
+        }
+
+        .animate-sun {
+            animation: rotate-sun 16s linear infinite;
+            transform-origin: center;
+        }
+
+        .animate-cloud {
+            animation: float-cloud 4s ease-in-out infinite;
+        }
+
+        .animate-rain-drop {
+            animation: fall-rain 1.5s linear infinite;
+        }
+
+        .animate-blink-colon {
+            animation: blink-colon 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        /* Erstes Laden der Seite: Gestaffelte Intro-Animation */
+        @keyframes materialize {
+            0% {
+                opacity: 0;
+                transform: translateY(22px) scale(0.97);
+            }
+
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .animate-materialize {
+            animation: materialize 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+        }
+
+        .delay-75 {
+            animation-delay: 75ms;
+        }
+
+        .delay-150 {
+            animation-delay: 150ms;
+        }
+
+        .delay-225 {
+            animation-delay: 225ms;
+        }
+
+        .delay-300 {
+            animation-delay: 300ms;
+        }
+
+        .delay-375 {
+            animation-delay: 375ms;
+        }
+
+        .delay-450 {
+            animation-delay: 450ms;
+        }
+
+        .delay-525 {
+            animation-delay: 525ms;
+        }
+
+        /* Custom Clean Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #333537;
+            border-radius: 9999px;
+            transition: background 0.3s ease;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #45464d;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-background text-on-background selection:bg-primary-container selection:text-on-primary-container flex flex-col min-h-screen">
+
+    <!-- Ambient Glow Elements -->
+    <div id="glow-1" class="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/10 ambient-glow rounded-full"></div>
+    <div id="glow-2" class="fixed bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-secondary/10 ambient-glow rounded-full">
+    </div>
+
+    <!-- Header mit hohem z-index [relative z-[60]], damit geöffnete Menüs physikalisch immer im Vordergrund schweben -->
+    <header
+        class="relative z-[60] flex justify-end items-center w-full max-w-full bg-transparent pt-6 px-8 gap-4 animate-materialize delay-75">
+            <!-- Google Apps Launcher Menu (Neun Punkte links neben dem Account-Icon) -->
+            <div class="relative">
+                <button onclick="toggleGoogleAppsMenu(event)"
+                class="w-10 h-10 hover:bg-surface-container-high rounded-full flex items-center justify-center cursor-pointer transition-all active:scale-95 focus:outline-none text-on-surface"
+                title="Google-Apps">
+                <span class="material-symbols-outlined text-[26px]">apps</span>
+            </button>
+
+            <!-- Google Apps Grid Dropdown -->
+            <div id="google-apps-popover"
+                class="absolute right-0 mt-3 w-[320px] bg-surface-container-high rounded-[28px] border border-outline-variant/30 p-6 shadow-2xl z-[100] text-on-surface transform origin-top-right transition-all duration-300 opacity-0 scale-95 -translate-y-2 pointer-events-none">
+                <div class="flex items-center justify-between mb-4 px-2">
+                    <span class="font-label-lg text-xs uppercase tracking-wider text-primary">Google-Dienste</span>
+                    <span class="material-symbols-outlined text-sm text-on-surface-variant">open_in_new</span>
+                </div>
+
+                <!-- 3x3 Grid of major Google services -->
+                <div class="grid grid-cols-3 gap-y-5 gap-x-2">
+                    <!-- Google Suche -->
+                    <a href="https://www.google.com" target="_blank"
+                        class="flex flex-col items-center gap-1.5 p-2 hover:bg-surface-container-low rounded-2xl transition-all group">
+                        <span
+                            class="material-symbols-outlined text-[28px] text-blue-400 group-hover:scale-110 transition-transform">search</span>
+                        <span class="text-[11px] font-medium text-on-surface-variant text-center">Suche</span>
+                    </a>
+                    <!-- YouTube -->
+                    <a href="https://www.youtube.com" target="_blank"
+                        class="flex flex-col items-center gap-1.5 p-2 hover:bg-surface-container-low rounded-2xl transition-all group">
+                        <span
+                            class="material-symbols-outlined text-[28px] text-red-500 group-hover:scale-110 transition-transform">play_circle</span>
+                        <span class="text-[11px] font-medium text-on-surface-variant text-center">YouTube</span>
+                    </a>
+                    <!-- Google Maps -->
+                    <a href="https://maps.google.com" target="_blank"
+                        class="flex flex-col items-center gap-1.5 p-2 hover:bg-surface-container-low rounded-2xl transition-all group">
+                        <span
+                            class="material-symbols-outlined text-[28px] text-emerald-400 group-hover:scale-110 transition-transform">map</span>
+                        <span class="text-[11px] font-medium text-on-surface-variant text-center">Maps</span>
+                    </a>
+                    <!-- Gmail -->
+                    <a href="https://mail.google.com" target="_blank"
+                        class="flex flex-col items-center gap-1.5 p-2 hover:bg-surface-container-low rounded-2xl transition-all group">
+                        <span
+                            class="material-symbols-outlined text-[28px] text-red-400 group-hover:scale-110 transition-transform">mail</span>
+                        <span class="text-[11px] font-medium text-on-surface-variant text-center">Gmail</span>
+                    </a>
+                    <!-- Google Drive -->
+                    <a href="https://drive.google.com" target="_blank"
+                        class="flex flex-col items-center gap-1.5 p-2 hover:bg-surface-container-low rounded-2xl transition-all group">
+                        <span
+                            class="material-symbols-outlined text-[28px] text-amber-400 group-hover:scale-110 transition-transform">cloud</span>
+                        <span class="text-[11px] font-medium text-on-surface-variant text-center">Drive</span>
+                    </a>
+                    <!-- Google Kalender -->
+                    <a href="https://calendar.google.com" target="_blank"
+                        class="flex flex-col items-center gap-1.5 p-2 hover:bg-surface-container-low rounded-2xl transition-all group">
+                        <span
+                            class="material-symbols-outlined text-[28px] text-sky-400 group-hover:scale-110 transition-transform">calendar_today</span>
+                        <span class="text-[11px] font-medium text-on-surface-variant text-center">Kalender</span>
+                    </a>
+                    <!-- Google Play -->
+                    <a href="https://play.google.com" target="_blank"
+                        class="flex flex-col items-center gap-1.5 p-2 hover:bg-surface-container-low rounded-2xl transition-all group">
+                        <span
+                            class="material-symbols-outlined text-[28px] text-teal-400 group-hover:scale-110 transition-transform">shop</span>
+                        <span class="text-[11px] font-medium text-on-surface-variant text-center">Play Store</span>
+                    </a>
+                    <!-- Google Meet -->
+                    <a href="https://meet.google.com" target="_blank"
+                        class="flex flex-col items-center gap-1.5 p-2 hover:bg-surface-container-low rounded-2xl transition-all group">
+                        <span
+                            class="material-symbols-outlined text-[28px] text-indigo-400 group-hover:scale-110 transition-transform">video_call</span>
+                        <span class="text-[11px] font-medium text-on-surface-variant text-center">Meet</span>
+                    </a>
+                    <!-- Google Übersetzer -->
+                    <a href="https://translate.google.com" target="_blank"
+                        class="flex flex-col items-center gap-1.5 p-2 hover:bg-surface-container-low rounded-2xl transition-all group">
+                        <span
+                            class="material-symbols-outlined text-[28px] text-purple-400 group-hover:scale-110 transition-transform">translate</span>
+                        <span class="text-[11px] font-medium text-on-surface-variant text-center">Translate</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Profile & Account Dialog (Ganz rechts) -->
+        <div class="relative">
+            <button onclick="toggleGoogleMenu(event)"
+                class="w-10 h-10 bg-transparent rounded-full flex items-center justify-center cursor-pointer hover:bg-white/10 transition-all active:scale-95 focus:outline-none"
+                title="Google-Konto">
+                <span class="material-symbols-outlined text-[28px] text-white">account_circle</span>
+            </button>
+
+            <!-- Google Account Dropdown Popover -->
+            <div id="google-account-popover"
+                class="absolute right-0 mt-3 w-[340px] bg-surface-container-high rounded-[28px] border border-outline-variant/30 p-6 shadow-2xl z-[100] text-on-surface transform origin-top-right transition-all duration-300 opacity-0 scale-95 -translate-y-2 pointer-events-none">
+                <div class="flex flex-col items-center">
+                    <!-- Email Label Top -->
+                    <span class="text-xs text-on-surface-variant font-medium mb-4">contact@l8tenever.com</span>
+
+                    <!-- Large Profile Image -->
+                    <div
+                        class="w-20 h-20 bg-transparent rounded-full flex items-center justify-center mb-3">
+                        <span class="material-symbols-outlined text-[64px] text-white">account_circle</span>
+                    </div>
+
+                    <!-- User Info -->
+                    <h3 class="font-headline-md text-[18px] font-bold text-on-surface">Simon</h3>
+                    <p class="text-xs text-on-surface-variant mb-6">Standardkonto</p>
+
+                    <!-- Main Google Account Link Button -->
+                    <a href="https://myaccount.google.com/" target="_blank"
+                        class="w-full text-center py-3 px-6 bg-surface-container-low text-primary border border-outline-variant hover:bg-surface-container-highest rounded-full text-sm font-semibold transition-all mb-6 flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined text-[18px]">manage_accounts</span>
+                        Google-Konto verwalten
+                    </a>
+                </div>
+
+                <!-- Action Items -->
+                <div class="border-t border-outline-variant/30 pt-4 space-y-1">
+                    <button onclick="showSimpleMessageBox('Konto-Wechsel wird simuliert...')"
+                        class="w-full flex items-center gap-3 px-3 py-3 hover:bg-surface-container-low rounded-xl text-left text-sm font-medium text-on-surface transition-colors">
+                        <span class="material-symbols-outlined text-on-surface-variant">person_add</span>
+                        Weiteres Konto hinzufügen
+                    </button>
+                    <button onclick="showSimpleMessageBox('Abmeldung wird simuliert...')"
+                        class="w-full flex items-center gap-3 px-3 py-3 hover:bg-surface-container-low rounded-xl text-left text-sm font-medium text-error transition-colors">
+                        <span class="material-symbols-outlined text-error">logout</span>
+                        Vom Konto abmelden
+                    </button>
+                </div>
+
+                <!-- Small Info Footer -->
+                <div
+                    class="text-center text-[10px] text-on-surface-variant/60 mt-4 border-t border-outline-variant/30 pt-3 flex justify-center gap-2">
+                    <a href="https://policies.google.com/privacy" target="_blank"
+                        class="hover:underline">Datenschutz</a>
+                    <span>•</span>
+                    <a href="https://policies.google.com/terms" target="_blank" class="hover:underline">Bedingungen</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 py-12 flex flex-col items-center flex-grow w-full">
+        <div class="w-full flex flex-col md:flex-row items-center justify-center gap-12 mb-16">
+            <!-- Roboto Flex Single-Line Clock Widget (Weich animiertes Layout-Shifting bei Menüöffnung) -->
+            <div class="clock-display text-[80px] md:text-[100px] transition-all duration-500 ease-out origin-center animate-materialize delay-150"
+                id="clock-container">
+                <div class="digit-group">
+                    <span id="h1" class="digit text-primary">0</span>
+                    <span id="h2" class="digit text-primary">0</span>
+                </div>
+                <span class="separator text-primary/40 px-2 animate-blink-colon">:</span>
+                <div class="digit-group">
+                    <span id="m1" class="digit text-secondary">0</span>
+                    <span id="m2" class="digit text-secondary">0</span>
+                </div>
+            </div>
+
+            <!-- Pill Search Bar (Weich verkleinernd und weiche Verschiebung nach links bei geöffnetem Menü) -->
+            <div id="search-bar-container"
+                class="w-full max-w-2xl transition-all duration-500 ease-out origin-center animate-materialize delay-225">
+                <form onsubmit="handleMainSearch(event)" class="relative group">
+                    <input id="main-search-input"
+                        class="w-full py-6 pl-10 pr-40 rounded-full bg-surface-container-high border-none text-on-surface placeholder:text-on-surface-variant font-body-lg focus:ring-4 focus:ring-primary/20 transition-all shadow-lg group-hover:bg-surface-container-highest"
+                        placeholder="Google-Suche oder Wetter-Stadt eingeben..." type="text" />
+                    <div class="absolute right-6 top-1/2 -translate-y-1/2 flex items-center gap-3">
+                        <!-- Gemini Spark Button: Öffnet Gemini im neuen Tab mit vorgegebenem Text-Input -->
+                        <button type="button" onclick="triggerGeminiFromInput(event)"
+                            class="p-2 text-purple-400 hover:text-purple-300 hover:bg-surface-container-low rounded-full transition-all flex items-center justify-center relative group/spark"
+                            title="Gemini KI fragen">
+                            <span class="material-symbols-outlined text-[24px] animate-pulse">auto_awesome</span>
+                            <span
+                                class="absolute inset-0 rounded-full bg-purple-500/15 blur-sm scale-125 opacity-0 group-hover/spark:opacity-100 transition-opacity"></span>
+                        </button>
+                        <button type="button"
+                            class="p-2 text-primary hover:bg-surface-container-low rounded-full transition-all">
+                            <span class="material-symbols-outlined">mic</span>
+                        </button>
+                        <button type="button"
+                            class="p-2 text-primary hover:bg-surface-container-low rounded-full transition-all">
+                            <span class="material-symbols-outlined">photo_camera</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Bento Grid Container (Wird bei geöffnetem Menü weich abgedunkelt, verkleinert, nach unten links geschoben und unscharf) -->
+        <div id="bento-grid-container"
+            class="grid grid-cols-1 md:grid-cols-12 gap-6 w-full max-w-6xl transition-all duration-500 ease-out origin-center">
+            <!-- Date Widget (Symmetrisches abgerundetes Quadrat) -->
+            <div onclick="openHolidaysApp()"
+                class="md:col-span-4 h-full bg-primary-container text-on-primary-container p-6 rounded-[32px] flex flex-col justify-between bento-card min-h-[260px] cursor-pointer animate-materialize delay-300">
+                <div class="flex justify-between items-start w-full">
+                    <span class="font-label-lg text-label-lg uppercase tracking-[0.2em] opacity-80"
+                        id="current-day">Sonntag</span>
+                    <span class="material-symbols-outlined opacity-80 text-[24px]">calendar_today</span>
+                </div>
+                <div class="font-display-hero text-[80px] md:text-[96px] leading-none font-extrabold tracking-tighter"
+                    id="current-date">08</div>
+                <div class="font-headline-md text-headline-lg font-bold" id="current-month">Juni</div>
+            </div>
+
+            <!-- WEATHER WIDGET (Symmetrisch identischer Aufbau wie das Datums-Widget) -->
+            <div onclick="openWeatherApp()"
+                class="md:col-span-4 min-h-[260px] bg-secondary-container text-on-secondary-container p-6 rounded-[32px] bento-card cursor-pointer relative group overflow-hidden select-none flex flex-col justify-between animate-materialize delay-375"
+                id="weather-card">
+                <!-- Wetter-Hintergrund-Gradients -->
+                <div class="absolute inset-0 bg-gradient-to-br from-amber-500/15 to-transparent opacity-0 transition-opacity duration-700"
+                    id="weather-bg-sunny"></div>
+                <div class="absolute inset-0 bg-gradient-to-br from-blue-600/25 to-transparent opacity-0 transition-opacity duration-700"
+                    id="weather-bg-rainy"></div>
+                <div class="absolute inset-0 bg-gradient-to-br from-purple-500/15 to-transparent opacity-0 transition-opacity duration-700"
+                    id="weather-bg-cloudy"></div>
+
+                <div class="flex justify-between items-start z-10 w-full relative">
+                    <div class="flex items-center gap-1 hover:bg-black/15 px-3 py-1 rounded-full transition-colors"
+                        id="weather-city-trigger" onclick="event.stopPropagation(); triggerCityChange();">
+                        <span
+                            class="font-label-lg text-label-lg font-bold opacity-90 tracking-wider truncate max-w-[120px]"
+                            id="weather-city">AALEN</span>
+                    </div>
+                    <div id="weather-icon-container" class="h-6 w-6 flex items-center justify-center">
+                        <!-- Dynamisch geladenes Live-Icon -->
+                    </div>
+                </div>
+
+                <div class="z-10 relative font-display-hero text-[80px] md:text-[96px] leading-none font-extrabold tracking-tighter"
+                    id="weather-temp">
+                    --°
+                </div>
+
+                <div class="z-10 relative font-headline-md text-headline-lg font-bold" id="weather-condition">
+                    Lade...
+                </div>
+            </div>
+
+            <!-- School Links Section (Abgerundeter Material Ordner - Dynamisch generiert) -->
+            <div
+                class="md:col-span-4 bg-surface-container text-on-surface p-6 rounded-[32px] bento-card flex flex-col justify-center min-h-[260px] animate-materialize delay-450">
+                <div id="school-links-grid"
+                    class="grid grid-cols-3 gap-y-6 gap-x-2 flex-grow place-items-center justify-center my-auto">
+                    <!-- Wird dynamisch durch JavaScript befüllt -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer id="desktop-footer"
+        class="flex flex-col sm:flex-row justify-between items-center w-full max-w-6xl mx-auto px-6 py-8 mt-auto gap-4 border-t border-outline-variant/15 animate-materialize delay-525 transition-all duration-500 ease-out">
+        <span class="font-label-sm text-[11px] text-on-surface-variant/50">Nina Flow</span>
+        <div class="flex gap-6">
+            <button onclick="openSettingsModal()"
+                class="font-label-sm text-[11px] text-primary hover:text-primary-fixed-dim tracking-wider uppercase font-bold transition-all hover:scale-105 active:scale-95"
+                title="Systemeinstellungen öffnen">EINSTELLUNGEN</button>
+        </div>
+    </footer>
+
+    <!-- SETTINGS MODAL (Android 16 Bottom-Sheet & Dialog) -->
+    <div id="settings-modal"
+        class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xl flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+        <div
+            class="bg-surface-container-high text-on-surface rounded-[32px] w-full max-w-xl mx-4 overflow-hidden shadow-2xl flex flex-col border border-white/10 transform scale-95 transition-transform duration-300">
+            <!-- Header -->
+            <div class="p-6 flex justify-between items-center bg-gradient-to-b from-black/20 to-transparent">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary">settings</span>
+                    <span
+                        class="font-label-lg text-label-lg uppercase tracking-wider text-primary">System-Einstellungen</span>
+                </div>
+                <button onclick="closeSettingsModal()" class="p-2 hover:bg-white/10 rounded-full transition-all">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <!-- Scrollable Content -->
+            <div class="p-6 overflow-y-auto max-h-[70vh] space-y-6">
+                <!-- Wetter-Stadt anpassen -->
+                <div class="bg-surface-container-low p-5 rounded-2xl space-y-3">
+                    <div class="flex items-center gap-2 text-primary">
+                        <span class="material-symbols-outlined">location_on</span>
+                        <h4 class="font-semibold text-sm uppercase tracking-wide">Standard-Wetterstandort</h4>
+                    </div>
+                    <p class="text-xs text-on-surface-variant">Passe die Stadt an, die auf deinem Desktop-Widget
+                        standardmäßig
+                        angezeigt wird.</p>
+                    <div class="flex gap-2">
+                        <input id="settings-city-input" type="text" placeholder="Z. B. Hamburg, Paris, New York..."
+                            class="flex-grow bg-surface rounded-xl py-2 px-4 text-on-surface border-none focus:ring-2 focus:ring-primary placeholder:text-on-surface-variant text-sm" />
+                        <button onclick="saveCityFromSettings()"
+                            class="bg-primary text-background font-bold px-4 py-2 rounded-xl hover:brightness-110 active:scale-95 transition-all text-sm">
+                            Speichern
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Interaktive Schalter (Glow & Einheit) -->
+                <div class="bg-surface-container-low p-5 rounded-2xl space-y-4">
+                    <div class="flex items-center gap-2 text-primary">
+                        <span class="material-symbols-outlined">tune</span>
+                        <h4 class="font-semibold text-sm uppercase tracking-wide">Personalisierung & Anzeige</h4>
+                    </div>
+
+                    <!-- Ambient-Glow Toggle -->
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-semibold">Hintergrund-Leuchten (Ambient Glow)</p>
+                            <p class="text-xs text-on-surface-variant">Aktiviert dynamische Lichteffekte bei
+                                Mausbewegung.</p>
+                        </div>
+                        <button id="glow-toggle-btn" onclick="toggleGlow()"
+                            class="w-12 h-6 bg-primary rounded-full p-1 transition-colors duration-300 focus:outline-none flex items-center justify-end">
+                            <div class="bg-background w-4 h-4 rounded-full shadow-md"></div>
+                        </button>
+                    </div>
+
+                    <!-- Celsius / Fahrenheit Toggle -->
+                    <div class="flex items-center justify-between border-t border-outline-variant/20 pt-3">
+                        <div>
+                            <p class="text-sm font-semibold">Temperatureinheit</p>
+                            <p class="text-xs text-on-surface-variant">Wechsle zwischen Celsius (°C) und Fahrenheit
+                                (°F).</p>
+                        </div>
+                        <div class="flex bg-surface-container rounded-lg p-0.5 text-xs font-bold">
+                            <button id="unit-c" onclick="setTemperatureUnit(true)"
+                                class="px-3 py-1.5 rounded-md bg-primary text-background transition-all">°C</button>
+                            <button id="unit-f" onclick="setTemperatureUnit(false)"
+                                class="px-3 py-1.5 rounded-md text-on-surface-variant transition-all">°F</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- WEGWEISER & VERKNÜPFUNGS-EDITOR (Komplett konfigurierbar) -->
+                <div class="bg-surface-container-low p-5 rounded-2xl space-y-4">
+                    <div class="flex items-center justify-between text-primary">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined">explore</span>
+                            <h4 class="font-semibold text-sm uppercase tracking-wide">Verknüpfungen & Wegweiser</h4>
+                        </div>
+                        <button onclick="restoreDefaultLinks()"
+                            class="text-[10px] uppercase font-bold text-primary hover:text-primary-fixed-dim border border-primary/30 px-2.5 py-1 rounded-lg transition-colors">
+                            Zurücksetzen
+                        </button>
+                    </div>
+                    <p class="text-xs text-on-surface-variant">Passe die Icons, Namen, Weiterleitungs-Links und
+                        Beschreibungen
+                        deiner Apps im Bento-Ordner live an:</p>
+
+                    <div id="settings-links-list" class="space-y-3">
+                        <!-- Wird dynamisch mit Akkordeon-Editoren für jede Verknüpfung befüllt -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- HOLIDAYS APP MODAL -->
+    <div id="holidays-app-modal"
+        class="fixed inset-0 z-50 bg-black/70 backdrop-blur-2xl flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-surface-container-high text-on-surface rounded-[40px] w-full max-w-xl mx-4 overflow-hidden shadow-2xl flex flex-col border border-white/5 relative transform scale-95 transition-transform duration-300">
+            <!-- Close Button & Header -->
+            <div class="p-6 flex justify-between items-center bg-gradient-to-b from-black/25 to-transparent">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary">event_upcoming</span>
+                    <span class="font-label-lg text-label-lg uppercase tracking-wider text-primary">Nächste Feiertage</span>
+                </div>
+                <button onclick="closeHolidaysApp()" class="p-2 hover:bg-white/10 rounded-full transition-all">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <!-- Scrollable Content -->
+            <div class="p-8 overflow-y-auto max-h-[75vh] space-y-4" id="holidays-list-container">
+                <!-- Wird dynamisch durch JavaScript befüllt -->
+            </div>
+        </div>
+    </div>
+
+    <!-- WEATHER APP MODAL: Android 16 Immersive Detailed Weather View -->
+    <div id="weather-app-modal"
+        class="fixed inset-0 z-50 bg-black/70 backdrop-blur-2xl flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+        <div
+            class="bg-surface-container-high text-on-surface rounded-[40px] w-full max-w-2xl mx-4 overflow-hidden shadow-2xl flex flex-col border border-white/5 relative transform scale-95 transition-transform duration-300">
+            <!-- Close Button & Header -->
+            <div class="p-6 flex justify-between items-center bg-gradient-to-b from-black/25 to-transparent">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary">cloud</span>
+                    <span
+                        class="font-label-lg text-label-lg uppercase tracking-wider text-primary">Live-Wetterdetails</span>
+                </div>
+                <button onclick="closeWeatherApp()" class="p-2 hover:bg-white/10 rounded-full transition-all">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <!-- Scrollable details container -->
+            <div class="p-8 overflow-y-auto max-h-[75vh] space-y-8">
+
+
+                <!-- Current Temp & Visuals -->
+                <div
+                    class="flex flex-col md:flex-row items-center justify-between gap-6 bg-surface/50 p-6 rounded-[32px]">
+                    <div class="text-center md:text-left">
+                        <h2 class="font-display-hero text-[72px] leading-tight text-primary-fixed"
+                            id="modal-weather-temp">--°</h2>
+                        <p class="font-headline-md text-headline-md capitalize mt-1" id="modal-weather-city">Aalen,
+                            Deutschland</p>
+                        <p class="font-body-lg text-on-surface-variant capitalize mt-0.5" id="modal-weather-desc">Lade
+                            Detaildaten...</p>
+                    </div>
+                    <div id="modal-weather-illustration"
+                        class="w-32 h-32 flex items-center justify-center bg-white/5 rounded-full p-4">
+                        <!-- Dynamic detailed SVG loaded via JS -->
+                    </div>
+                </div>
+
+                <!-- Details Grid -->
+                <div class="grid grid-cols-3 gap-4 text-center">
+                    <div class="bg-surface-container-low p-4 rounded-2xl">
+                        <span class="material-symbols-outlined text-primary mb-1 text-[28px]">thermostat</span>
+                        <p class="text-xs text-on-surface-variant font-semibold uppercase tracking-wider">Gefühlt</p>
+                        <p class="text-lg font-bold text-on-surface mt-1" id="modal-feels-like">--°</p>
+                    </div>
+                    <div class="bg-surface-container-low p-4 rounded-2xl">
+                        <span class="material-symbols-outlined text-secondary mb-1 text-[28px]">air</span>
+                        <p class="text-xs text-on-surface-variant font-semibold uppercase tracking-wider">Wind</p>
+                        <p class="text-lg font-bold text-on-surface mt-1" id="modal-wind">-- km/h</p>
+                    </div>
+                    <div class="bg-surface-container-low p-4 rounded-2xl">
+                        <span class="material-symbols-outlined text-tertiary mb-1 text-[28px]">humidity_mid</span>
+                        <p class="text-xs text-on-surface-variant font-semibold uppercase tracking-wider">Feuchtigkeit
+                        </p>
+                        <p class="text-lg font-bold text-on-surface mt-1" id="modal-humidity">--%</p>
+                    </div>
+                </div>
+
+                <!-- Weather Forecast Timeline -->
+                <div>
+                    <h3 class="font-headline-md text-headline-md mb-4 text-primary">5-Tage-Prognose</h3>
+                    <div id="forecast-timeline" class="space-y-3">
+                        <div
+                            class="flex items-center justify-between bg-surface/40 px-5 py-4 rounded-2xl animate-pulse">
+                            <div class="w-1/4 h-4 bg-white/15 rounded"></div>
+                            <div class="w-1/4 h-4 bg-white/15 rounded"></div>
+                            <div class="w-1/4 h-4 bg-white/15 rounded"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- STATS AND CORE LOGIC -->
+    <script>
+        let currentCity = "Aalen";
+        let isMetric = true;
+        let weatherState = {};
+        let isGlowEnabled = true;
+
+        // Dynamische Konfiguration für die Verknüpfungen & Wegweiser
+        let schoolLinks = [
+            { id: 'moodle', name: 'Moodle', url: 'https://moodle.org', icon: 'auto_stories', bgClass: 'bg-tertiary-container text-on-tertiary-container', desc: 'Öffnet die offizielle Moodle-Lernplattform für Kursmaterialien und Schulorganisation.' },
+            { id: 'untis', name: 'Untis', url: 'https://webuntis.com', icon: 'calendar_month', bgClass: 'bg-primary-fixed text-on-primary-fixed', desc: 'Führt dich direkt zu WebUntis für die Einsicht deines tagesaktuellen Stunden- und Vertretungsplans.' },
+            { id: 'website', name: 'Website', url: '#', icon: 'language', bgClass: 'bg-secondary-fixed-dim text-on-secondary-fixed', desc: 'Simuliert den Direktaufruf des offiziellen Schulportals.' },
+            { id: 'grades', name: 'Noten', url: '#', icon: 'grade', bgClass: 'bg-primary-container text-on-primary-container', desc: 'Simuliert den Aufruf der Notendatenbank.' },
+            { id: 'mail', name: 'Outlook', url: 'https://outlook.live.com', icon: 'mail', bgClass: 'bg-surface-variant text-on-surface', desc: 'Öffnet Outlook Webmail, um deine Schul- und Privat-E-Mails direkt abrufen zu können.' },
+            { id: 'drive', name: 'Drive', url: 'https://drive.google.com', icon: 'cloud', bgClass: 'bg-tertiary-fixed text-on-tertiary-fixed', desc: 'Öffnet dein Google Drive-Konto für die sichere Cloud-Dateiverwaltung.' }
+        ];
+
+        // Standard-Verknüpfungen sichern für Reset-Funktion
+        const defaultSchoolLinks = JSON.parse(JSON.stringify(schoolLinks));
+
+        // Desktop-Icons rendern
+        function renderSchoolLinksGrid() {
+            const grid = document.getElementById('school-links-grid');
+            grid.innerHTML = '';
+
+            schoolLinks.forEach((link, index) => {
+                const isSimulated = link.url === '#';
+                const actionAttr = isSimulated
+                    ? `onclick="event.preventDefault(); handleSimulatedLinkClick(${index})"`
+                    : `href="${link.url}" target="_blank"`;
+
+                grid.innerHTML += `
+                <a class="flex flex-col items-center gap-1.5 group" ${actionAttr}>
+                    <div class="${link.bgClass} w-12 h-12 flex items-center justify-center rounded-2xl group-hover:scale-110 transition-transform shadow-md cursor-pointer">
+                        <span class="material-symbols-outlined text-[20px]">${link.icon}</span>
+                    </div>
+                    <span class="font-label-sm text-[11px] text-on-surface-variant truncate max-w-[70px] text-center">${link.name}</span>
+                </a>
+            `;
+            });
+        }
+
+        // Behandlung simulierter Klicks auf dem Desktop
+        function handleSimulatedLinkClick(index) {
+            const link = schoolLinks[index];
+            showSimpleMessageBox(`${link.name}: ${link.desc}`);
+        }
+
+        // Akkordeon-Editoren für die Einstellungen rendern
+        function renderSettingsLinks() {
+            const listContainer = document.getElementById('settings-links-list');
+            listContainer.innerHTML = '';
+
+            schoolLinks.forEach((link, index) => {
+                listContainer.innerHTML += `
+                <div class="border border-outline-variant/20 rounded-2xl p-3.5 bg-surface-container-low/60 space-y-2">
+                    <div class="flex items-center justify-between cursor-pointer" onclick="toggleLinkEditor(${index})">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-primary text-[20px]">${link.icon}</span>
+                            <span class="font-bold text-xs tracking-wide text-on-surface">${link.name}</span>
+                        </div>
+                        <span id="editor-arrow-${index}" class="material-symbols-outlined text-on-surface-variant text-sm transition-transform duration-300">expand_more</span>
+                    </div>
+                    
+                    <div id="editor-panel-${index}" class="hidden space-y-3 pt-3 border-t border-outline-variant/15 transition-all">
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-[9px] uppercase font-bold text-primary tracking-wider block mb-1">Anzeigename</label>
+                                <input type="text" value="${link.name}" oninput="updateLinkData(${index}, 'name', this.value)" class="w-full bg-surface rounded-xl py-1.5 px-3 text-xs text-on-surface border-none focus:ring-1 focus:ring-primary" />
+                            </div>
+                            <div>
+                                <label class="text-[9px] uppercase font-bold text-primary tracking-wider block mb-1">Icon (Symbol-Name)</label>
+                                <input type="text" value="${link.icon}" oninput="updateLinkData(${index}, 'icon', this.value)" class="w-full bg-surface rounded-xl py-1.5 px-3 text-xs text-on-surface border-none focus:ring-1 focus:ring-primary" placeholder="z.B. language, mail" />
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-[9px] uppercase font-bold text-primary tracking-wider block mb-1">Weiterleitungs-URL (Nutze # für Simulation)</label>
+                            <input type="text" value="${link.url}" oninput="updateLinkData(${index}, 'url', this.value)" class="w-full bg-surface rounded-xl py-1.5 px-3 text-xs text-on-surface border-none focus:ring-1 focus:ring-primary" />
+                        </div>
+                        <div>
+                            <label class="text-[9px] uppercase font-bold text-primary tracking-wider block mb-1">Beschreibung (Wegweiser & Dialog)</label>
+                            <textarea oninput="updateLinkData(${index}, 'desc', this.value)" rows="2" class="w-full bg-surface rounded-xl py-1.5 px-3 text-xs text-on-surface border-none focus:ring-1 focus:ring-primary resize-none">${link.desc}</textarea>
+                        </div>
+                    </div>
+                </div>
+            `;
+            });
+        }
+
+        // Öffnet/Schließt die einzelnen Kachel-Editoren im Menü
+        function toggleLinkEditor(index) {
+            const panel = document.getElementById(`editor-panel-${index}`);
+            const arrow = document.getElementById(`editor-arrow-${index}`);
+
+            if (panel.classList.contains('hidden')) {
+                panel.classList.remove('hidden');
+                arrow.style.transform = "rotate(180deg)";
+            } else {
+                panel.classList.add('hidden');
+                arrow.style.transform = "rotate(0deg)";
+            }
+        }
+
+        // Aktualisiert die Modelldaten live bei der Eingabe im Editor
+        function updateLinkData(index, field, value) {
+            schoolLinks[index][field] = value;
+            // Desktop-Grid sofort live aktualisieren
+            renderSchoolLinksGrid();
+
+            // Kleine Visuelle Bestätigung im Editor-Icon-Vorschaufenster
+            if (field === 'icon') {
+                const iconPreview = document.querySelector(`#settings-links-list > div:nth-child(${index + 1}) .material-symbols-outlined`);
+                if (iconPreview) iconPreview.textContent = value;
+            }
+            if (field === 'name') {
+                const titlePreview = document.querySelector(`#settings-links-list > div:nth-child(${index + 1}) .font-bold`);
+                if (titlePreview) titlePreview.textContent = value;
+            }
+        }
+
+        // Setzt alle Links auf die Originaleinstellungen zurück
+        function restoreDefaultLinks() {
+            schoolLinks = JSON.parse(JSON.stringify(defaultSchoolLinks));
+            renderSchoolLinksGrid();
+            renderSettingsLinks();
+            showSimpleMessageBox("Verknüpfungen wurden auf Standard zurückgesetzt.");
+        }
+
+        // SVG Wetter-Icons geladen nach WMO Wettercodes
+        const weatherIcons = {
+            sunny: `
+            <svg class="w-10 h-10 text-amber-400 animate-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="4.22" x2="19.78" y2="5.64"></line>
+            </svg>
+        `,
+            cloudy: `
+            <svg class="w-10 h-10 text-blue-200 animate-cloud" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path>
+            </svg>
+        `,
+            rainy: `
+            <svg class="w-10 h-10 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path class="animate-cloud" d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path>
+                <line class="animate-rain-drop" x1="12" y1="22" x2="12" y2="18" style="animation-delay: 0s"></line>
+                <line class="animate-rain-drop" x1="16" y1="22" x2="16" y2="18" style="animation-delay: 0.3s"></line>
+                <line class="animate-rain-drop" x1="8" y1="22" x2="8" y2="18" style="animation-delay: 0.6s"></line>
+            </svg>
+        `,
+            snowy: `
+            <svg class="w-10 h-10 text-cyan-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path class="animate-cloud" d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path>
+                <circle cx="8" cy="20" r="1" fill="currentColor"></circle>
+                <circle cx="12" cy="22" r="1" fill="currentColor"></circle>
+                <circle cx="16" cy="21" r="1" fill="currentColor"></circle>
+            </svg>
+        `
+        };
+
+        // Digit-Elemente für die Ziffern-Animation
+        const clockDigits = {
+            h1: document.getElementById('h1'),
+            h2: document.getElementById('h2'),
+            m1: document.getElementById('m1'),
+            m2: document.getElementById('m2')
+        };
+
+        // Ziffernwechsel-Animation
+        function animateDigit(element, newValue) {
+            if (element.textContent === newValue) return;
+            element.classList.add('changing');
+            setTimeout(() => {
+                element.textContent = newValue;
+                element.classList.remove('changing');
+            }, 120);
+        }
+
+        // Uhrzeit & Datums-Update
+        function updateClock() {
+            const now = new Date();
+            const h = String(now.getHours()).padStart(2, '0');
+            const m = String(now.getMinutes()).padStart(2, '0');
+
+            // Ziffern mit Absack-Animation updaten
+            animateDigit(clockDigits.h1, h[0]);
+            animateDigit(clockDigits.h2, h[1]);
+            animateDigit(clockDigits.m1, m[0]);
+            animateDigit(clockDigits.m2, m[1]);
+
+            // Deutsche Datums-Arrays
+            const days = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+            const months = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+
+            document.getElementById('current-day').textContent = days[now.getDay()];
+            document.getElementById('current-date').textContent = String(now.getDate()).padStart(2, '0');
+            document.getElementById('current-month').textContent = months[now.getMonth()];
+        }
+
+        // Wetter API-Anbindung (Geocoding & Wetterprognose)
+        async function fetchLiveWeather(city = "Aalen") {
+            try {
+                document.getElementById('weather-condition').textContent = 'Update...';
+
+                // Schritt 1: Geocoding Koordinatensuche
+                const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=de&format=json`);
+                const geoData = await geoRes.json();
+
+                if (!geoData.results || geoData.results.length === 0) {
+                    showSimpleMessageBox(`Stadt "${city}" nicht gefunden. Versuche Berlin.`);
+                    if (city !== "Berlin") fetchLiveWeather("Berlin");
+                    return;
+                }
+
+                const target = geoData.results[0];
+                const { latitude, longitude, name, country } = target;
+                currentCity = name;
+
+                // Schritt 2: Wettervorhersage-Daten abrufen
+                const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto`);
+                const weatherData = await weatherRes.json();
+
+                weatherState = {
+                    city: name,
+                    country: country || "",
+                    temp: Math.round(weatherData.current.temperature_2m),
+                    feelsLike: Math.round(weatherData.current.apparent_temperature),
+                    humidity: weatherData.current.relative_humidity_2m,
+                    wind: Math.round(weatherData.current.wind_speed_10m),
+                    code: weatherData.current.weather_code,
+                    daily: weatherData.daily
+                };
+
+                updateWeatherUI();
+            } catch (error) {
+                console.error("Wetter-Abruf fehlgeschlagen, nutze Fallback.", error);
+                simulateFallbackWeather(city);
+            }
+        }
+
+        function simulateFallbackWeather(city) {
+            weatherState = {
+                city: city.charAt(0).toUpperCase() + city.slice(1),
+                country: "Deutschland",
+                temp: 21,
+                feelsLike: 23,
+                humidity: 62,
+                wind: 12,
+                code: 1,
+                daily: {
+                    time: Array(5).fill("").map((_, i) => new Date(Date.now() + i * 86400000).toISOString().split('T')[0]),
+                    temperature_2m_max: [24, 25, 22, 19, 23],
+                    temperature_2m_min: [14, 15, 12, 11, 13],
+                    weather_code: [1, 2, 3, 51, 1]
+                }
+            };
+            updateWeatherUI();
+        }
+
+        function getConditionByCode(code) {
+            if (code === 0) return { name: "Sonnig", icon: 'sunny', bgId: 'weather-bg-sunny' };
+            if (code <= 3) return { name: "Leicht bewölkt", icon: 'cloudy', bgId: 'weather-bg-cloudy' };
+            if (code >= 51 && code <= 67) return { name: "Nieselregen", icon: 'rainy', bgId: 'weather-bg-rainy' };
+            if (code >= 71 && code <= 77) return { name: "Schneefall", icon: 'snowy', bgId: 'weather-bg-cloudy' };
+            if (code >= 80) return { name: "Regenschauer", icon: 'rainy', bgId: 'weather-bg-rainy' };
+            return { name: "Bedeckt", icon: 'cloudy', bgId: 'weather-bg-cloudy' };
+        }
+
+        function updateWeatherUI() {
+            const info = getConditionByCode(weatherState.code);
+
+            const displayTempNum = isMetric ? `${weatherState.temp}°` : `${Math.round(weatherState.temp * 1.8 + 32)}°`;
+            document.getElementById('weather-temp').textContent = displayTempNum;
+            document.getElementById('weather-condition').textContent = info.name;
+            document.getElementById('weather-city').textContent = weatherState.city.toUpperCase();
+            document.getElementById('weather-icon-container').innerHTML = weatherIcons[info.icon];
+
+            document.getElementById('weather-bg-sunny').style.opacity = info.bgId === 'weather-bg-sunny' ? '1' : '0';
+            document.getElementById('weather-bg-rainy').style.opacity = info.bgId === 'weather-bg-rainy' ? '1' : '0';
+            document.getElementById('weather-bg-cloudy').style.opacity = info.bgId === 'weather-bg-cloudy' ? '1' : '0';
+
+            document.getElementById('modal-weather-temp').textContent = displayTempNum;
+            document.getElementById('modal-weather-city').textContent = `${weatherState.city}, ${weatherState.country}`;
+            document.getElementById('modal-weather-desc').textContent = `${info.name} • Live Desktop Sync`;
+            document.getElementById('modal-weather-illustration').innerHTML = weatherIcons[info.icon];
+
+            const displayFeels = isMetric ? `${weatherState.feelsLike}°` : `${Math.round(weatherState.feelsLike * 1.8 + 32)}°`;
+            document.getElementById('modal-feels-like').textContent = displayFeels;
+            document.getElementById('modal-wind').textContent = `${weatherState.wind} km/h`;
+            document.getElementById('modal-humidity').textContent = `${weatherState.humidity}%`;
+
+            const timeline = document.getElementById('forecast-timeline');
+            timeline.innerHTML = '';
+
+            const daysOfWeek = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+
+            for (let i = 0; i < 5; i++) {
+                const dateStr = weatherState.daily.time[i];
+                const dateObj = new Date(dateStr);
+                const dayName = i === 0 ? "Heute" : daysOfWeek[dateObj.getDay()];
+
+                const maxTemp = isMetric ? `${Math.round(weatherState.daily.temperature_2m_max[i])}°` : `${Math.round(weatherState.daily.temperature_2m_max[i] * 1.8 + 32)}°`;
+                const minTemp = isMetric ? `${Math.round(weatherState.daily.temperature_2m_min[i])}°` : `${Math.round(weatherState.daily.temperature_2m_min[i] * 1.8 + 32)}°`;
+                const dailyCode = weatherState.daily.weather_code[i];
+                const dailyInfo = getConditionByCode(dailyCode);
+
+                timeline.innerHTML += `
+                <div class="flex items-center justify-between bg-surface/40 hover:bg-surface/60 transition-colors px-5 py-4 rounded-2xl">
+                    <span class="font-body-md font-semibold w-1/3">${dayName}</span>
+                    <div class="flex items-center gap-2 w-1/3 justify-center">
+                        <span class="text-xs text-on-surface-variant font-medium">${dailyInfo.name}</span>
+                    </div>
+                    <span class="font-label-lg text-right w-1/3">
+                        <span class="text-primary">${maxTemp}</span>
+                        <span class="text-on-surface-variant/50 ml-2">${minTemp}</span>
+                    </span>
+                </div>
+            `;
+            }
+        }
+
+        // Holidays App Logic
+        const holidaysData = [
+            { date: "2026-10-03", name: "Tag der Deutschen Einheit" },
+            { date: "2026-10-31", name: "Reformationstag" },
+            { date: "2026-11-01", name: "Allerheiligen" },
+            { date: "2026-12-25", name: "1. Weihnachtsfeiertag" },
+            { date: "2026-12-26", name: "2. Weihnachtsfeiertag" },
+            { date: "2027-01-01", name: "Neujahr" },
+            { date: "2027-04-02", name: "Karfreitag" },
+            { date: "2027-04-05", name: "Ostermontag" },
+            { date: "2027-05-01", name: "Tag der Arbeit" },
+            { date: "2027-05-13", name: "Christi Himmelfahrt" }
+        ];
+
+        function renderHolidays() {
+            const container = document.getElementById('holidays-list-container');
+            if (!container) return;
+            container.innerHTML = '';
+            
+            const now = new Date();
+            // Start of today to compare correctly
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            
+            let upcoming = holidaysData.filter(h => new Date(h.date) >= today).slice(0, 5);
+            
+            if (upcoming.length === 0) {
+                upcoming = holidaysData.slice(0, 5);
+            }
+
+            upcoming.forEach(holiday => {
+                const hDate = new Date(holiday.date);
+                const dayStr = hDate.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+                
+                const diffTime = hDate.getTime() - today.getTime();
+                const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+                
+                let daysText = `in ${diffDays} Tagen`;
+                if (diffDays === 0) daysText = "Heute!";
+                else if (diffDays === 1) daysText = "Morgen!";
+                else if (diffDays < 0) daysText = "Vorbei";
+
+                container.innerHTML += `
+                    <div class="flex items-center justify-between bg-surface-container-low p-5 rounded-3xl hover:bg-surface-container transition-colors group border border-transparent hover:border-primary/20">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-2xl bg-primary-container text-primary flex items-center justify-center font-bold text-lg">
+                                ${hDate.getDate()}
+                            </div>
+                            <div>
+                                <h4 class="font-headline-md text-base font-bold text-on-surface group-hover:text-primary transition-colors">${holiday.name}</h4>
+                                <p class="text-xs text-on-surface-variant mt-0.5">${dayStr}</p>
+                            </div>
+                        </div>
+                        <div class="bg-surface px-3 py-1.5 rounded-full border border-outline-variant/30 text-xs font-semibold text-primary">
+                            ${daysText}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function openHolidaysApp() {
+            renderHolidays();
+            const modal = document.getElementById('holidays-app-modal');
+            const modalContent = modal.querySelector('div');
+
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.classList.add('opacity-100');
+
+            modalContent.classList.remove('scale-95');
+            modalContent.classList.add('scale-100');
+        }
+
+        function closeHolidaysApp() {
+            const modal = document.getElementById('holidays-app-modal');
+            const modalContent = modal.querySelector('div');
+
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.classList.remove('opacity-100');
+
+            modalContent.classList.add('scale-95');
+            modalContent.classList.remove('scale-100');
+        }
+
+        // Modal Control Functions (Optimiert mit zweigeteilter Android Springfeder-Animation)
+        function openWeatherApp() {
+            const modal = document.getElementById('weather-app-modal');
+            const modalContent = modal.querySelector('div');
+
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.classList.add('opacity-100');
+
+            modalContent.classList.remove('scale-95');
+            modalContent.classList.add('scale-100');
+        }
+
+        function closeWeatherApp() {
+            const modal = document.getElementById('weather-app-modal');
+            const modalContent = modal.querySelector('div');
+
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.classList.remove('opacity-100');
+
+            modalContent.classList.add('scale-95');
+            modalContent.classList.remove('scale-100');
+        }
+
+        // Layout-Verschiebung wenn Menüs im Header geöffnet oder geschlossen werden
+        function updateDesktopLayoutState() {
+            const appsPopover = document.getElementById('google-apps-popover');
+            const accountPopover = document.getElementById('google-account-popover');
+
+            // Überprüfen, ob eines der Header-Dropdowns offen ist
+            const isAnyMenuOpen = !appsPopover.classList.contains('opacity-0') || !accountPopover.classList.contains('opacity-0');
+
+            const searchContainer = document.getElementById('search-bar-container');
+            const clockContainer = document.getElementById('clock-container');
+
+            if (isAnyMenuOpen) {
+                // Nur weich nach links verschieben, kein Verkleinern, kein Dimmen, keine Layout-Sperre
+                searchContainer.classList.add('md:-translate-x-24');
+                clockContainer.classList.add('md:-translate-x-24');
+            } else {
+                // Wieder in die ursprüngliche Position zurückgleiten lassen
+                searchContainer.classList.remove('md:-translate-x-24');
+                clockContainer.classList.remove('md:-translate-x-24');
+            }
+        }
+
+        function openSettingsModal() {
+            document.getElementById('settings-city-input').value = currentCity;
+            renderSettingsLinks();
+
+            const modal = document.getElementById('settings-modal');
+            const modalContent = modal.querySelector('div');
+
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.classList.add('opacity-100');
+
+            modalContent.classList.remove('scale-95');
+            modalContent.classList.add('scale-100');
+        }
+
+        function closeSettingsModal() {
+            const modal = document.getElementById('settings-modal');
+            const modalContent = modal.querySelector('div');
+
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.classList.remove('opacity-100');
+
+            modalContent.classList.add('scale-95');
+            modalContent.classList.remove('scale-100');
+        }
+
+        function triggerCityChange() {
+            const newCity = prompt("Gib eine Stadt ein, um den Wetterstandort zu wechseln:", currentCity);
+            if (newCity && newCity.trim() !== "") {
+                fetchLiveWeather(newCity.trim());
+            }
+        }
+
+        function saveCityFromSettings() {
+            const input = document.getElementById('settings-city-input');
+            if (input.value && input.value.trim() !== "") {
+                fetchLiveWeather(input.value.trim());
+                showSimpleMessageBox(`Wetter-Standort geändert zu: ${input.value.trim()}`);
+                closeSettingsModal();
+            }
+        }
+
+        function searchNewCityFromModal() {
+            const input = document.getElementById('modal-city-search');
+            if (input.value && input.value.trim() !== "") {
+                fetchLiveWeather(input.value.trim());
+                input.value = "";
+            }
+        }
+
+        // Toggle Ambient Glow
+        function toggleGlow() {
+            isGlowEnabled = !isGlowEnabled;
+            const glows = document.querySelectorAll('.ambient-glow');
+            const btn = document.getElementById('glow-toggle-btn');
+
+            if (isGlowEnabled) {
+                glows.forEach(glow => glow.style.opacity = '1');
+                btn.classList.add('justify-end');
+                btn.classList.remove('justify-start');
+                showSimpleMessageBox("Hintergrund-Lichter aktiviert.");
+            } else {
+                glows.forEach(glow => glow.style.opacity = '0');
+                btn.classList.remove('justify-end');
+                btn.classList.add('justify-start');
+                showSimpleMessageBox("Hintergrund-Lichter deaktiviert.");
+            }
+        }
+
+        // Unit toggle
+        function setTemperatureUnit(toMetric) {
+            isMetric = toMetric;
+            const btnC = document.getElementById('unit-c');
+            const btnF = document.getElementById('unit-f');
+
+            if (isMetric) {
+                btnC.className = "px-3 py-1.5 rounded-md bg-primary text-background transition-all";
+                btnF.className = "px-3 py-1.5 rounded-md text-on-surface-variant transition-all";
+            } else {
+                btnC.className = "px-3 py-1.5 rounded-md text-on-surface-variant transition-all";
+                btnF.className = "px-3 py-1.5 rounded-md bg-primary text-background transition-all";
+            }
+
+            updateWeatherUI();
+            showSimpleMessageBox(`Einheit auf ${isMetric ? 'Celsius (°C)' : 'Fahrenheit (°F)'} umgestellt.`);
+        }
+
+        function handleMainSearch(event) {
+            event.preventDefault();
+            const input = document.getElementById('main-search-input');
+            const query = input.value.trim();
+            if (query.toLowerCase().startsWith('wetter in ')) {
+                const city = query.replace(/wetter in /i, '');
+                fetchLiveWeather(city);
+                openWeatherApp();
+                input.value = "";
+            } else if (query !== "") {
+                window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
+                input.value = "";
+            }
+        }
+
+        function triggerGeminiFromInput(event) {
+            event.stopPropagation();
+            const input = document.getElementById('main-search-input');
+            const query = input.value.trim();
+            if (query !== "") {
+                // Weiterleitung zu Gemini mit dem eingegebenen Suchtext
+                window.open(`https://gemini.google.com/app?q=${encodeURIComponent(query)}`, '_blank');
+                input.value = "";
+            } else {
+                // Wenn leer, einfach nur die standardmäßige Gemini-App öffnen
+                window.open('https://gemini.google.com/app', '_blank');
+            }
+        }
+
+        // Google Services Launcher Menu Logic (Weiche Klassen-basierte Transitionen)
+        function toggleGoogleAppsMenu(event) {
+            event.stopPropagation();
+            closeGoogleMenu(); // Schließe das Konto-Menü, falls offen
+            const popover = document.getElementById('google-apps-popover');
+            const isClosed = popover.classList.contains('opacity-0');
+
+            if (isClosed) {
+                popover.classList.remove('opacity-0', 'scale-95', '-translate-y-2', 'pointer-events-none');
+                popover.classList.add('opacity-100', 'scale-100', 'translate-y-0', 'pointer-events-auto');
+            } else {
+                closeGoogleAppsMenu();
+            }
+            updateDesktopLayoutState();
+        }
+
+        function closeGoogleAppsMenu() {
+            const popover = document.getElementById('google-apps-popover');
+            if (popover && !popover.classList.contains('opacity-0')) {
+                popover.classList.add('opacity-0', 'scale-95', '-translate-y-2', 'pointer-events-none');
+                popover.classList.remove('opacity-100', 'scale-100', 'translate-y-0', 'pointer-events-auto');
+            }
+            updateDesktopLayoutState();
+        }
+
+        // Google Account Menu Logic (Weiche Klassen-basierte Transitionen)
+        function toggleGoogleMenu(event) {
+            event.stopPropagation();
+            closeGoogleAppsMenu(); // Schließe das App-Menü, falls offen
+            const popover = document.getElementById('google-account-popover');
+            const isClosed = popover.classList.contains('opacity-0');
+
+            if (isClosed) {
+                popover.classList.remove('opacity-0', 'scale-95', '-translate-y-2', 'pointer-events-none');
+                popover.classList.add('opacity-100', 'scale-100', 'translate-y-0', 'pointer-events-auto');
+            } else {
+                closeGoogleMenu();
+            }
+            updateDesktopLayoutState();
+        }
+
+        function closeGoogleMenu() {
+            const popover = document.getElementById('google-account-popover');
+            if (popover && !popover.classList.contains('opacity-0')) {
+                popover.classList.add('opacity-0', 'scale-95', '-translate-y-2', 'pointer-events-none');
+                popover.classList.remove('opacity-100', 'scale-100', 'translate-y-0', 'pointer-events-auto');
+            }
+            updateDesktopLayoutState();
+        }
+
+        function showSimpleMessageBox(msg) {
+            const box = document.createElement('div');
+            box.className = "fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-surface-container-highest text-on-surface px-6 py-3 rounded-full text-sm font-semibold shadow-2xl transition-all duration-300 transform translate-y-12 opacity-0";
+            box.innerText = msg;
+            document.body.appendChild(box);
+            setTimeout(() => {
+                box.classList.remove('translate-y-12', 'opacity-0');
+            }, 100);
+            setTimeout(() => {
+                box.classList.add('translate-y-12', 'opacity-0');
+                setTimeout(() => box.remove(), 400);
+            }, 3500);
+        }
+
+        // Menüs schließen bei Klick außerhalb
+        document.addEventListener('click', function (event) {
+            const appsPopover = document.getElementById('google-apps-popover');
+            const accountContainer = document.getElementById('google-account-popover');
+            let changed = false;
+
+            if (accountContainer && !accountContainer.classList.contains('opacity-0')) {
+                if (!accountContainer.contains(event.target)) {
+                    closeGoogleMenu();
+                    changed = true;
+                }
+            }
+            if (appsPopover && !appsPopover.classList.contains('opacity-0')) {
+                if (!appsPopover.contains(event.target)) {
+                    closeGoogleAppsMenu();
+                    changed = true;
+                }
+            }
+            if (changed) {
+                updateDesktopLayoutState();
+            }
+        });
+
+        // Start-Dienste laden
+        window.onload = function () {
+            setInterval(updateClock, 1000);
+            updateClock();
+            fetchLiveWeather("Aalen");
+            renderSchoolLinksGrid();
+        }
+
+        // Mausbewegung für die Hintergrund-Ambient-Lichter
+        document.addEventListener('mousemove', (e) => {
+            if (!isGlowEnabled) return;
+            const glows = document.querySelectorAll('.ambient-glow');
+            const x = (e.clientX / window.innerWidth - 0.5) * 40;
+            const y = (e.clientY / window.innerHeight - 0.5) * 40;
+
+            glows.forEach((glow, index) => {
+                const factor = index === 0 ? 1 : -1;
+                glow.style.transform = `translate(${x * factor}px, ${y * factor}px)`;
+            });
+        });
+    </script>
+</body>
+
+</html>

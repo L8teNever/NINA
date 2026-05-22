@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html class="dark" lang="{{ lang }}">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Chrome Extensions | NINA & NINA Flow</title>
+    <!-- Tailwind CSS laden -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <!-- Premium Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&amp;display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:wght@100..1000&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-low": "#1a1c1e",
+                        "on-tertiary-fixed": "#1e192b",
+                        "on-primary-fixed": "#111a36",
+                        "surface-bright": "#37393b",
+                        "on-primary": "#272f4d",
+                        "on-background": "#e2e2e5",
+                        "on-error-container": "#ffdad6",
+                        "secondary-container": "#3f4564",
+                        "on-surface": "#e2e2e5",
+                        "inverse-on-surface": "#2f3133",
+                        "surface-tint": "#bdc5ea",
+                        "inverse-surface": "#e2e2e5",
+                        "surface-container-highest": "#333537",
+                        "secondary-fixed-dim": "#bfc4ea",
+                        "surface-container-lowest": "#0c0e10",
+                        "tertiary-fixed": "#e8def8",
+                        "on-secondary": "#292f4c",
+                        "error-container": "#93000a",
+                        "background": "#121416",
+                        "inverse-primary": "#555d7d",
+                        "primary": "#f7f6ff",
+                        "tertiary-fixed-dim": "#ccc2dc",
+                        "secondary-fixed": "#dde1ff",
+                        "tertiary": "#fbf4ff",
+                        "tertiary-container": "#e0d6f0",
+                        "on-secondary-fixed": "#131a36",
+                        "outline-variant": "#45464d",
+                        "secondary": "#bfc4ea",
+                        "on-secondary-fixed-variant": "#3f4564",
+                        "primary-fixed-dim": "#bdc5ea",
+                        "primary-fixed": "#dce1ff",
+                        "on-surface-variant": "#c6c6ce",
+                        "on-secondary-container": "#aeb3d8",
+                        "on-error": "#690005",
+                        "surface-container-high": "#282a2c",
+                        "surface": "#121416",
+                        "on-primary-fixed-variant": "#3d4564",
+                        "on-tertiary-fixed-variant": "#4a4458",
+                        "surface-dim": "#121416",
+                        "on-primary-container": "#565e7e",
+                        "surface-container": "#1e2022",
+                        "on-tertiary": "#332d41",
+                        "on-tertiary-container": "#635c72",
+                        "error": "#ffb4ab",
+                        "surface-variant": "#333537",
+                        "primary-container": "#d1d9ff",
+                        "outline": "#909098"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "label-sm": ["Plus Jakarta Sans"],
+                        "display-hero-mobile": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "label-lg": ["Plus Jakarta Sans"],
+                        "display-hero": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "label-sm": ["11px", { "lineHeight": "16px", "fontWeight": "600" }],
+                        "display-hero-mobile": ["80px", { "lineHeight": "72px", "fontWeight": "800" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "500" }],
+                        "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.1em", "fontWeight": "700" }],
+                        "display-hero": ["120px", { "lineHeight": "110px", "letterSpacing": "-0.04em", "fontWeight": "800" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+                    }
+                },
+            },
+        }
+    </script>
+
+    <style>
+        body {
+            background: radial-gradient(circle at 50% 50%, #1a2a26 0%, #121416 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .bento-card {
+            backdrop-filter: blur(16px);
+            box-shadow: 0 24px 40px -10px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+        }
+
+        .bento-card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 32px 50px -12px rgba(0, 0, 0, 0.45);
+        }
+
+        .ambient-glow {
+            filter: blur(80px);
+            z-index: -1;
+            transition: transform 0.2s cubic-bezier(0.1, 0.8, 0.3, 1), opacity 0.5s ease;
+        }
+
+        @keyframes materialize {
+            0% {
+                opacity: 0;
+                transform: translateY(22px) scale(0.97);
+            }
+
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .animate-materialize {
+            animation: materialize 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+        }
+
+        .delay-75 {
+            animation-delay: 75ms;
+        }
+
+        .delay-150 {
+            animation-delay: 150ms;
+        }
+
+        .delay-225 {
+            animation-delay: 225ms;
+        }
+
+        .delay-300 {
+            animation-delay: 300ms;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #333537;
+            border-radius: 9999px;
+            transition: background 0.3s ease;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #45464d;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-background text-on-background selection:bg-primary-container selection:text-on-primary-container flex flex-col min-h-screen">
+
+    <!-- Ambient Glow Elements -->
+    <div id="glow-1"
+        class="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/10 ambient-glow rounded-full pointer-events-none">
+    </div>
+    <div id="glow-2"
+        class="fixed bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-secondary/10 ambient-glow rounded-full pointer-events-none">
+    </div>
+
+    <header
+        class="relative z-[60] flex justify-between items-center w-full max-w-6xl mx-auto pt-6 px-8 gap-4 animate-materialize delay-75">
+        <button id="back-btn"
+            class="hidden items-center gap-2 text-primary hover:text-primary-fixed-dim transition-colors"
+            onclick="navigate('home')">
+            <span class="material-symbols-outlined text-[24px]">arrow_back</span>
+            <span class="font-label-lg tracking-widest uppercase" data-i18n="back">Zurück</span>
+        </button>
+        <div class="flex items-center gap-4 ml-auto relative">
+            <!-- Language Dropdown Toggle -->
+            <button onclick="toggleLangMenu(event)"
+                class="flex items-center gap-2 bg-surface-container-high hover:bg-surface-container-highest px-4 py-2 rounded-full transition-all border border-outline-variant/30 text-primary">
+                <span class="material-symbols-outlined text-[20px]">language</span>
+                <span id="lang-label" class="font-label-lg text-xs uppercase">DE</span>
+                <span class="material-symbols-outlined text-[18px]">expand_more</span>
+            </button>
+
+            <!-- Language Dropdown -->
+            <div id="lang-dropdown"
+                class="absolute right-0 top-full mt-3 w-44 bg-surface-container-high rounded-[20px] border border-outline-variant/30 shadow-2xl overflow-y-auto max-h-72 transition-all duration-300 opacity-0 scale-95 pointer-events-none origin-top-right z-[100] custom-scrollbar">
+                <button onclick="setLang('ar')"
+                    class="w-full text-left px-5 py-3 hover:bg-surface-container-highest text-on-surface text-sm font-label-lg flex items-center gap-3 transition-colors border-b border-outline-variant/10">
+                    <span class="text-lg">🇸🇦</span> العربية
+                </button>
+                <button onclick="setLang('bn')"
+                    class="w-full text-left px-5 py-3 hover:bg-surface-container-highest text-on-surface text-sm font-label-lg flex items-center gap-3 transition-colors border-b border-outline-variant/10">
+                    <span class="text-lg">🇧🇩</span> বাংলা
+                </button>
+                <button onclick="setLang('zh')"
+                    class="w-full text-left px-5 py-3 hover:bg-surface-container-highest text-on-surface text-sm font-label-lg flex items-center gap-3 transition-colors border-b border-outline-variant/10">
+                    <span class="text-lg">🇨🇳</span> 中文
+                </button>
+                <button onclick="setLang('de')"
+                    class="w-full text-left px-5 py-3 hover:bg-surface-container-highest text-on-surface text-sm font-label-lg flex items-center gap-3 transition-colors border-b border-outline-variant/10">
+                    <span class="text-lg">🇩🇪</span> Deutsch
+                </button>
+                <button onclick="setLang('en')"
+                    class="w-full text-left px-5 py-3 hover:bg-surface-container-highest text-on-surface text-sm font-label-lg flex items-center gap-3 transition-colors border-b border-outline-variant/10">
+                    <span class="text-lg">🇬🇧</span> English
+                </button>
+                <button onclick="setLang('es')"
+                    class="w-full text-left px-5 py-3 hover:bg-surface-container-highest text-on-surface text-sm font-label-lg flex items-center gap-3 transition-colors border-b border-outline-variant/10">
+                    <span class="text-lg">🇪🇸</span> Español
+                </button>
+                <button onclick="setLang('fr')"
+                    class="w-full text-left px-5 py-3 hover:bg-surface-container-highest text-on-surface text-sm font-label-lg flex items-center gap-3 transition-colors border-b border-outline-variant/10">
+                    <span class="text-lg">🇫🇷</span> Français
+                </button>
+                <button onclick="setLang('hi')"
+                    class="w-full text-left px-5 py-3 hover:bg-surface-container-highest text-on-surface text-sm font-label-lg flex items-center gap-3 transition-colors border-b border-outline-variant/10">
+                    <span class="text-lg">🇮🇳</span> हिन्दी
+                </button>
+                <button onclick="setLang('it')"
+                    class="w-full text-left px-5 py-3 hover:bg-surface-container-highest text-on-surface text-sm font-label-lg flex items-center gap-3 transition-colors border-b border-outline-variant/10">
+                    <span class="text-lg">🇮🇹</span> Italiano
+                </button>
+                <button onclick="setLang('pt')"
+                    class="w-full text-left px-5 py-3 hover:bg-surface-container-highest text-on-surface text-sm font-label-lg flex items-center gap-3 transition-colors border-b border-outline-variant/10">
+                    <span class="text-lg">🇵🇹</span> Português
+                </button>
+                <button onclick="setLang('ru')"
+                    class="w-full text-left px-5 py-3 hover:bg-surface-container-highest text-on-surface text-sm font-label-lg flex items-center gap-3 transition-colors">
+                    <span class="text-lg">🇷🇺</span> Русский
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-6 py-12 flex flex-col items-center flex-grow w-full relative">
+
+        <!-- HOME VIEW -->
+        <div id="view-home"
+            class="w-full flex flex-col transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] opacity-100 scale-100 blur-none translate-y-0 relative z-10">
+            <div class="text-center mb-16 animate-materialize delay-150">
+                <h1 class="font-display-hero text-[60px] md:text-[80px] leading-tight font-extrabold tracking-tighter"
+                    data-i18n="title">Chrome Addons</h1>
+                <p class="font-body-lg text-on-surface-variant mt-4 max-w-2xl mx-auto" data-i18n="subtitle">Entdecke
+                    meine leistungsstarken Erweiterungen für deinen Browser, die deinen Workflow auf das nächste Level
+                    heben.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
+                <!-- NINA Card -->
+                <div onclick="navigate('nina')"
+                    class="bg-surface-container text-on-surface p-8 md:p-12 rounded-[40px] bento-card cursor-pointer group animate-materialize delay-225 flex flex-col h-full min-h-[340px] relative overflow-hidden">
+                    <div
+                        class="absolute -top-4 -right-4 p-8 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110 duration-500">
+                        <span class="material-symbols-outlined text-[180px]">extension</span>
+                    </div>
+                    <div class="w-16 h-16 bg-primary/10 rounded-[20px] flex items-center justify-center mb-6">
+                        <span class="material-symbols-outlined text-[32px] text-primary">extension</span>
+                    </div>
+                    <h2 class="font-headline-lg text-primary text-[40px] mb-4 font-bold">NINA</h2>
+                    <p class="font-body-md text-on-surface-variant mb-8 flex-grow text-lg" data-i18n="nina_short">Der
+                        intelligente Assistent für deinen täglichen Workflow im Browser.</p>
+                    <div
+                        class="flex items-center gap-2 text-primary font-label-lg uppercase tracking-wider group-hover:translate-x-2 transition-transform mt-auto">
+                        <span data-i18n="learn_more">Mehr erfahren</span>
+                        <span class="material-symbols-outlined">arrow_forward</span>
+                    </div>
+                </div>
+
+                <!-- NINA Flow Card -->
+                <div onclick="navigate('nina-flow')"
+                    class="bg-primary-container text-on-primary-container p-8 md:p-12 rounded-[40px] bento-card cursor-pointer group animate-materialize delay-300 flex flex-col h-full min-h-[340px] relative overflow-hidden">
+                    <div
+                        class="absolute -top-4 -right-4 p-8 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110 duration-500">
+                        <span class="material-symbols-outlined text-[180px]">dashboard_customize</span>
+                    </div>
+                    <div class="w-16 h-16 bg-white/20 rounded-[20px] flex items-center justify-center mb-6">
+                        <span
+                            class="material-symbols-outlined text-[32px] text-on-primary-container">dashboard_customize</span>
+                    </div>
+                    <h2 class="font-headline-lg text-[40px] mb-4 font-bold">NINA Flow</h2>
+                    <p class="font-body-md opacity-80 mb-8 flex-grow text-lg" data-i18n="nina_flow_short">Dein
+                        ultimatives New Tab Erlebnis mit Widgets, Kalender und mehr.</p>
+                    <div
+                        class="flex items-center gap-2 font-label-lg uppercase tracking-wider group-hover:translate-x-2 transition-transform mt-auto">
+                        <span data-i18n="learn_more">Mehr erfahren</span>
+                        <span class="material-symbols-outlined">arrow_forward</span>
+                    </div>
+                </div>
+
+
+            </div>
+        </div>
+
+        <!-- NINA VIEW -->
+        <div id="view-nina"
+            class="w-full absolute top-12 left-0 right-0 px-6 opacity-0 scale-105 translate-y-12 blur-lg transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] pointer-events-none">
+            <div class="max-w-4xl mx-auto flex flex-col">
+                <div class="flex items-center gap-6 mb-10">
+                    <div
+                        class="w-24 h-24 bg-surface-container rounded-[28px] flex items-center justify-center shadow-xl border border-white/5">
+                        <span class="material-symbols-outlined text-[48px] text-primary">extension</span>
+                    </div>
+                    <h1
+                        class="font-display-hero text-[50px] md:text-[70px] leading-tight font-extrabold tracking-tighter text-primary">
+                        NINA</h1>
+                </div>
+
+                <div class="bg-surface-container-low rounded-[40px] p-8 md:p-14 mb-8 shadow-2xl border border-white/5">
+                    <h3 class="font-headline-md text-primary mb-6" data-i18n="about_addon">Über das Addon</h3>
+                    <p class="font-body-lg text-on-surface-variant leading-relaxed mb-10 text-[18px]"
+                        data-i18n="nina_desc">NINA ist eine vielseitige Chrome-Erweiterung, die entwickelt wurde, um
+                        deine Produktivität zu steigern. Mit einem schlanken Design und intelligenten Funktionen
+                        integriert sie sich nahtlos in deinen Browser-Alltag und bietet dir genau die Werkzeuge, die du
+                        benötigst. Perfekt für alle, die ihren Workflow optimieren wollen.</p>
+
+                    <div class="flex flex-col sm:flex-row flex-wrap gap-4">
+                        <a href="https://chrome.google.com/webstore" target="_blank"
+                            class="flex items-center justify-center gap-3 bg-primary text-background px-8 py-4 rounded-full font-label-lg hover:brightness-110 transition-all shadow-lg hover:scale-105 active:scale-95">
+                            <span class="material-symbols-outlined text-[22px]">shop</span>
+                            <span data-i18n="chrome_store">Chrome Web Store</span>
+                        </a>
+                        <a href="https://github.com/L8teNever/NINA/tree/main/NINA" target="_blank"
+                            class="flex items-center justify-center gap-3 bg-surface-container-highest text-on-surface px-8 py-4 rounded-full font-label-lg hover:bg-surface-variant transition-all hover:scale-105 active:scale-95 border border-outline-variant/20">
+                            <span class="material-symbols-outlined text-[22px]">code</span>
+                            <span data-i18n="github_repo">GitHub Repo</span>
+                        </a>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- NINA FLOW VIEW -->
+        <div id="view-nina-flow"
+            class="w-full absolute top-12 left-0 right-0 px-6 opacity-0 scale-105 translate-y-12 blur-lg transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] pointer-events-none">
+            <div class="max-w-4xl mx-auto flex flex-col">
+                <div class="flex items-center gap-6 mb-10">
+                    <div
+                        class="w-24 h-24 bg-primary-container rounded-[28px] flex items-center justify-center shadow-xl border border-white/5">
+                        <span
+                            class="material-symbols-outlined text-[48px] text-on-primary-container">dashboard_customize</span>
+                    </div>
+                    <h1
+                        class="font-display-hero text-[50px] md:text-[70px] leading-tight font-extrabold tracking-tighter text-primary-fixed">
+                        NINA Flow</h1>
+                </div>
+
+                <div class="bg-surface-container-low rounded-[40px] p-8 md:p-14 mb-8 shadow-2xl border border-white/5">
+                    <h3 class="font-headline-md text-primary mb-6" data-i18n="about_addon">Über das Addon</h3>
+                    <p class="font-body-lg text-on-surface-variant leading-relaxed mb-10 text-[18px]"
+                        data-i18n="nina_flow_desc">NINA Flow überschreibt deine Standard-Neu-Tab-Seite mit einer
+                        wunderschönen, individualisierbaren Oberfläche im Android 16 Style. Erlebe ein interaktives
+                        Kalender-Widget, dynamisches Wetter, schnellen Zugriff auf Google-Dienste und atemberaubende
+                        Ambient-Glow-Effekte – alles direkt in deinem neuen Tab.</p>
+
+                    <div class="flex flex-col sm:flex-row flex-wrap gap-4">
+                        <a href="https://chrome.google.com/webstore" target="_blank"
+                            class="flex items-center justify-center gap-3 bg-primary text-background px-8 py-4 rounded-full font-label-lg hover:brightness-110 transition-all shadow-lg hover:scale-105 active:scale-95">
+                            <span class="material-symbols-outlined text-[22px]">shop</span>
+                            <span data-i18n="chrome_store">Chrome Web Store</span>
+                        </a>
+                        <a href="https://github.com/L8teNever/NINA/tree/main/Nina%20Flow" target="_blank"
+                            class="flex items-center justify-center gap-3 bg-surface-container-highest text-on-surface px-8 py-4 rounded-full font-label-lg hover:bg-surface-variant transition-all hover:scale-105 active:scale-95 border border-outline-variant/20">
+                            <span class="material-symbols-outlined text-[22px]">code</span>
+                            <span data-i18n="github_repo">GitHub Repo</span>
+                        </a>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer
+        class="w-full max-w-6xl mx-auto px-6 py-8 mt-auto border-t border-outline-variant/15 flex flex-col md:flex-row justify-between items-center animate-materialize delay-300 gap-4">
+        <span class="font-label-sm text-[11px] text-on-surface-variant/50 tracking-widest uppercase">© 2026 L8TENEVER |
+            Simon</span>
+        <a href="mailto:contact@l8tenever.com"
+            class="flex items-center gap-2 text-primary hover:text-primary-fixed-dim transition-colors font-label-sm text-[11px] tracking-widest uppercase bg-surface-container-low px-4 py-2 rounded-full border border-outline-variant/20 hover:bg-surface-container-highest shadow-md">
+            <span class="material-symbols-outlined text-[16px]">mail</span>
+            contact@l8tenever.com
+        </a>
+    </footer>
+
+    <script>
+        const translations = {
+            de: {
+                back: "Zurück",
+                title: "Chrome Addons",
+                subtitle: "Entdecke meine leistungsstarken Erweiterungen für deinen Browser, die deinen Workflow auf das nächste Level heben.",
+                nina_short: "Der intelligente Assistent für deinen täglichen Workflow im Browser.",
+                nina_flow_short: "Dein ultimatives New Tab Erlebnis mit Widgets, Kalender und mehr.",
+                learn_more: "Mehr erfahren",
+                about_addon: "Über das Addon",
+                nina_desc: "NINA ist die ultimative All-in-One-Mediensteuerung für deinen Browser. Kontrolliere die Wiedergabegeschwindigkeit stufenlos (0.25x - 10x) auf Plattformen wie YouTube, Netflix und Disney+. Booste zu leise Videos mit dem Audio-Verstärker um bis zu 600 %. Erlebe stressfreies Schauen dank Auto-Skip für Intros und Werbung, automatisches Liken auf YouTube, nahtloser SponsorBlock-Integration und der Rückkehr des YouTube-Dislike-Zählers. Alles verpackt in einem eleganten Android-15-Dark-Mode Design.",
+                nina_flow_desc: "NINA Flow überschreibt deine Standard-Neu-Tab-Seite mit einer wunderschönen, individualisierbaren Oberfläche im Android 16 Style. Entdecke ein Dashboard mit flüssig animierter Uhrzeit, einem Kalender inklusive Feiertags-Anzeige, einem interaktiven Live-Wetter-Widget mit 5-Tage-Prognose, frei anpassbaren Schnellzugriffen auf deine wichtigsten Apps und einer smarten Suchleiste mit direkter Google Gemini KI Integration. Komplettiert wird das Erlebnis durch butterweiche Animationen und beeindruckende Ambient-Glow-Effekte.",
+                chrome_store: "Chrome Web Store",
+                github_repo: "GitHub Repo",
+                contact_mail: "Kontaktieren"
+            },
+            en: {
+                back: "Back",
+                title: "Chrome Addons",
+                subtitle: "Discover my powerful browser extensions designed to elevate your workflow to the next level.",
+                nina_short: "The intelligent assistant for your daily browser workflow.",
+                nina_flow_short: "Your ultimate New Tab experience with widgets, calendar, and more.",
+                learn_more: "Learn more",
+                about_addon: "About the Addon",
+                nina_desc: "NINA is the ultimate all-in-one media controller for your browser. Seamlessly control playback speed (0.25x - 10x) on platforms like YouTube, Netflix, and Disney+. Boost quiet videos by up to 600% with the built-in audio amplifier. Enjoy stress-free streaming with auto-skip for intros and ads, automatic liking on YouTube, seamless SponsorBlock integration, and the return of the YouTube dislike counter. All wrapped in a sleek Android 15 dark mode design.",
+                nina_flow_desc: "NINA Flow overrides your default new tab page with a beautiful, customizable Android 16-style interface. Discover a dashboard featuring a smoothly animated clock, a calendar with holiday tracking, an interactive live weather widget with a 5-day forecast, fully customizable app shortcuts, and a smart search bar with direct Google Gemini AI integration. The experience is completed by buttery smooth animations and stunning ambient glow effects.",
+                chrome_store: "Chrome Web Store",
+                github_repo: "GitHub Repo",
+                contact_mail: "Contact"
+            },
+            es: {
+                back: "Atrás",
+                title: "Extensiones Chrome",
+                subtitle: "Descubre mis potentes extensiones de navegador diseñadas para elevar tu flujo de trabajo al siguiente nivel.",
+                nina_short: "El asistente inteligente para tu flujo de trabajo diario en el navegador.",
+                nina_flow_short: "Tu experiencia definitiva en la Nueva Pestaña con widgets, calendario y más.",
+                learn_more: "Saber más",
+                about_addon: "Acerca del Addon",
+                nina_desc: "NINA es el controlador multimedia definitivo para tu navegador. Controla la velocidad de reproducción sin interrupciones (0.25x - 10x) en plataformas como YouTube, Netflix y Disney+. Amplifica el audio de los videos silenciosos hasta en un 600%. Disfruta de una transmisión sin estrés con salto automático para intros y anuncios, \"me gusta\" automáticos en YouTube, integración perfecta con SponsorBlock y el regreso del contador de \"no me gusta\" en YouTube. Todo en un elegante diseño de modo oscuro estilo Android 15.",
+                nina_flow_desc: "NINA Flow reemplaza tu página de nueva pestaña predeterminada con una hermosa interfaz personalizable al estilo Android 16. Descubre un panel que cuenta con un reloj animado de manera fluida, un calendario con seguimiento de días festivos, un widget interactivo del clima en vivo con un pronóstico de 5 días, accesos directos a aplicaciones totalmente personalizables y una barra de búsqueda inteligente con integración directa de la IA de Google Gemini. La experiencia se completa con animaciones suaves y sorprendentes efectos de brillo ambiental.",
+                chrome_store: "Chrome Web Store",
+                github_repo: "GitHub Repo",
+                contact_mail: "Contactar"
+            },
+            fr: {
+                back: "Retour",
+                title: "Modules Chrome",
+                subtitle: "Découvrez mes puissantes extensions de navigateur conçues pour élever votre flux de travail au niveau supérieur.",
+                nina_short: "L'assistant intelligent pour votre flux de travail quotidien sur navigateur.",
+                nina_flow_short: "Votre expérience ultime de Nouvel Onglet avec widgets, calendrier et plus.",
+                learn_more: "En savoir plus",
+                about_addon: "À propos du module",
+                nina_desc: "NINA est le contrôleur multimédia tout-en-un ultime pour votre navigateur. Contrôlez la vitesse de lecture de manière fluide (0,25x - 10x) sur des plateformes telles que YouTube, Netflix et Disney+. Amplifiez le son des vidéos trop faibles jusqu'à 600 %. Profitez du streaming sans stress avec le saut automatique des intros et des publicités, les likes automatiques sur YouTube, l'intégration de SponsorBlock et le retour du compteur de \"Je n'aime pas\" sur YouTube. Le tout dans un élégant design sombre inspiré d'Android 15.",
+                nina_flow_desc: "NINA Flow remplace votre page de nouvel onglet par défaut par une magnifique interface personnalisable de style Android 16. Découvrez un tableau de bord comprenant une horloge animée avec fluidité, un calendrier avec suivi des jours fériés, un widget météo interactif en direct avec des prévisions sur 5 jours, des raccourcis d'applications entièrement personnalisables et une barre de recherche intelligente avec intégration directe de l'IA Google Gemini. L'expérience est complétée par des animations ultra-fluides et de superbes effets de lueur ambiante.",
+                chrome_store: "Chrome Web Store",
+                github_repo: "Dépôt GitHub",
+                contact_mail: "Contact"
+            },
+            it: {
+                back: "Indietro",
+                title: "Estensioni Chrome",
+                subtitle: "Scopri le mie potenti estensioni per browser progettate per elevare il tuo flusso di lavoro al livello successivo.",
+                nina_short: "L'assistente intelligente per il tuo flusso di lavoro quotidiano nel browser.",
+                nina_flow_short: "La tua esperienza definitiva per la Nuova Scheda con widget, calendario e altro ancora.",
+                learn_more: "Scopri di più",
+                about_addon: "Informazioni sull'estensione",
+                nina_desc: "NINA è il controller multimediale all-in-one definitivo per il tuo browser. Controlla la velocità di riproduzione (0.25x - 10x) su piattaforme come YouTube, Netflix e Disney+. Amplifica l'audio dei video silenziosi fino al 600%. Goditi lo streaming senza stress con il salto automatico di intro e pubblicità, mi piace automatici su YouTube, l'integrazione di SponsorBlock e il ritorno del contatore di 'non mi piace' su YouTube. Tutto racchiuso in un elegante design dark mode in stile Android 15.",
+                nina_flow_desc: "NINA Flow sostituisce la pagina predefinita della nuova scheda con un'interfaccia splendida e personalizzabile in stile Android 16. Scopri una dashboard che offre un orologio animato fluidamente, un calendario con il tracciamento delle festività, un widget interattivo per il meteo in tempo reale con previsioni a 5 giorni, scorciatoie per app completamente personalizzabili e una barra di ricerca intelligente con integrazione diretta dell'IA di Google Gemini. L'esperienza si completa con animazioni fluide e straordinari effetti di luce ambientale.",
+                chrome_store: "Chrome Web Store",
+                github_repo: "Repository GitHub",
+                contact_mail: "Contatto"
+            },
+            ar: {
+                back: "رجوع",
+                title: "إضافات Chrome",
+                subtitle: "اكتشف إضافات المتصفح القوية المصممة للارتقاء بسير عملك إلى المستوى التالي.",
+                nina_short: "المساعد الذكي لسير عملك اليومي في المتصفح.",
+                nina_flow_short: "تجربة علامة التبويب الجديدة المثلى مع الأدوات والتقويم والمزيد.",
+                learn_more: "اعرف المزيد",
+                about_addon: "حول الإضافة",
+                nina_desc: "NINA هي أداة التحكم بالوسائط الشاملة والمثلى لمتصفحك. تحكم بسرعة التشغيل (0.25x - 10x) على منصات مثل YouTube وNetflix وDisney+. قم بتضخيم صوت الفيديوهات الهادئة بنسبة تصل إلى 600٪. استمتع بتجربة خالية من التوتر مع تخطي المقدمات والإعلانات تلقائيًا، والإعجاب التلقائي على YouTube، ودمج SponsorBlock، وعودة عداد 'عدم الإعجاب' على YouTube. كل ذلك في تصميم أنيق بالوضع الداكن مستوحى من Android 15.",
+                nina_flow_desc: "يستبدل NINA Flow صفحة علامة التبويب الجديدة الافتراضية الخاصة بك بواجهة جميلة وقابلة للتخصيص بأسلوب Android 16. اكتشف لوحة تحكم تتميز بساعة متحركة بسلاسة، وتقويم مع تتبع العطلات، وأداة طقس تفاعلية حية مع توقعات لمدة 5 أيام، واختصارات تطبيقات قابلة للتخصيص بالكامل، وشريط بحث ذكي مع دمج مباشر لذكاء Google Gemini الاصطناعي. تكتمل التجربة برسوم متحركة سلسة للغاية وتأثيرات توهج محيطة مذهلة.",
+                chrome_store: "سوق Chrome الإلكتروني",
+                github_repo: "مستودع GitHub",
+                contact_mail: "اتصل بنا"
+            },
+            bn: {
+                back: "ফিরে যান",
+                title: "Chrome এক্সটেনশন",
+                subtitle: "আপনার ওয়ার্কফ্লোকে পরবর্তী স্তরে নিয়ে যাওয়ার জন্য ডিজাইন করা আমার শক্তিশালী ব্রাউজার এক্সটেনশনগুলি আবিষ্কার করুন।",
+                nina_short: "আপনার প্রতিদিনের ব্রাউজার ওয়ার্কফ্লোর জন্য বুদ্ধিমান সহকারী।",
+                nina_flow_short: "উইজেট, ক্যালেন্ডার এবং আরও অনেক কিছুর সাথে আপনার চূড়ান্ত নতুন ট্যাব অভিজ্ঞতা।",
+                learn_more: "আরও জানুন",
+                about_addon: "এক্সটেনশন সম্পর্কে",
+                nina_desc: "NINA হল আপনার ব্রাউজারের জন্য চূড়ান্ত অল-ইন-ওয়ান মিডিয়া কন্ট্রোলার। YouTube, Netflix এবং Disney+-এর মতো প্ল্যাটফর্মে প্লেব্যাকের গতি (0.25x - 10x) নির্বিঘ্নে নিয়ন্ত্রণ করুন। অডিও অ্যামপ্লিফায়ারের মাধ্যমে নীরব ভিডিওর সাউন্ড 600% পর্যন্ত বাড়ান। ইন্ট্রো এবং বিজ্ঞাপনের অটো-স্কিপ, YouTube-এ অটো-লাইক, SponsorBlock ইন্টিগ্রেশন এবং YouTube ডিসলাইক কাউন্টারের প্রত্যাবর্তনের মাধ্যমে চাপমুক্ত স্ট্রিমিং উপভোগ করুন। সবকিছু একটি মার্জিত Android 15 ডার্ক মোড ডিজাইনে মোড়ানো।",
+                nina_flow_desc: "NINA Flow আপনার ডিফল্ট নতুন ট্যাব পৃষ্ঠাকে একটি সুন্দর, কাস্টমাইজযোগ্য Android 16-স্টাইল ইন্টারফেস দিয়ে ওভাররাইড করে। একটি মসৃণভাবে অ্যানিমেটেড ঘড়ি, ছুটির ট্র্যাকিং সহ একটি ক্যালেন্ডার, 5 দিনের পূর্বাভাস সহ একটি ইন্টারেক্টিভ লাইভ আবহাওয়া উইজেট, সম্পূর্ণ কাস্টমাইজযোগ্য অ্যাপ শর্টকাট এবং সরাসরি Google Gemini AI ইন্টিগ্রেশন সহ একটি স্মার্ট সার্চ বার বৈশিষ্ট্যযুক্ত একটি ড্যাশবোর্ড আবিষ্কার করুন। মাখনের মতো মসৃণ অ্যানিমেশন এবং অত্যাশ্চর্য পরিবেষ্টিত আভা প্রভাব অভিজ্ঞতাটি সম্পূর্ণ করে।",
+                chrome_store: "Chrome ওয়েব স্টোর",
+                github_repo: "GitHub রিপো",
+                contact_mail: "যোগাযোগ"
+            },
+            hi: {
+                back: "वापस",
+                title: "Chrome एक्सटेंशन",
+                subtitle: "अपने वर्कफ़्लो को अगले स्तर तक ले जाने के लिए डिज़ाइन किए गए मेरे शक्तिशाली ब्राउज़र एक्सटेंशन खोजें।",
+                nina_short: "आपके दैनिक ब्राउज़र वर्कफ़्लो के लिए बुद्धिमान सहायक।",
+                nina_flow_short: "विजेट, कैलेंडर और बहुत कुछ के साथ आपका अंतिम नया टैब अनुभव।",
+                learn_more: "और जानें",
+                about_addon: "एक्सटेंशन के बारे में",
+                nina_desc: "NINA आपके ब्राउज़र के लिए बेहतरीन ऑल-इन-वन मीडिया कंट्रोलर है। YouTube, Netflix और Disney+ जैसे प्लेटफ़ॉर्म पर प्लेबैक स्पीड (0.25x - 10x) को आसानी से नियंत्रित करें। ऑडियो एम्पलीफायर के साथ शांत वीडियो की आवाज़ 600% तक बढ़ाएं। इंट्रो और विज्ञापनों के लिए ऑटो-स्किप, YouTube पर ऑटो-लाइक, SponsorBlock इंटीग्रेशन और YouTube डिसलाइक काउंटर की वापसी के साथ तनाव-मुक्त स्ट्रीमिंग का आनंद लें। यह सब एक आकर्षक Android 15 डार्क मोड डिज़ाइन में।",
+                nina_flow_desc: "NINA Flow आपके डिफ़ॉल्ट नए टैब पृष्ठ को एक सुंदर, अनुकूलन योग्य Android 16 शैली के इंटरफ़ेस के साथ ओवरराइड करता है। एक सुचारू रूप से एनिमेटेड घड़ी, छुट्टी ट्रैकिंग के साथ एक कैलेंडर, 5-दिवसीय पूर्वानुमान के साथ एक इंटरैक्टिव लाइव मौसम विजेट, पूरी तरह से अनुकूलन योग्य ऐप शॉर्टकट और सीधे Google Gemini AI एकीकरण के साथ एक स्मार्ट खोज बार वाले डैशबोर्ड की खोज करें। मक्खन की तरह चिकने एनिमेशन और आश्चर्यजनक परिवेश चमक प्रभाव अनुभव को पूरा करते हैं।",
+                chrome_store: "Chrome वेब स्टोर",
+                github_repo: "GitHub रेपो",
+                contact_mail: "संपर्क"
+            },
+            pt: {
+                back: "Voltar",
+                title: "Extensões Chrome",
+                subtitle: "Descubra as minhas poderosas extensões de navegador concebidas para elevar o seu fluxo de trabalho ao próximo nível.",
+                nina_short: "O assistente inteligente para o seu fluxo de trabalho diário no navegador.",
+                nina_flow_short: "A sua experiência definitiva de Novo Separador com widgets, calendário e muito mais.",
+                learn_more: "Saber mais",
+                about_addon: "Sobre a Extensão",
+                nina_desc: "NINA é o controlador multimédia definitivo para o seu navegador. Controle a velocidade de reprodução (0.25x - 10x) em plataformas como YouTube, Netflix e Disney+. Aumente o som de vídeos silenciosos em até 600%. Desfrute de um streaming sem stress com o salto automático de intros e anúncios, 'gostos' automáticos no YouTube, integração do SponsorBlock e o regresso do contador de 'não gosto' no YouTube. Tudo num elegante design de modo escuro ao estilo do Android 15.",
+                nina_flow_desc: "NINA Flow substitui a sua página de novo separador predefinida por uma interface bonita e personalizável ao estilo Android 16. Descubra um painel com um relógio animado de forma fluida, um calendário com controlo de feriados, um widget interativo de meteorologia em tempo real com previsão para 5 dias, atalhos de aplicações totalmente personalizáveis e uma barra de pesquisa inteligente com integração direta de IA Google Gemini. A experiência é completada por animações extremamente suaves e efeitos de brilho ambiente deslumbrantes.",
+                chrome_store: "Chrome Web Store",
+                github_repo: "Repositório GitHub",
+                contact_mail: "Contato"
+            },
+            ru: {
+                back: "Назад",
+                title: "Расширения Chrome",
+                subtitle: "Откройте для себя мои мощные расширения для браузера, созданные для вывода вашего рабочего процесса на новый уровень.",
+                nina_short: "Интеллектуальный помощник для вашего повседневного рабочего процесса в браузере.",
+                nina_flow_short: "Ваша идеальная новая вкладка с виджетами, календарем и многим другим.",
+                learn_more: "Узнать больше",
+                about_addon: "О расширении",
+                nina_desc: "NINA — это идеальный медиаконтроллер для вашего браузера. Плавно управляйте скоростью воспроизведения (0,25x - 10x) на таких платформах, как YouTube, Netflix и Disney+. Увеличивайте громкость тихих видео до 600%. Наслаждайтесь просмотром без стресса с автоматическим пропуском заставок и рекламы, автоматическими лайками на YouTube, интеграцией SponsorBlock и возвращением счетчика дизлайков YouTube. Все это в элегантном темном дизайне в стиле Android 15.",
+                nina_flow_desc: "NINA Flow заменяет вашу стандартную новую вкладку на красивый настраиваемый интерфейс в стиле Android 16. Откройте для себя панель управления с плавно анимированными часами, календарем с отслеживанием праздников, интерактивным виджетом погоды в реальном времени с 5-дневным прогнозом, полностью настраиваемыми ярлыками приложений и умной панелью поиска с прямой интеграцией ИИ Google Gemini. Впечатление дополняется невероятно плавными анимациями и потрясающими эффектами окружающего свечения.",
+                chrome_store: "Интернет-магазин Chrome",
+                github_repo: "Репозиторий GitHub",
+                contact_mail: "Контакт"
+            },
+            zh: {
+                back: "返回",
+                title: "Chrome 扩展",
+                subtitle: "探索我强大的浏览器扩展，将您的工作流程提升到一个新的水平。",
+                nina_short: "您浏览器中日常工作流程的智能助手。",
+                nina_flow_short: "您的终极新标签页体验：包含小部件、日历等。",
+                learn_more: "了解更多",
+                about_addon: "关于扩展",
+                nina_desc: "NINA 是您浏览器的终极多合一媒体控制器。在 YouTube、Netflix 和 Disney+ 等平台上无缝控制播放速度 (0.25x - 10x)。使用内置音频放大器将安静视频的音量提高多达 600%。通过自动跳过片头和广告、YouTube 上的自动点赞、SponsorBlock 集成以及恢复 YouTube 踩（不喜欢）计数器，享受无压力的流媒体体验。所有这些都包裹在时尚的 Android 15 深色模式设计中。",
+                nina_flow_desc: "NINA Flow 用美丽、可自定义的 Android 16 风格界面覆盖默认的新标签页。探索一个包含流畅动画时钟、带假期跟踪的日历、带有 5 天预报的交互式实时天气小部件、完全可自定义的应用程序快捷方式以及直接集成 Google Gemini AI 的智能搜索栏的仪表板。流畅的动画和令人惊叹的环境光效果使体验更加完美。",
+                chrome_store: "Chrome 网上应用店",
+                github_repo: "GitHub 仓库",
+                contact_mail: "联系"
+            }
+        };
+
+        let currentLang = '{{ lang }}';
+
+        window.addEventListener('hashchange', handleHash);
+        window.addEventListener('DOMContentLoaded', () => {
+            initLang();
+            handleHash();
+
+            // Mouse tracking for ambient glow
+            document.addEventListener('mousemove', (e) => {
+                const glow1 = document.getElementById('glow-1');
+                const glow2 = document.getElementById('glow-2');
+
+                const x = e.clientX / window.innerWidth;
+                const y = e.clientY / window.innerHeight;
+
+                if (glow1 && glow2) {
+                    glow1.style.transform = `translate(${x * 30}px, ${y * 30}px)`;
+                    glow2.style.transform = `translate(${x * -30}px, ${y * -30}px)`;
+                }
+            });
+
+            // Close language dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                const dropdown = document.getElementById('lang-dropdown');
+                if (dropdown && !e.target.closest('#lang-dropdown') && !e.target.closest('button[onclick="toggleLangMenu(event)"]')) {
+                    dropdown.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
+                }
+            });
+        });
+
+        function initLang() {
+            // Language is provided by backend template rendering
+            updateLangUI();
+        }
+
+        function toggleLangMenu(event) {
+            if (event) event.stopPropagation();
+            const dropdown = document.getElementById('lang-dropdown');
+            dropdown.classList.toggle('opacity-0');
+            dropdown.classList.toggle('scale-95');
+            dropdown.classList.toggle('pointer-events-none');
+        }
+
+        function setLang(lang) {
+            // Redirect to the language route
+            const currentHash = window.location.hash;
+            window.location.href = `/${lang}/${currentHash}`;
+        }
+
+        function updateLangUI() {
+            document.getElementById('lang-label').innerText = currentLang.toUpperCase();
+            document.documentElement.lang = currentLang;
+
+            const elements = document.querySelectorAll('[data-i18n]');
+            elements.forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[currentLang] && translations[currentLang][key]) {
+                    el.innerText = translations[currentLang][key];
+                }
+            });
+        }
+
+        function handleHash() {
+            const hash = window.location.hash.replace('#', '');
+            if (hash === 'nina') {
+                navigateView('nina');
+            } else if (hash === 'nina-flow') {
+                navigateView('nina-flow');
+            } else {
+                navigateView('home');
+            }
+        }
+
+        function navigate(viewId) {
+            window.location.hash = viewId === 'home' ? '' : viewId;
+        }
+
+        function navigateView(viewId) {
+            const views = ['home', 'nina', 'nina-flow'];
+            const backBtn = document.getElementById('back-btn');
+
+            views.forEach(v => {
+                const el = document.getElementById('view-' + v);
+                if (v === viewId) {
+                    el.classList.remove('absolute', 'pointer-events-none', 'opacity-0', 'scale-95', 'scale-105', 'blur-lg', 'translate-y-12', '-translate-y-12', 'translate-x-12', '-translate-x-12');
+                    el.classList.add('relative', 'opacity-100', 'scale-100', 'blur-none', 'translate-y-0', 'z-10');
+                } else {
+                    el.classList.remove('relative', 'opacity-100', 'scale-100', 'blur-none', 'translate-y-0', 'z-10');
+                    el.classList.add('absolute', 'pointer-events-none', 'opacity-0', 'blur-lg');
+                    if (viewId === 'home') {
+                        el.classList.add('scale-105', 'translate-y-12');
+                    } else if (v === 'home') {
+                        el.classList.add('scale-95', '-translate-y-12');
+                    } else {
+                        el.classList.add('scale-95', 'translate-y-12');
+                    }
+                }
+            });
+
+            if (viewId === 'home') {
+                backBtn.classList.add('hidden');
+                backBtn.classList.remove('flex');
+            } else {
+                backBtn.classList.remove('hidden');
+                backBtn.classList.add('flex');
+            }
+
+            // Scroll to top when navigating
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+</body>
+
+</html>
