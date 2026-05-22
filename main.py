@@ -30,4 +30,4 @@ async def serve_lang(request: Request, lang: str):
     if lang not in SUPPORTED_LANGUAGES:
         return RedirectResponse(url="/en/")
     
-    return templates.TemplateResponse("index.html", {"request": request, "lang": lang})
+    return templates.TemplateResponse(request=request, name="index.html", context={"lang": lang})
