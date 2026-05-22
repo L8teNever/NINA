@@ -23,7 +23,7 @@ Um das Projekt lokal oder auf einem Server zu starten, nutze die `docker-compose
 version: '3.8'
 services:
   web:
-    image: ghcr.io/L8teNever/nina:latest
+    image: ghcr.io/l8tenever/nina:latest
     ports:
       - "8000:8000"
     environment:
