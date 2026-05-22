@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request
-from fastapi.responses import RedirectResponse, HTMLResponse
+from fastapi.responses import RedirectResponse, HTMLResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 
@@ -11,6 +11,10 @@ app.mount("/addons/nina", StaticFiles(directory="NINA"), name="addon-nina")
 app.mount("/addons/nina-flow", StaticFiles(directory="Nina Flow"), name="addon-nina-flow")
 
 SUPPORTED_LANGUAGES = ["ar", "bn", "de", "en", "es", "fr", "hi", "it", "pt", "ru", "zh"]
+
+@app.get("/favicon.ico")
+async def favicon():
+    return FileResponse("favicon.png")
 
 @app.get("/")
 async def root(request: Request):
