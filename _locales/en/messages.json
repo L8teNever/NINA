@@ -1,0 +1,437 @@
+{
+  "appName": {
+    "message": "NINA"
+  },
+  "appDesc": {
+    "message": "NINA — Speed control, audio boost & auto-skip for streaming sites. Includes auto-like, SponsorBlock & dislikes."
+  },
+  "reset": {
+    "message": "Reset"
+  },
+  "speed": {
+    "message": "Playback"
+  },
+  "speed_header": {
+    "message": "Playback Speed"
+  },
+  "ff_speed": {
+    "message": "Fast Forward (Hold)"
+  },
+  "audio_boost": {
+    "message": "Audio Boost"
+  },
+  "audio_volume": {
+    "message": "Audio (Boost)"
+  },
+  "reset_vol_100": {
+    "message": "Reset to 100%"
+  },
+  "hint_more_options": {
+    "message": "Tap above for more options"
+  },
+  "back": {
+    "message": "Back"
+  },
+  "settings": {
+    "message": "Settings"
+  },
+  "settings_title": {
+    "message": "Nina Settings"
+  },
+  "autoskip_title": {
+    "message": "Auto-Skip Intros"
+  },
+  "autoskip_desc": {
+    "message": "Automatically skips intros, recaps & ads."
+  },
+  "autolike_title": {
+    "message": "Auto-Like (YouTube)"
+  },
+  "autolike_active": {
+    "message": "Enabled"
+  },
+  "autolike_prefix": {
+    "message": "Like after"
+  },
+  "autolike_suffix": {
+    "message": "% of the video"
+  },
+  "autolike_suffix_simple": {
+    "message": "of the video"
+  },
+  "autolike_hint": {
+    "message": "Only triggered on YouTube /watch pages."
+  },
+  "dislikes_title": {
+    "message": "YouTube Dislikes"
+  },
+  "dislikes_desc": {
+    "message": "Show dislike count (Return YouTube Dislike)."
+  },
+  "timer_title": {
+    "message": "Playback Speed Timer"
+  },
+  "timer_desc": {
+    "message": "Show adjusted remaining time next to video duration."
+  },
+  "sponsorblock_title": {
+    "message": "SponsorBlock Segments"
+  },
+  "sponsorblock_desc": {
+    "message": "Show ad markers in the progress bar."
+  },
+  "thanks_download_title": {
+    "message": "Thanks & Download"
+  },
+  "thanks_download_desc": {
+    "message": "Show Thanks and Download buttons on YouTube."
+  },
+  "pause_on_open_title": {
+    "message": "Pause video in overlay"
+  },
+  "pause_on_open_desc": {
+    "message": "Pause video when the player control overlay is open."
+  },
+  "xray_title": {
+    "message": "Hide Prime Video X-Ray"
+  },
+  "xray_desc": {
+    "message": "Hides the X-Ray overlay (actors, trivia, etc.) on Prime Video."
+  },
+  "prime_controls_title": {
+    "message": "Hide Prime Video control bar"
+  },
+  "prime_controls_desc": {
+    "message": "Hides the bottom player bar (timeline, buttons, etc.)."
+  },
+  "prime_topbar_title": {
+    "message": "Hide Prime Video top bar"
+  },
+  "prime_topbar_desc": {
+    "message": "Hides the top bar (back arrow & video title)."
+  },
+  "prime_nextup_title": {
+    "message": "Hide Prime Video \"Next Episode\""
+  },
+  "prime_nextup_desc": {
+    "message": "Hides the automatic popups for the next episode."
+  },
+  "prime_settings_title": {
+    "message": "Hide Prime Video \"3-dot menu\""
+  },
+  "prime_settings_desc": {
+    "message": "Hides the options menu (three vertical dots) in the top right."
+  },
+  "controls_title": {
+    "message": "Hide control bar"
+  },
+  "controls_desc_netflix": {
+    "message": "Hides the bottom player bar on Netflix"
+  },
+  "controls_desc_joyn": {
+    "message": "Hides the bottom player bar on Joyn"
+  },
+  "controls_desc_disney": {
+    "message": "Hides the bottom player bar on Disney+"
+  },
+  "topbar_title": {
+    "message": "Hide top bar"
+  },
+  "topbar_desc_netflix": {
+    "message": "Hides the top bar on Netflix"
+  },
+  "topbar_desc_joyn": {
+    "message": "Hides the top bar on Joyn"
+  },
+  "topbar_desc_disney": {
+    "message": "Hides the top bar on Disney+"
+  },
+  "nextup_title": {
+    "message": "Hide \"Next Episode\""
+  },
+  "nextup_desc_netflix": {
+    "message": "Hides the automatic popups for the next episode"
+  },
+  "nextup_desc_joyn": {
+    "message": "Hides the automatic popups for the next episode"
+  },
+  "nextup_desc_disney": {
+    "message": "Hides the automatic popups for the next episode"
+  },
+  "coming_soon": {
+    "message": "(coming soon)"
+  },
+  "in_kuerze": {
+    "message": "Soon"
+  },
+  "status_title": {
+    "message": "Status"
+  },
+  "status_badge_checking": {
+    "message": "— checking …"
+  },
+  "status_recheck_btn": {
+    "message": "Check again"
+  },
+  "status_functest_btn": {
+    "message": "Functional test"
+  },
+  "sb_legend_title": {
+    "message": "SponsorBlock"
+  },
+  "sb_legend_subtitle": {
+    "message": "Color guide"
+  },
+  "sb_sponsor": {
+    "message": "Sponsor Ad"
+  },
+  "sb_selfpromo": {
+    "message": "Self Promotion"
+  },
+  "sb_interaction": {
+    "message": "Interaction reminder"
+  },
+  "sb_intro": {
+    "message": "Intro"
+  },
+  "sb_outro": {
+    "message": "Outro"
+  },
+  "sb_preview": {
+    "message": "Preview/Recap"
+  },
+  "sb_music": {
+    "message": "Music"
+  },
+  "sb_filler": {
+    "message": "Filler/Tangential"
+  },
+  "dev_support": {
+    "message": "Developer Support"
+  },
+  "dev_support_desc": {
+    "message": "Have questions or feature requests for Nina? Contact the developer directly."
+  },
+  "toast_saved": {
+    "message": "Saved"
+  },
+  "toast_reset": {
+    "message": "Values reset to default"
+  },
+  "toast_autoskip_active": {
+    "message": "Auto-Skip active"
+  },
+  "toast_autoskip_inactive": {
+    "message": "Auto-Skip inactive"
+  },
+  "toast_dislikes_active": {
+    "message": "YouTube Dislikes active"
+  },
+  "toast_dislikes_inactive": {
+    "message": "YouTube Dislikes inactive"
+  },
+  "toast_timer_active": {
+    "message": "Playback timer active"
+  },
+  "toast_timer_inactive": {
+    "message": "Playback timer inactive"
+  },
+  "toast_sb_active": {
+    "message": "SponsorBlock active"
+  },
+  "toast_sb_inactive": {
+    "message": "SponsorBlock inactive"
+  },
+  "toast_buttons_shown": {
+    "message": "Buttons shown"
+  },
+  "toast_buttons_hidden": {
+    "message": "Buttons hidden"
+  },
+  "toast_pause_active": {
+    "message": "Pause in overlay active"
+  },
+  "toast_pause_inactive": {
+    "message": "Pause in overlay inactive"
+  },
+  "toast_xray_hidden": {
+    "message": "X-Ray hidden"
+  },
+  "toast_xray_shown": {
+    "message": "X-Ray shown"
+  },
+  "toast_prime_controls_hidden": {
+    "message": "Control bar hidden"
+  },
+  "toast_prime_controls_shown": {
+    "message": "Control bar shown"
+  },
+  "toast_prime_topbar_hidden": {
+    "message": "Top bar hidden"
+  },
+  "toast_prime_topbar_shown": {
+    "message": "Top bar shown"
+  },
+  "toast_prime_nextup_hidden": {
+    "message": "Next episode popup hidden"
+  },
+  "toast_prime_nextup_shown": {
+    "message": "Next episode popup shown"
+  },
+  "toast_prime_settings_hidden": {
+    "message": "Options menu hidden"
+  },
+  "toast_prime_settings_shown": {
+    "message": "Options menu shown"
+  },
+  "toast_autolike_active": {
+    "message": "YouTube Auto-Like active"
+  },
+  "toast_autolike_inactive": {
+    "message": "YouTube Auto-Like inactive"
+  },
+  "player_control_title": {
+    "message": "NINA Player Control"
+  },
+  "reset_all_title": {
+    "message": "Reset all values"
+  },
+  "player_features": {
+    "message": "Player & YouTube Features"
+  },
+  "diag_intercept_inactive": {
+    "message": "playbackRate intercept inactive — browser blocks prototype patch."
+  },
+  "diag_gain_not_created": {
+    "message": "Audio Boost: GainNode not created yet — will be active on first click."
+  },
+  "diag_audio_boost": {
+    "message": "Audio Boost"
+  },
+  "diag_target": {
+    "message": "Target"
+  },
+  "diag_ctx_suspended": {
+    "message": "AudioContext suspended — Browser requires page click."
+  },
+  "diag_active": {
+    "message": "active"
+  },
+  "diag_inactive": {
+    "message": "inactive"
+  },
+  "diag_all_ok": {
+    "message": "✓ All OK"
+  },
+  "diag_mismatch": {
+    "message": "✗ Mismatch"
+  },
+  "test_starting": {
+    "message": "Starting functional test …"
+  },
+  "test_cannot_check": {
+    "message": "This page cannot be checked (chrome://, Web Store, or file URL)."
+  },
+  "test_step1_missing": {
+    "message": "1/5 · Content scripts missing — extension does not load on this page. Check permissions / reload extension."
+  },
+  "test_step1_incomplete_1": {
+    "message": "1/5 · Patch incomplete in"
+  },
+  "test_step1_incomplete_2": {
+    "message": "frames. Site blocks MAIN-world Script-Injection (CSP)."
+  },
+  "test_step1_ok_1": {
+    "message": "1/5 · Patch loaded in"
+  },
+  "test_step1_ok_2": {
+    "message": "frame(s) ✓"
+  },
+  "test_step2_no_video": {
+    "message": "2/5 · No <video> element found. Open a video and run the test again."
+  },
+  "test_step2_ok_1": {
+    "message": "2/5 ·"
+  },
+  "test_step2_ok_2": {
+    "message": "video(s) detected ✓"
+  },
+  "test_step3_ok_1": {
+    "message": "3/5 · Override to"
+  },
+  "test_step3_ok_2": {
+    "message": "successful ✓"
+  },
+  "test_step3_fail_1": {
+    "message": "3/5 · Override failed on"
+  },
+  "test_step3_fail_2": {
+    "message": "video(s) ✗"
+  },
+  "test_cause_paused": {
+    "message": "Video paused — speed snaps when playing"
+  },
+  "test_cause_loading": {
+    "message": "Video loading (readyState"
+  },
+  "test_cause_overwrite": {
+    "message": "Player actively overwrites playbackRate (typical Netflix/Disney+/MediaSource streams)"
+  },
+  "test_step4_skipped": {
+    "message": "4/5 · Snap-back test skipped (target is 1×)"
+  },
+  "test_step4_ok": {
+    "message": "4/5 · Setter intercept catches foreign playbackRate writes ✓"
+  },
+  "test_step4_fail_1": {
+    "message": "4/5 · Snap-back failed: player can set rate to"
+  },
+  "test_step4_hint": {
+    "message": "→ Site probably uses a custom prototype wrapper. Try reloading the page."
+  },
+  "test_step5_no_audio": {
+    "message": "5/5 · Audio patch not found ⚠"
+  },
+  "test_step5_active": {
+    "message": "5/5 · AudioContext active ✓"
+  },
+  "test_step5_suspended": {
+    "message": "5/5 · AudioContext suspended ⚠ — click once on the video, then test again."
+  },
+  "test_step5_not_init": {
+    "message": "5/5 · AudioContext not initialized yet (created upon first boost > 100%)."
+  },
+  "test_error": {
+    "message": "Test error:"
+  },
+  "version_hint": {
+    "message": "NINA Settings · v3.1"
+  },
+  "language_select": {
+    "message": "Language"
+  },
+  "lang_system": {
+    "message": "System default"
+  },
+  "settings_group_general": {
+    "message": "General & Language"
+  },
+  "settings_group_playback": {
+    "message": "Playback & Skipper"
+  },
+  "settings_group_youtube": {
+    "message": "YouTube Features"
+  },
+  "settings_group_platforms": {
+    "message": "Streaming Platforms"
+  },
+  "settings_other_platforms": {
+    "message": "Other Platforms"
+  },
+  "settings_group_newtab_shortcuts": {
+    "message": "New Tab: Shortcuts & Search"
+  },
+  "settings_group_newtab_appearance": {
+    "message": "New Tab: Appearance"
+  }
+}

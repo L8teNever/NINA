@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<title>NINA Web Store Screenshot Mockup</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap');
+
+  :root {
+    --bg-dark: #111314;
+    --surface-dark: #1A1C1E;
+    --surface-variant-dark: #2E3033;
+    
+    --primary-aqua: #80D8DF;
+    --primary-aqua-container: #004F54;
+    --on-primary-aqua-container: #AEEFF4;
+    
+    --primary-lime: #a3e635;
+    --primary-lime-container: #274e13;
+    --on-primary-lime-container: #d9ffb3;
+    
+    --outline: #8E9196;
+    --text-primary: #E2E2E6;
+    --text-secondary: #C6C6CA;
+    --text-disabled: #94a3b8;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 1280px; height: 800px;
+    font-family: 'Google Sans', 'Roboto', sans-serif;
+    color: var(--text-primary);
+    background: radial-gradient(ellipse at 20% 25%, #182229 0%, #0d1216 55%, #050709 100%);
+    overflow: hidden;
+  }
+
+  .stage {
+    width: 1280px; height: 800px;
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 48px;
+    padding: 50px 80px 50px 100px;
+    align-items: center;
+  }
+
+  /* ── Left Column: Marketing Info ─────────────────────────────────── */
+  .left { display: flex; flex-direction: column; justify-content: center; gap: 32px; }
+
+  .logo-block { display: flex; align-items: center; gap: 20px; }
+  .logo-img {
+    width: 90px; height: 90px;
+    border-radius: 24px;
+    background: #000;
+    box-shadow: 0 8px 24px rgba(128, 216, 223, 0.25);
+  }
+  .logo-text {
+    font-size: 84px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    background: linear-gradient(135deg, #80D8DF 0%, #a3e635 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    line-height: 1;
+  }
+  .tagline {
+    font-size: 26px;
+    color: var(--primary-aqua);
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    margin-top: -8px;
+  }
+  .features { display: flex; flex-direction: column; gap: 16px; margin-top: 8px; }
+  .feature {
+    display: flex; align-items: center; gap: 16px;
+    padding: 16px 24px;
+    background: rgba(26, 28, 30, 0.4);
+    border: 1px solid rgba(128, 216, 223, 0.15);
+    border-radius: 20px;
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    backdrop-filter: blur(12px);
+    width: max-content;
+    max-width: 100%;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+  .feature .ico { font-size: 24px; }
+  .feature .accent { color: var(--primary-aqua); font-weight: 700; }
+  .feature .accent-green { color: var(--primary-lime); font-weight: 700; }
+
+  /* ── Right Column: Sidebar Mockup ────────────────────── */
+  .panel-container {
+    width: 400px;
+    background: var(--bg-dark);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 36px;
+    padding: 18px;
+    box-shadow:
+      0 24px 72px rgba(0,0,0,0.7),
+      0 0 100px rgba(128,216,223,0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  /* Header Card */
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px;
+  }
+  .brand-group { display: flex; align-items: center; gap: 12px; }
+  .brand-icon { width: 42px; height: 42px; object-fit: contain; }
+  .brand-title { font-size: 20px; font-weight: 700; color: #fff; }
+  .brand-subtitle { font-size: 10px; color: var(--outline); text-transform: uppercase; font-weight: 600; letter-spacing: 1px; margin-top: 1px; }
+
+  /* M3 Actions */
+  .header-actions { display: flex; gap: 6px; }
+  .icon-btn-mock {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: var(--surface-variant-dark);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-secondary);
+  }
+
+  /* M3 Card Section */
+  .m3-card {
+    background: var(--surface-dark);
+    border-radius: 28px;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .card-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #fff;
+  }
+  .card-title svg { width: 20px; height: 20px; }
+  .card-value {
+    font-size: 13px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 99px;
+  }
+  .card-value.aqua {
+    background: var(--primary-aqua-container);
+    color: var(--on-primary-aqua-container);
+  }
+  .card-value.lime {
+    background: var(--primary-lime-container);
+    color: var(--on-primary-lime-container);
+  }
+
+  /* Pill Sliders */
+  .slider-track-mock {
+    height: 28px;
+    border-radius: 28px;
+    width: 100%;
+    position: relative;
+  }
+  .slider-track-mock.aqua {
+    background: linear-gradient(to right, #80D8DF 0%, #80D8DF 45%, rgba(128, 216, 223, 0.08) 45%);
+  }
+  .slider-track-mock.lime {
+    background: linear-gradient(to right, #a3e635 0%, #a3e635 25%, rgba(163, 230, 53, 0.08) 25%);
+  }
+  .slider-thumb-mock {
+    position: absolute;
+    width: 10px;
+    height: 40px;
+    border-radius: 99px;
+    top: -6px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+  }
+  .slider-thumb-mock.aqua {
+    left: calc(45% - 5px);
+    background-color: var(--primary-aqua);
+  }
+  .slider-thumb-mock.lime {
+    left: calc(25% - 5px);
+    background-color: var(--primary-lime);
+  }
+
+  /* Settings Section Title */
+  .section-card-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--primary-aqua);
+    padding-left: 4px;
+    margin-bottom: -4px;
+  }
+
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 0;
+  }
+  .toggle-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    max-w: 75%;
+  }
+  .toggle-label {
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+  .toggle-desc {
+    font-size: 11px;
+    color: var(--outline);
+    line-height: 1.3;
+  }
+
+  /* M3 Switch Mock */
+  .switch-mock {
+    width: 48px;
+    height: 24px;
+    border-radius: 99px;
+    position: relative;
+    cursor: pointer;
+  }
+  .switch-mock.active {
+    background-color: var(--primary-aqua);
+  }
+  .switch-mock.active::after {
+    content: "";
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    top: 4px;
+    right: 4px;
+    background-color: var(--bg-dark);
+  }
+  .switch-mock.inactive {
+    background-color: var(--surface-variant-dark);
+  }
+  .switch-mock.inactive::after {
+    content: "";
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    top: 4px;
+    left: 4px;
+    background-color: var(--outline);
+  }
+
+  /* Auto-Like Slider area inside mockup */
+  .autolike-slider-area {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    border-top: 1px dashed var(--surface-variant-dark);
+    padding-top: 8px;
+    margin-top: 4px;
+  }
+  .autolike-slider-track {
+    height: 20px;
+    border-radius: 20px;
+    width: 100%;
+    position: relative;
+    background: linear-gradient(to right, #80D8DF 0%, #80D8DF 10%, rgba(128, 216, 223, 0.08) 10%);
+  }
+  .autolike-slider-thumb {
+    position: absolute;
+    width: 6px;
+    height: 28px;
+    border-radius: 99px;
+    top: -4px;
+    background-color: var(--primary-aqua);
+    left: calc(10% - 3px);
+  }
+
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <!-- Left Side Info -->
+  <div class="left">
+    <div class="logo-block">
+      <img src="../icons/icon.png" class="logo-img" alt="NINA Icon" onerror="this.src='../icons/icon128.png'">
+      <div class="logo-text">NINA</div>
+    </div>
+    <div class="tagline">Premium Media Controller for Google Chrome</div>
+    <div class="features">
+      <div class="feature"><span class="ico">⚡</span>Wiedergabe bis zu <span class="accent">10.00x</span> — Alle Plattformen</div>
+      <div class="feature"><span class="ico">🔊</span>Audio Boost bis zu <span class="accent-green">600%</span> via WebAudio</div>
+      <div class="feature"><span class="ico">⏭</span>Automatisches Überspringen von Intros & Werbung</div>
+      <div class="feature"><span class="ico">📺</span>Elemente ausblenden auf Amazon Prime Video</div>
+      <div class="feature"><span class="ico">👍</span>Auto-Like YouTube-Videos basierend auf Restlaufzeit</div>
+    </div>
+  </div>
+
+  <!-- Right Side Extension Mock -->
+  <div class="panel-container">
+    
+    <!-- Extension Header -->
+    <div class="panel-header">
+      <div class="brand-group">
+        <img src="../icons/icon.png" class="brand-icon" alt="NINA Icon" onerror="this.src='../icons/icon128.png'">
+        <div>
+          <div class="brand-title">Nina</div>
+          <div class="brand-subtitle">Media Controller</div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <div class="icon-btn-mock">
+          <svg style="width:20px;height:20px" viewBox="0 0 24 24" fill="currentColor"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+        </div>
+        <div class="icon-btn-mock">
+          <svg style="width:20px;height:20px" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Geschwindigkeit (Card 1) -->
+    <div class="m3-card">
+      <div class="card-header">
+        <div class="card-title">
+          <svg fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a4.122 4.122 0 003 4.12 4.122 4.122 0 003-4.12 8.284 8.284 0 00.362-4.386z"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 9.75v3.25"/></svg>
+          Geschwindigkeit
+        </div>
+        <div class="card-value aqua">1.50x</div>
+      </div>
+      <div class="slider-track-mock aqua">
+        <div class="slider-thumb-mock aqua"></div>
+      </div>
+    </div>
+
+    <!-- Audio Boost (Card 2) -->
+    <div class="m3-card">
+      <div class="card-header">
+        <div class="card-title" style="color: var(--primary-lime);">
+          <svg style="color: var(--primary-lime);" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z"/></svg>
+          Audio (Verstärkung)
+        </div>
+        <div class="card-value lime">150%</div>
+      </div>
+      <div class="slider-track-mock lime">
+        <div class="slider-thumb-mock lime"></div>
+      </div>
+    </div>
+
+    <!-- Features Settings Card -->
+    <div class="m3-card" style="gap: 12px;">
+      <div class="section-card-title">YouTube & Player Features</div>
+      
+      <!-- Auto-Skip -->
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <span class="toggle-label">Auto-Skip Intros</span>
+          <span class="toggle-desc">Überspringt Intros, Recaps & Werbung automatisch.</span>
+        </div>
+        <div class="switch-mock active"></div>
+      </div>
+
+      <!-- SponsorBlock -->
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <span class="toggle-label">SponsorBlock Segmente</span>
+          <span class="toggle-desc">Werbe-Markierungen in der Suchleiste anzeigen.</span>
+        </div>
+        <div class="switch-mock active"></div>
+      </div>
+
+      <!-- YouTube Dislikes -->
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <span class="toggle-label">YouTube Dislikes</span>
+          <span class="toggle-desc">Dislike-Anzahl in der Bewertung einblenden.</span>
+        </div>
+        <div class="switch-mock active"></div>
+      </div>
+    </div>
+
+    <!-- Auto-Like Card -->
+    <div class="m3-card" style="gap: 10px;">
+      <div class="card-header" style="padding: 0;">
+        <div class="card-title">Auto-Like (YouTube)</div>
+        <div class="switch-mock active"></div>
+      </div>
+      <div class="autolike-slider-area">
+        <div class="toggle-desc" style="font-weight: 500; color: #fff; margin-bottom: 2px;">Liken nach <span style="color: var(--primary-aqua);">10%</span> des Videos</div>
+        <div class="autolike-slider-track">
+          <div class="autolike-slider-thumb"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Amazon Prime Features Card -->
+    <div class="m3-card" style="gap: 10px;">
+      <div class="section-card-title">Amazon Prime Features</div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <span class="toggle-label">X-Ray ausblenden</span>
+          <span class="toggle-desc">Blendet das X-Ray-Overlay bei Prime Video aus.</span>
+        </div>
+        <div class="switch-mock active"></div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+</body>
+</html>

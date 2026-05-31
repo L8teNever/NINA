@@ -1,0 +1,17 @@
+# Google OAuth Credential-Dateien (niemals committen)
+client_secret_*.json
+
+# Gepackte Extension
+*.zip
+*.crx
+
+# OS-Dateien
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+*.swp
+
+# Node (falls später build tools genutzt werden)
+node_modules/

@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NINA - Einstellungen</title>
+  <link rel="stylesheet" href="tailwind.min.css">
+  <link rel="stylesheet" href="sidepanel-custom.css">
+  <style>
+    /* Android 15 Pill-Slider Styling */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      background: transparent;
+      cursor: pointer;
+      height: 44px;
+    }
+    input[type="range"]:focus { outline: none; }
+    
+    .slider-aqua::-webkit-slider-runnable-track { background: linear-gradient(to right, #006A72 var(--value-percent, 0%), rgba(0, 106, 114, 0.12) var(--value-percent, 0%)); border-radius: 28px; height: 28px; transition: background 0.1s ease; }
+    .dark .slider-aqua::-webkit-slider-runnable-track { background: linear-gradient(to right, #80D8DF var(--value-percent, 0%), rgba(128, 216, 223, 0.08) var(--value-percent, 0%)); }
+    .slider-aqua::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; margin-top: -6px; background-color: #006A72; height: 40px; width: 10px; border-radius: 9999px; box-shadow: 0 1px 3px rgba(0,0,0,0.3); transition: transform 0.1s ease; }
+    .dark .slider-aqua::-webkit-slider-thumb { background-color: #80D8DF; }
+    .slider-aqua:active::-webkit-slider-thumb { transform: scaleY(1.1) scaleX(1.3); }
+
+    .slider-lime::-webkit-slider-runnable-track { background: linear-gradient(to right, #65a30d var(--value-percent, 0%), rgba(132, 204, 22, 0.15) var(--value-percent, 0%)); border-radius: 28px; height: 28px; transition: background 0.1s ease; }
+    .dark .slider-lime::-webkit-slider-runnable-track { background: linear-gradient(to right, #a3e635 var(--value-percent, 0%), rgba(163, 230, 53, 0.12) var(--value-percent, 0%)); }
+    .slider-lime::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; margin-top: -6px; background-color: #65a30d; height: 40px; width: 10px; border-radius: 9999px; box-shadow: 0 1px 3px rgba(0,0,0,0.3); transition: transform 0.1s ease; }
+    .dark .slider-lime::-webkit-slider-thumb { background-color: #a3e635; }
+    .slider-lime:active::-webkit-slider-thumb { transform: scaleY(1.1) scaleX(1.3); }
+
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(128, 216, 223, 0.2); border-radius: 8px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #80D8DF; }
+    
+    /* Layout styling */
+    .sidebar-link {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1.25rem;
+        border-radius: 9999px; /* M3 navigation indicator is pill-shaped */
+        margin: 0.25rem 0.75rem;
+        color: #70787C;
+        font-weight: 500;
+        transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+        cursor: pointer;
+    }
+    .dark .sidebar-link {
+        color: #8A9296;
+    }
+    .sidebar-link:hover {
+        background-color: rgba(0, 0, 0, 0.04);
+        color: #1e293b;
+    }
+    .dark .sidebar-link:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+        color: #f1f5f9;
+    }
+    .sidebar-link.active {
+        background-color: #CCE8EA; /* --m3-primaryContainer-light */
+        color: #051F21; /* --m3-onPrimaryContainer-light */
+        font-weight: 600;
+    }
+    .dark .sidebar-link.active {
+        background-color: #004F54; /* --m3-primaryContainer-dark */
+        color: #CCE8EA; /* --m3-onPrimaryContainer-dark */
+    }
+
+    .setting-section { scroll-margin-top: 100px; }
+    .setting-item { transition: opacity 0.2s; }
+    
+    .btn-danger {
+        background: transparent; color: #ef4444; border: none; font-size: 0.75rem; font-weight: 500; padding: 0.375rem 0.625rem; border-radius: 0.5rem; cursor: pointer;
+    }
+    .btn-danger:hover { background-color: rgba(239, 68, 68, 0.1); }
+
+    /* Explicit Theme Styles for Sidebar & Inputs (static Tailwind fallback) */
+    #sidebar {
+        background-color: var(--m3-surface-light);
+        border-color: #e2e8f0;
+    }
+    .dark #sidebar {
+        background-color: #161719;
+        border-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .sidebar-separator {
+        height: 1px;
+        background-color: #e2e8f0;
+        margin: 1rem 0.5rem;
+    }
+    .dark .sidebar-separator {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    input[type="text"]:focus, textarea:focus {
+        border-color: var(--m3-primary-light) !important;
+    }
+    .dark input[type="text"]:focus, .dark textarea:focus {
+        border-color: var(--m3-primary-dark) !important;
+    }
+  </style>
+</head>
+<body class="bg-m3-background-light dark:bg-m3-background-dark text-slate-800 dark:text-slate-100 font-sans transition-colors duration-300 min-h-screen overflow-hidden flex select-none">
+
+  <!-- SIDEBAR (Navigation) -->
+  <div id="sidebar" class="w-64 flex flex-col h-screen shrink-0 relative z-20 border-r shadow-sm">
+    <div class="p-6 flex items-center gap-3">
+      <img src="../icons/icon.png" class="w-8 h-8 object-contain" alt="NINA">
+      <h1 class="text-xl font-bold tracking-wide text-slate-800 dark:text-slate-100" data-i18n="settings_title">Nina Einstellungen</h1>
+    </div>
+    
+    <div class="flex-1 overflow-y-auto p-4 space-y-1 custom-scrollbar" id="sidebar-nav">
+      <a href="#cat-general" class="sidebar-link active" data-target="cat-general">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A11.952 11.952 0 0112 16.5c-2.998 0-5.74-1.1-7.843-2.918m0 0A8.959 8.959 0 013 12c0-.778.099-1.533.284-2.253" /></svg>
+        <span data-i18n="settings_group_general">Allgemein & Sprache</span>
+      </a>
+      <a href="#cat-playback" class="sidebar-link" data-target="cat-playback">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>
+        <span data-i18n="settings_group_playback">Wiedergabe & Skipper</span>
+      </a>
+      <a href="#cat-youtube" class="sidebar-link" data-target="cat-youtube">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" /></svg>
+        <span data-i18n="settings_group_youtube">YouTube Features</span>
+      </a>
+      <a href="#cat-platforms" class="sidebar-link" data-target="cat-platforms">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 13.5a3 3 0 100-6 3 3 0 000 6z" /></svg>
+        <span data-i18n="settings_group_platforms">Streaming-Plattformen</span>
+      </a>
+      <div class="sidebar-separator"></div>
+      <a href="#cat-newtab-shortcuts" class="sidebar-link" data-target="cat-newtab-shortcuts">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+        <span data-i18n="settings_group_newtab_shortcuts">Neuer Tab: Kürzel & Suche</span>
+      </a>
+      <a href="#cat-newtab-appearance" class="sidebar-link" data-target="cat-newtab-appearance">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>
+        <span data-i18n="settings_group_newtab_appearance">Neuer Tab: Aussehen</span>
+      </a>
+      <a href="#cat-drive" class="sidebar-link" data-target="cat-drive">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 15l4-8 5 9H3zm5 0h13l-4-8-9 0zm6.5 0L12 7"/></svg>
+        <span>Notizen & Drive Sync</span>
+      </a>
+      <a href="#cat-support" class="sidebar-link" data-target="cat-support">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" /></svg>
+        <span data-i18n="dev_support">Entwickler Support</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT AREA -->
+  <div class="flex-1 flex flex-col h-screen relative bg-m3-background-light dark:bg-m3-background-dark">
+    
+    <!-- Header mit Suche -->
+    <div class="sticky top-0 z-30 bg-m3-background-light/80 dark:bg-m3-background-dark/80 backdrop-blur-xl p-4 px-8 flex justify-between items-center h-20 border-b border-slate-200/50 dark:border-white/5">
+      <div class="relative w-full max-w-lg">
+        <svg class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+        <input type="text" id="searchInput" placeholder="Einstellungen durchsuchen..." class="w-full bg-m3-surfaceVariant-light dark:bg-m3-surfaceVariant-dark text-slate-800 dark:text-slate-100 rounded-full py-3 pl-12 pr-4 outline-none transition-all border border-transparent focus:border-m3-primary-light dark:focus:border-m3-primary-dark placeholder-slate-400 dark:placeholder-slate-500">
+      </div>
+      <button id="btnResetAll" class="ml-4 p-3 rounded-full hover:bg-m3-surfaceVariant-light dark:hover:bg-m3-surfaceVariant-dark text-slate-600 dark:text-slate-300 transition-all active:scale-[0.9] cursor-pointer" title="Erweiterungswerwe zurücksetzen">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
+      </button>
+    </div>
+
+    <!-- Scrollable Settings Container -->
+    <div class="flex-1 overflow-y-auto p-8 custom-scrollbar" id="settingsContainer">
+      <div class="max-w-3xl mx-auto space-y-6 pb-20">
+        <div class="mb-4">
+          <h1 class="text-2xl font-bold tracking-wide text-slate-800 dark:text-slate-100" data-i18n="settings_title">Nina Einstellungen</h1>
+        </div>
+        
+        <div id="noResultsMsg" class="hidden text-center text-slate-500 mt-10">Keine Einstellungen gefunden.</div>
+
+        <!-- ================= EXTENSION SETTINGS ================= -->
+
+        <!-- 1: Allgemein & Sprache -->
+        <section id="cat-general" class="setting-section bg-m3-surface-light dark:bg-m3-surface-dark rounded-[28px] p-5 shadow-sm space-y-4 relative">
+          <h2 class="text-xs font-semibold uppercase tracking-wider text-m3-primary-light dark:text-m3-primary-dark flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A11.952 11.952 0 0112 16.5c-2.998 0-5.74-1.1-7.843-2.918m0 0A8.959 8.959 0 013 12c0-.778.099-1.533.284-2.253" /></svg>
+            <span data-i18n="settings_group_general">Allgemein & Sprache</span>
+          </h2>
+          
+          <div class="space-y-2.5">
+            <span class="text-xs font-semibold text-m3-outline-light dark:text-m3-outline-dark uppercase tracking-wider block">Systemsprache</span>
+            <div class="relative w-full z-30" id="customDropdownContainer">
+              <button id="dropdownTrigger" class="w-full flex items-center justify-between bg-m3-surfaceVariant-light dark:bg-m3-surfaceVariant-dark text-slate-800 dark:text-slate-100 rounded-xl px-4 py-2.5 text-sm outline-none border border-transparent cursor-pointer hover:brightness-105 transition-all duration-200">
+                <span id="dropdownSelectedValue" data-i18n="lang_system">System default</span>
+                <svg class="w-4 h-4 text-slate-600 dark:text-slate-300 transition-transform duration-200" id="dropdownArrow" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+              </button>
+              <div id="dropdownMenu" class="absolute left-0 right-0 mt-2 bg-m3-surface-light dark:bg-m3-background-dark border border-m3-surfaceVariant-light dark:border-m3-surfaceVariant-dark rounded-2xl shadow-xl hidden overflow-hidden scale-95 opacity-0 transition-all duration-150 origin-top flex flex-col p-1.5 z-50">
+                <button class="dropdown-item flex items-center px-3 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-m3-surfaceVariant-light dark:hover:bg-m3-surfaceVariant-dark rounded-xl transition-colors text-left" data-value="system" data-i18n="lang_system">System default</button>
+                <button class="dropdown-item flex items-center px-3 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-m3-surfaceVariant-light dark:hover:bg-m3-surfaceVariant-dark rounded-xl transition-colors text-left" data-value="de" data-i18n="de">Deutsch</button>
+                <button class="dropdown-item flex items-center px-3 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-m3-surfaceVariant-light dark:hover:bg-m3-surfaceVariant-dark rounded-xl transition-colors text-left" data-value="en" data-i18n="en">English</button>
+                <button class="dropdown-item flex items-center px-3 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-m3-surfaceVariant-light dark:hover:bg-m3-surfaceVariant-dark rounded-xl transition-colors text-left" data-value="es" data-i18n="es">Español</button>
+                <button class="dropdown-item flex items-center px-3 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-m3-surfaceVariant-light dark:hover:bg-m3-surfaceVariant-dark rounded-xl transition-colors text-left" data-value="fr" data-i18n="fr">Français</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="border-t border-slate-100 dark:border-slate-800/80 my-2"></div>
+
+          <div class="setting-item flex items-center justify-between">
+            <div class="flex flex-col max-w-[70%]">
+              <span class="text-sm font-medium" data-i18n="pause_on_open_title">Video im Overlay pausieren</span>
+              <span class="text-xs text-m3-outline-light dark:text-m3-outline-dark mt-0.5" data-i18n="pause_on_open_desc">Video pausieren, wenn die Player-Steuerungs-Overlay offen ist.</span>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+              <input type="checkbox" id="togglePauseOnOpen" class="sr-only peer">
+              <div class="relative w-12 h-6 bg-m3-surfaceVariant-light dark:bg-m3-surfaceVariant-dark peer-focus:outline-none rounded-full peer peer-checked:bg-m3-primary-light dark:peer-checked:bg-m3-primary-dark border border-transparent transition-colors duration-200 after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-slate-500 dark:after:bg-slate-400 peer-checked:after:bg-white dark:peer-checked:after:bg-m3-background-dark after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-6"></div>
+            </label>
+          </div>
+        </section>
+
+        <!-- 2: Wiedergabe & Skipper -->
+        <section id="cat-playback" class="setting-section bg-m3-surface-light dark:bg-m3-surface-dark rounded-[28px] p-5 shadow-sm space-y-4 relative">
+          <h2 class="text-xs font-semibold uppercase tracking-wider text-m3-primary-light dark:text-m3-primary-dark flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>
+            <span data-i18n="settings_group_playback">Wiedergabe & Skipper</span>
+          </h2>
+          
+          <div class="setting-item space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-medium text-slate-700 dark:text-slate-200" data-i18n="ff_speed">Vorspulen (Gedrückthalten)</span>
+              <span id="ffSpeedVal" class="text-sm font-bold bg-m3-primaryContainer-light dark:bg-m3-primaryContainer-dark text-m3-onPrimaryContainer-light dark:text-m3-onPrimaryContainer-dark px-3 py-1 rounded-full">2.00x</span>
+            </div>
+            <div class="relative w-full flex items-center">
+              <input type="range" id="ffSpeedSlider" min="1.0" max="10.0" step="0.1" value="2.0" class="w-full slider-aqua">
+            </div>
+          </div>
+
+          <div class="border-t border-slate-100 dark:border-slate-800/80 my-2"></div>
+
+          <div class="setting-item flex items-center justify-between">
+            <div class="flex flex-col max-w-[70%]">
+              <span class="text-sm font-medium" data-i18n="autoskip_title">Auto-Skip Intros</span>
+              <span class="text-xs text-m3-outline-light dark:text-m3-outline-dark mt-0.5" data-i18n="autoskip_desc">Überspringt Intros, Recaps & Werbung automatisch.</span>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+              <input type="checkbox" id="toggleAutoSkip" class="sr-only peer" checked>
+              <div class="relative w-12 h-6 bg-m3-surfaceVariant-light dark:bg-m3-surfaceVariant-dark peer-focus:outline-none rounded-full peer peer-checked:bg-m3-primary-light dark:peer-checked:bg-m3-primary-dark border border-transparent transition-colors duration-200 after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-slate-500 dark:after:bg-slate-400 peer-checked:after:bg-white dark:peer-checked:after:bg-m3-background-dark after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-6"></div>
+            </label>
+          </div>
+        </section>
+
+        <!-- 3: YouTube Features -->
+        <section id="cat-youtube" class="setting-section bg-m3-surface-light dark:bg-m3-surface-dark rounded-[28px] p-5 shadow-sm space-y-4 relative">
+          <h2 class="text-xs font-semibold uppercase tracking-wider text-m3-primary-light dark:text-m3-primary-dark flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" /></svg>
+            <span data-i18n="settings_group_youtube">YouTube Features</span>
+          </h2>
+          
+          <div class="setting-item flex items-center justify-between">
+            <div class="flex flex-col max-w-[70%]">
+              <span class="text-sm font-medium" data-i18n="dislikes_title">YouTube Dislikes</span>
+              <span class="text-xs text-m3-outline-light dark:text-m3-outline-dark mt-0.5" data-i18n="dislikes_desc">Dislike-Anzahl (Return YouTube Dislike) einblenden.</span>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+              <input type="checkbox" id="toggleDislikes" class="sr-only peer" checked>
+              <div class="relative w-12 h-6 bg-m3-surfaceVariant-light dark:bg-m3-surfaceVariant-dark peer-focus:outline-none rounded-full peer peer-checked:bg-m3-primary-light dark:peer-checked:bg-m3-primary-dark border border-transparent transition-colors duration-200 after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-slate-500 dark:after:bg-slate-400 peer-checked:after:bg-white dark:peer-checked:after:bg-m3-background-dark after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-6"></div>
+            </label>
+          </div>
+
+          <div class="border-t border-slate-100 dark:border-slate-800/80 my-2"></div>
+
+          <div class="setting-item flex items-center justify-between">
+            <div class="flex flex-col max-w-[70%]">
+              <span class="text-sm font-medium" data-i18n="timer_title">Geschwindigkeits-Timer</span>
+              <span class="text-xs text-m3-outline-light dark:text-m3-outline-dark mt-0.5" data-i18n="timer_desc">Angepasste Restzeit neben der Videodauer anzeigen.</span>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+              <input type="checkbox" id="toggleSpeedTimer" class="sr-only peer" checked>
+              <div class="relative w-12 h-6 bg-m3-surfaceVariant-light dark:bg-m3-surfaceVariant-dark peer-focus:outline-none rounded-full peer peer-checked:bg-m3-primary-light dark:peer-checked:bg-m3-primary-dark border border-transparent transition-colors duration-200 after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-slate-500 dark:after:bg-slate-400 peer-checked:after:bg-white dark:peer-checked:after:bg-m3-background-dark after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-6"></div>
+            </label>
+          </div>
+
+          <div class="border-t border-slate-100 dark:border-slate-800/80 my-2"></div>
+
+          <div class="setting-item flex items-center justify-between">
+            <div class="flex flex-col max-w-[70%]">
+              <span class="text-sm font-medium" data-i18n="sponsorblock_title">SponsorBlock Segmente</span>
+              <span class="text-xs text-m3-outline-light dark:text-m3-outline-dark mt-0.5" data-i18n="sponsorblock_desc">Werbe-Markierungen in der Suchleiste anzeigen.</span>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+              <input type="checkbox" id="toggleSponsorBlock" class="sr-only peer" checked>
+              <div class="relative w-12 h-6 bg-m3-surfaceVariant-light dark:bg-m3-surfaceVariant-dark peer-focus:outline-none rounded-full peer peer-checked:bg-m3-primary-light dark:peer-checked:bg-m3-primary-dark border border-transparent transition-colors duration-200 after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-slate-500 dark:after:bg-slate-400 peer-checked:after:bg-white dark:peer-checked:after:bg-m3-background-dark after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-6"></div>
+            </label>
+          </div>
+
+          <div class="border-t border-slate-100 dark:border-slate-800/80 my-2"></div>
+
+          <div class="setting-item flex items-center justify-between">
+            <div class="flex flex-col max-w-[70%]">
+              <span class="text-sm font-medium" data-i18n="thanks_download_title">Thanks & Download Buttons</span>
+              <span class="text-xs text-m3-outline-light dark:text-m3-outline-dark mt-0.5" data-i18n="thanks_download_desc">Thanks- und Download-Buttons einblenden.</span>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+              <input type="checkbox" id="toggleThanksDownload" class="sr-only peer">
+              <div class="relative w-12 h-6 bg-m3-surfaceVariant-light dark:bg-m3-surfaceVariant-dark peer-focus:outline-none rounded-full peer peer-checked:bg-m3-primary-light dark:peer-checked:bg-m3-primary-dark border border-transparent transition-colors duration-200 after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-slate-500 dark:after:bg-slate-400 peer-checked:after:bg-white dark:peer-checked:after:bg-m3-background-dark after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-6"></div>
+            </label>
+          </div>
+
+          <div class="border-t border-slate-100 dark:border-slate-800/80 my-2"></div>
+
+          <div class="setting-item space-y-4">
+            <div class="flex items-center justify-between">
+              <div class="flex flex-col max-w-[70%]">
+                <span class="text-sm font-medium" data-i18n="autolike_title">Auto-Like (YouTube)</span>
+                <span class="text-xs text-m3-outline-light dark:text-m3-outline-dark mt-0.5" data-i18n="autolike_hint">Wird nur auf YouTube /watch-Seiten ausgelöst.</span>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                <input type="checkbox" id="toggleAutoLike" class="sr-only peer" checked>
+                <div class="relative w-12 h-6 bg-m3-surfaceVariant-light dark:bg-m3-surfaceVariant-dark peer-focus:outline-none rounded-full peer peer-checked:bg-m3-primary-light dark:peer-checked:bg-m3-primary-dark border border-transparent transition-colors duration-200 after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-slate-500 dark:after:bg-slate-400 peer-checked:after:bg-white dark:peer-checked:after:bg-m3-background-dark after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-6"></div>
+              </label>
+            </div>
+            <div id="autoLikeSliderBlock" class="flex flex-col space-y-2 pt-2 border-t border-dashed border-m3-surfaceVariant-light dark:border-m3-surfaceVariant-dark transition-all duration-200">
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-medium text-m3-outline-light dark:text-m3-outline-dark"><span data-i18n="autolike_prefix">Liken nach</span> <span id="autoLikeVal" class="font-bold text-m3-primary-light dark:text-m3-primary-dark text-sm">10%</span> <span data-i18n="autolike_suffix_simple">des Videos</span></span>
+              </div>
+              <input type="range" id="autoLikeSlider" min="1" max="100" step="1" value="10" class="w-full slider-aqua">
+            </div>
+          </div>
+        </section>
+
+        <!-- 4: Streaming-Plattformen -->
+        <section id="cat-platforms" class="setting-section bg-m3-surface-light dark:bg-m3-surface-dark rounded-[28px] p-5 shadow-sm space-y-4 relative">
+          <h2 class="text-xs font-semibold uppercase tracking-wider text-m3-primary-light dark:text-m3-primary-dark flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 13.5a3 3 0 100-6 3 3 0 000 6z" /></svg>
+            <span data-i18n="settings_group_platforms">Streaming-Plattformen</span>
+          </h2>
+
+          <div class="space-y-4">
+            <h3 class="text-xs font-semibold text-m3-outline-light dark:text-m3-outline-dark uppercase tracking-wider">Amazon Prime</h3>
+            
+            <div class="flex items-center justify-between">
+              <div class="flex flex-col max-w-[70%]">
+                <span class="text-sm font-medium" data-i18n="xray_title">X-Ray ausblenden</span>
+                <span class="text-xs text-m3-outline-light dark:text-m3-outline-dark mt-0.5" data-i18n="xray_desc">Blendet das X-Ray-Overlay bei Prime Video aus.</span>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                <input type="checkbox" id="toggleHideXRay" class="sr-only peer">
+                <div class="relative w-12 h-6 bg-m3-surfaceVariant-light dark:bg-m3-surfaceVariant-dark peer-focus:outline-none rounded-full peer peer-checked:bg-m3-primary-light dark:peer-checked:bg-m3-primary-dark border border-transparent transition-colors duration-200 after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-slate-500 dark:after:bg-slate-400 peer-checked:after:bg-white dark:peer-checked:after:bg-m3-background-dark after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-6"></div>
+              </label>
+            </div>
+
+            <div class="flex items-center justify-between opacity-50 select-none pointer-events-none">
+              <div class="flex flex-col max-w-[70%]">
+                <span class="text-sm font-medium line-through" data-i18n="controls_title">Steuerungsleiste ausblenden</span>
+                <span class="text-xs text-m3-outline-light dark:text-m3-outline-dark mt-0.5"><span data-i18n="prime_controls_desc">Blendet die untere Player-Leiste (Timeline, Buttons etc.) aus.</span> <span class="text-m3-primary-light dark:text-m3-primary-dark font-medium" data-i18n="coming_soon">(kommt noch)</span></span>
+              </div>
+              <label class="relative inline-flex items-center flex-shrink-0">
+                <input type="checkbox" id="toggleHidePrimeControls" class="sr-only peer" disabled>
+                <div class="relative w-12 h-6 bg-m3-surfaceVariant-light dark:bg-m3-surfaceVariant-dark peer-focus:outline-none rounded-full peer border border-transparent transition-colors duration-200 after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-slate-400 dark:after:bg-slate-500 after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+              </label>
+            </div>
+
+            <div class="flex items-center justify-between opacity-50 select-none pointer-events-none">
+              <div class="flex flex-col max-w-[70%]">
+                <span class="text-sm font-medium line-through" data-i18n="topbar_title">Kopfleiste ausblenden</span>
+                <span class="text-xs text-m3-outline-light dark:text-m3-outline-dark mt-0.5"><span data-i18n="prime_topbar_desc">Blendet die obere Leiste (Zurück-Pfeil & Filmtitel) aus.</span> <span class="text-m3-primary-light dark:text-m3-primary-dark font-medium" data-i18n="coming_soon">(kommt noch)</span></span>
+              </div>
+              <label class="relative inline-flex items-center flex-shrink-0">
+                <input type="checkbox" id="toggleHidePrimeTopbar" class="sr-only peer" disabled>
+                <div class="relative w-12 h-6 bg-m3-surfaceVariant-light dark:bg-m3-surfaceVariant-dark peer-focus:outline-none rounded-full peer border border-transparent transition-colors duration-200 after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-slate-400 dark:after:bg-slate-500 after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+              </label>
+            </div>
+
+            <div class="flex items-center justify-between opacity-50 select-none pointer-events-none">
+              <div class="flex flex-col max-w-[70%]">
+                <span class="text-sm font-medium line-through" data-i18n="nextup_title">"Nächste Folge" ausblenden</span>
+                <span class="text-xs text-m3-outline-light dark:text-m3-outline-dark mt-0.5"><span data-i18n="prime_nextup_desc">Blendet die automatische Einblendung für die nächste Episode aus.</span> <span class="text-m3-primary-light dark:text-m3-primary-dark font-medium" data-i18n="coming_soon">(kommt noch)</span></span>
+              </div>
+              <label class="relative inline-flex items-center flex-shrink-0">
+                <input type="checkbox" id="toggleHidePrimeNextup" class="sr-only peer" disabled>
+                <div class="relative w-12 h-6 bg-m3-surfaceVariant-light dark:bg-m3-surfaceVariant-dark peer-focus:outline-none rounded-full peer border border-transparent transition-colors duration-200 after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-slate-400 dark:after:bg-slate-500 after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+              </label>
+            </div>
+
+            <div class="flex items-center justify-between opacity-50 select-none pointer-events-none">
+              <div class="flex flex-col max-w-[70%]">
+                <span class="text-sm font-medium line-through" data-i18n="prime_settings_title">"3-Punkte-Menü" ausblenden</span>
+                <span class="text-xs text-m3-outline-light dark:text-m3-outline-dark mt-0.5"><span data-i18n="prime_settings_desc">Blendet das Optionen-Menü (drei vertikale Punkte) oben rechts aus.</span> <span class="text-m3-primary-light dark:text-m3-primary-dark font-medium" data-i18n="coming_soon">(kommt noch)</span></span>
+              </div>
+              <label class="relative inline-flex items-center flex-shrink-0">
+                <input type="checkbox" id="toggleHidePrimeSettings" class="sr-only peer" disabled>
+                <div class="relative w-12 h-6 bg-m3-surfaceVariant-light dark:bg-m3-surfaceVariant-dark peer-focus:outline-none rounded-full peer border border-transparent transition-colors duration-200 after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-slate-400 dark:after:bg-slate-500 after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+              </label>
+            </div>
+          </div>
+
+          <div class="border-t border-slate-100 dark:border-slate-800/80 my-2"></div>
+
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" data-i18n="settings_other_platforms">Weitere Plattformen</span>
+              <span class="text-[9px] bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full font-semibold" data-i18n="in_kuerze">In Kürze</span>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2 text-center pt-1">
+              <div class="p-2.5 bg-m3-surfaceVariant-light dark:bg-m3-surfaceVariant-dark/25 rounded-2xl border border-slate-100 dark:border-slate-800/40 opacity-70">
+                <span class="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">Netflix</span>
+                <span class="text-[9px] text-slate-500 dark:text-slate-400 block leading-tight">Skipper & UI Autohide</span>
+              </div>
+              <div class="p-2.5 bg-m3-surfaceVariant-light dark:bg-m3-surfaceVariant-dark/25 rounded-2xl border border-slate-100 dark:border-slate-800/40 opacity-70">
+                <span class="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">Joyn</span>
+                <span class="text-[9px] text-slate-500 dark:text-slate-400 block leading-tight">UI Autohide</span>
+              </div>
+              <div class="p-2.5 bg-m3-surfaceVariant-light dark:bg-m3-surfaceVariant-dark/25 rounded-2xl border border-slate-100 dark:border-slate-800/40 opacity-70">
+                <span class="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">Disney+</span>
+                <span class="text-[9px] text-slate-500 dark:text-slate-400 block leading-tight">Skipper & UI Autohide</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= NEW TAB SETTINGS ================= -->
+
+        <!-- 5: Neuer Tab: Kürzel & Suche -->
+        <section id="cat-newtab-shortcuts" class="setting-section bg-m3-surface-light dark:bg-m3-surface-dark rounded-[28px] p-5 shadow-sm space-y-4 relative">
+          <h2 class="text-xs font-semibold uppercase tracking-wider text-m3-primary-light dark:text-m3-primary-dark flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+            <span data-i18n="settings_group_newtab_shortcuts">Neuer Tab: Kürzel & Suche</span>
+          </h2>
+
+          <div class="space-y-3">
+            <h4 class="text-xs font-semibold text-m3-outline-light dark:text-m3-outline-dark uppercase tracking-wider">Aktuelle Kürzel / Direktsprünge</h4>
+            <div id="settings-bookmarks-list" class="flex flex-col gap-2">
+                <!-- Dynamisch befüllt -->
+            </div>
+          </div>
+
+          <div class="border-t border-slate-100 dark:border-slate-800/80 my-2"></div>
+
+          <div class="space-y-4">
+            <h4 class="text-xs font-semibold text-m3-outline-light dark:text-m3-outline-dark uppercase tracking-wider">Neues Kürzel erstellen</h4>
+            <div class="flex flex-col gap-4">
+                 <div>
+                     <label class="text-[11px] font-semibold text-m3-outline-light dark:text-m3-outline-dark mb-1.5 block tracking-wider uppercase">Name / Kürzel (z.B. mail)</label>
+                     <input type="text" id="bookmark-name" placeholder="z.B. mail" class="w-full bg-slate-100 dark:bg-m3-background-dark text-slate-800 dark:text-slate-100 rounded-xl px-4 py-3 border border-slate-200 dark:border-white/5 focus:border-m3-primary-light dark:focus:border-m3-primary-dark focus:bg-white dark:focus:bg-m3-background-dark outline-none transition-all duration-200">
+                 </div>
+                 <div>
+                     <label class="text-[11px] font-semibold text-m3-outline-light dark:text-m3-outline-dark mb-1.5 block tracking-wider uppercase">URL (Zieladresse)</label>
+                     <input type="text" id="bookmark-url" placeholder="z.B. https://mail.google.com" class="w-full bg-slate-100 dark:bg-m3-background-dark text-slate-800 dark:text-slate-100 rounded-xl px-4 py-3 border border-slate-200 dark:border-white/5 focus:border-m3-primary-light dark:focus:border-m3-primary-dark focus:bg-white dark:focus:bg-m3-background-dark outline-none transition-all duration-200">
+                     <p id="error-message" class="text-red-500 text-xs mt-2 hidden">Bitte fülle beide Felder korrekt aus!</p>
+                 </div>
+             </div>
+             <div class="flex gap-3">
+                 <button id="add-shortcut-btn" class="w-full bg-m3-primaryContainer-light dark:bg-m3-primaryContainer-dark hover:brightness-110 text-m3-onPrimaryContainer-light dark:text-m3-onPrimaryContainer-dark font-bold py-3 rounded-xl transition-all active:scale-[0.98] cursor-pointer">Kürzel speichern</button>
+                 <button id="toggle-bulk-import-btn" class="px-5 bg-m3-surfaceVariant-light dark:bg-m3-surfaceVariant-dark hover:brightness-110 rounded-xl transition-all active:scale-[0.98] cursor-pointer text-slate-800 dark:text-slate-100" title="Mehrere Kürzel importieren">
+                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16m-7 6h7" /></svg>
+                 </button>
+             </div>
+             <div id="bulk-import-container" class="hidden mt-2 pt-4 border-t border-slate-100 dark:border-slate-800/80">
+                 <label class="text-[11px] font-semibold text-m3-outline-light dark:text-m3-outline-dark mb-2 block tracking-wider uppercase">Mehrere importieren (Eine pro Zeile: Name | URL)</label>
+                 <textarea id="bulk-import-text" rows="4" placeholder="mail | https://mail.google.com" class="w-full bg-slate-100 dark:bg-m3-background-dark text-slate-800 dark:text-slate-100 rounded-xl p-4 border border-slate-200 dark:border-white/5 outline-none transition-colors"></textarea>
+                 <button id="confirm-bulk-import-btn" class="w-full mt-3 bg-m3-surfaceVariant-light dark:bg-m3-surfaceVariant-dark hover:brightness-110 text-slate-800 dark:text-slate-100 font-semibold py-2.5 rounded-xl transition-colors cursor-pointer">Alle importieren</button>
+             </div>
+          </div>
+
+          <div class="border-t border-slate-100 dark:border-slate-800/80 my-2"></div>
+
+          <div class="setting-item">
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-sm font-medium">Chrome Favoriten in Suche anzeigen</span>
+              <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                <input type="checkbox" id="chrome-bookmarks-toggle" class="sr-only peer">
+                <div class="relative w-12 h-6 bg-m3-surfaceVariant-light dark:bg-m3-surfaceVariant-dark peer-focus:outline-none rounded-full peer peer-checked:bg-m3-primary-light dark:peer-checked:bg-m3-primary-dark border border-transparent transition-colors duration-200 after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-slate-500 dark:after:bg-slate-400 peer-checked:after:bg-white dark:peer-checked:after:bg-m3-background-dark after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-6"></div>
+              </label>
+            </div>
+            
+            <div id="chrome-bookmarks-filter-container" class="hidden space-y-4 pt-2">
+              <div class="space-y-1.5">
+                  <label class="text-[11px] font-semibold text-m3-outline-light dark:text-m3-outline-dark block tracking-wider uppercase">Filter-Modus</label>
+                  <select id="chrome-filter-mode" class="w-full bg-slate-100 dark:bg-m3-background-dark text-slate-800 dark:text-slate-100 rounded-xl px-4 py-3 border border-slate-200 dark:border-white/5 outline-none cursor-pointer">
+                      <option value="exclude">Alle anzeigen, AUSSER untenstehende</option>
+                      <option value="include">NUR untenstehende anzeigen</option>
+                  </select>
+              </div>
+              <div class="relative space-y-1.5">
+                  <label class="text-[11px] font-semibold text-m3-outline-light dark:text-m3-outline-dark block tracking-wider uppercase">Lesezeichen suchen oder Domain eingeben</label>
+                  <div class="flex gap-3 relative">
+                      <input type="text" id="chrome-filter-search" placeholder="z.B. youtube.com" class="w-full bg-slate-100 dark:bg-m3-background-dark text-slate-800 dark:text-slate-100 rounded-xl px-4 py-3 border border-slate-200 dark:border-white/5 focus:border-m3-primary-light dark:focus:border-m3-primary-dark outline-none transition-colors" autocomplete="off">
+                      <button id="add-domain-filter-btn" class="bg-m3-surfaceVariant-light dark:bg-m3-surfaceVariant-dark hover:brightness-110 text-slate-800 dark:text-slate-100 px-5 py-3 rounded-xl font-semibold cursor-pointer shrink-0 transition-colors">Filtern</button>
+                      <div id="chrome-filter-search-results" class="hidden absolute top-full left-0 right-0 mt-2 bg-m3-surface-light dark:bg-m3-surface-dark border border-slate-200 dark:border-white/5 rounded-xl shadow-xl max-h-48 overflow-y-auto custom-scrollbar z-50"></div>
+                  </div>
+              </div>
+              <div class="space-y-2">
+                  <h4 class="text-[11px] font-semibold text-m3-outline-light dark:text-m3-outline-dark tracking-wider uppercase">Gefilterte Lesezeichen</h4>
+                  <div id="chrome-filter-list" class="flex flex-col gap-2"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 6: Neuer Tab: Aussehen -->
+        <section id="cat-newtab-appearance" class="setting-section bg-m3-surface-light dark:bg-m3-surface-dark rounded-[28px] p-5 shadow-sm space-y-4 relative">
+          <h2 class="text-xs font-semibold uppercase tracking-wider text-m3-primary-light dark:text-m3-primary-dark flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>
+            <span data-i18n="settings_group_newtab_appearance">Neuer Tab: Aussehen</span>
+          </h2>
+
+          <div class="setting-item flex items-center justify-between">
+            <span class="text-sm font-medium">Uhrzeit: Sekunden anzeigen</span>
+            <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+              <input type="checkbox" id="seconds-toggle" class="sr-only peer" checked>
+              <div class="relative w-12 h-6 bg-m3-surfaceVariant-light dark:bg-m3-surfaceVariant-dark peer-focus:outline-none rounded-full peer peer-checked:bg-m3-primary-light dark:peer-checked:bg-m3-primary-dark border border-transparent transition-colors duration-200 after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-slate-500 dark:after:bg-slate-400 peer-checked:after:bg-white dark:peer-checked:after:bg-m3-background-dark after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-6"></div>
+            </label>
+          </div>
+
+          <div class="border-t border-slate-100 dark:border-slate-800/80 my-2"></div>
+
+          <div class="setting-item flex items-center justify-between">
+             <span class="text-sm font-medium">Hintergrundfarbe</span>
+             <div class="flex items-center gap-4 bg-slate-100 dark:bg-m3-background-dark rounded-xl px-4 py-2 border border-slate-200 dark:border-white/5">
+               <div class="relative w-8 h-8 rounded-full overflow-hidden border border-slate-300 dark:border-white/10 flex-shrink-0">
+                 <input type="color" id="bg-color-picker" value="#0f1113" class="absolute -top-2 -left-2 w-12 h-12 cursor-pointer border-none p-0">
+               </div>
+               <button id="reset-bg-color-btn" class="text-xs font-bold text-m3-primary-light dark:text-m3-primary-dark hover:brightness-110 cursor-pointer bg-transparent border-none">Standard wiederherstellen</button>
+             </div>
+           </div>
+
+           <div class="border-t border-slate-100 dark:border-slate-800/80 my-2"></div>
+
+           <div class="setting-item space-y-4">
+             <span class="text-sm font-medium block">Hintergrundbild</span>
+             <div class="flex gap-3">
+               <label for="bg-upload" class="flex-1 flex items-center justify-center gap-2 py-3 bg-m3-surfaceVariant-light dark:bg-m3-surfaceVariant-dark hover:bg-m3-primaryContainer-light dark:hover:bg-m3-primaryContainer-dark text-slate-800 dark:text-slate-100 rounded-xl cursor-pointer text-sm font-semibold transition-all border border-transparent active:scale-[0.98]">
+                   <svg class="w-5 h-5 text-m3-primary-light dark:text-m3-primary-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>
+                   Bild hochladen
+               </label>
+               <input type="file" id="bg-upload" accept="image/*" class="hidden">
+               <button id="btn-clear-bg" class="px-5 py-3 bg-red-500/10 hover:bg-red-500/25 text-red-500 rounded-xl text-sm font-semibold cursor-pointer transition-all active:scale-[0.98] hidden flex items-center justify-center gap-2">
+                   <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9 9m12 6a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                   Löschen
+               </button>
+             </div>
+             
+             <div id="overlay-control" class="hidden mt-4 pt-4 border-t border-slate-100 dark:border-slate-800/80">
+               <div class="flex justify-between text-xs text-m3-outline-light dark:text-m3-outline-dark mb-4 font-medium tracking-wide">
+                   <span>Hintergrund-Dunkelheit</span>
+                   <span id="overlay-val">50%</span>
+               </div>
+               <input type="range" id="overlay-slider" min="0" max="95" value="50" class="w-full slider-aqua">
+             </div>
+           </div>
+        </section>
+
+        <!-- 7: Notizen & Google Drive Sync -->
+        <section id="cat-drive" class="setting-section bg-m3-surface-light dark:bg-m3-surface-dark rounded-[28px] p-5 shadow-sm space-y-4 relative">
+          <h2 class="text-xs font-semibold uppercase tracking-wider text-m3-primary-light dark:text-m3-primary-dark flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 15l4-8 5 9H3zm5 0h13l-4-8-9 0zm6.5 0L12 7"/></svg>
+            Notizen & Google Drive Sync
+          </h2>
+
+          <!-- Verbindungs-Status -->
+          <div class="flex items-center justify-between p-4 rounded-2xl bg-m3-surfaceVariant-light dark:bg-m3-surfaceVariant-dark">
+            <div class="flex items-center gap-3">
+              <div id="drive-status-dot" class="w-2.5 h-2.5 rounded-full bg-slate-400"></div>
+              <div>
+                <p class="text-sm font-semibold text-slate-800 dark:text-slate-100">Google Drive</p>
+                <p id="drive-status-text" class="text-xs text-slate-500 dark:text-slate-400">Nicht verbunden</p>
+              </div>
+            </div>
+            <button id="drive-connect-btn" class="px-4 py-2 text-xs font-semibold rounded-xl bg-m3-primary-light dark:bg-m3-primary-dark text-white dark:text-black transition-all hover:opacity-90 cursor-pointer border-0">
+              Verbinden
+            </button>
+          </div>
+
+          <!-- Info -->
+          <div class="p-4 rounded-2xl border border-slate-200 dark:border-white/5 space-y-2">
+            <p class="text-xs font-semibold text-slate-600 dark:text-slate-300">Wie funktioniert der Sync?</p>
+            <ul class="text-xs text-slate-500 dark:text-slate-400 space-y-1.5 list-disc pl-4">
+              <li>Notizen werden in <strong class="text-slate-700 dark:text-slate-200">Google Drive → NINA/notes/</strong> gespeichert</li>
+              <li>Anhänge liegen in <strong class="text-slate-700 dark:text-slate-200">NINA/attachments/</strong></li>
+              <li>Nur Dateien, die NINA selbst erstellt hat, werden gelesen (<code class="text-xs bg-slate-100 dark:bg-white/5 px-1 rounded">drive.file</code> Scope)</li>
+              <li>Beim Öffnen des Notizen-Overlays wird automatisch synchronisiert</li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- 8: Entwickler Support -->
+        <section id="cat-support" class="setting-section bg-m3-surface-light dark:bg-m3-surface-dark rounded-[28px] p-5 shadow-sm space-y-4 relative">
+          <h2 class="text-xs font-semibold uppercase tracking-wider text-m3-outline-light dark:text-m3-outline-dark flex items-center gap-2 mb-6">
+            <svg class="w-5 h-5 text-m3-outline-light dark:text-m3-outline-dark" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+            </svg>
+            <span data-i18n="dev_support">Entwickler Support</span>
+          </h2>
+          <div class="setting-item flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <p class="text-sm text-slate-600 dark:text-slate-300 max-w-md" data-i18n="dev_support_desc">Hast du Fragen oder Feature-Wünsche zu Nina? Melde dich direkt beim Entwickler.</p>
+            <a href="mailto:support@l8tenever.com" class="flex items-center gap-2.5 px-6 py-3.5 bg-m3-primaryContainer-light dark:bg-m3-primaryContainer-dark text-m3-onPrimaryContainer-light dark:text-m3-onPrimaryContainer-dark rounded-full hover:brightness-110 active:scale-[0.98] transition-all text-sm font-semibold shadow-sm shrink-0">
+              <svg class="w-4 h-4 text-m3-primary-light dark:text-m3-primary-dark" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" /></svg>
+              support@l8tenever.com
+            </a>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="fixed bottom-8 right-8 bg-m3-primaryContainer-light dark:bg-m3-primaryContainer-dark text-m3-onPrimaryContainer-light dark:text-m3-onPrimaryContainer-dark text-sm font-semibold py-3 px-6 rounded-full shadow-lg opacity-0 pointer-events-none transform translate-y-4 transition-all duration-300 z-50 flex items-center gap-2">
+    <svg class="w-5 h-5 text-m3-primary-light dark:text-m3-primary-dark" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+    <span id="toastText">Gespeichert</span>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>

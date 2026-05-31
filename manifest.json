@@ -1,0 +1,256 @@
+{
+  "manifest_version": 3,
+  "name": "__MSG_appName__",
+  "short_name": "__MSG_appName__",
+  "version": "3.1.4",
+  "version_name": "3.1.4",
+  "description": "__MSG_appDesc__",
+  "default_locale": "en",
+  "author": "NINA",
+  "permissions": ["activeTab", "storage", "scripting", "tabs", "sidePanel", "bookmarks", "identity"],
+  "oauth2": {
+    "client_id": "787110895260-h6li7gdkbcdu06ariopvh6b0fscl5nrc.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/drive.file"
+    ]
+  },
+  "host_permissions": [
+    "*://*.joyn.de/*",
+    "*://*.glomex.com/*",
+    "*://*.youtube.com/*",
+    "*://*.youtu.be/*",
+    "*://*.netflix.com/*",
+    "*://*.primevideo.com/*",
+    "*://*.amazon.de/*",
+    "*://*.amazon.com/*",
+    "*://*.amazon.co.uk/*",
+    "*://*.disneyplus.com/*",
+    "*://*.crunchyroll.com/*",
+    "*://*.dazn.com/*",
+    "*://*.twitch.tv/*",
+    "*://*.ardmediathek.de/*",
+    "*://*.zdf.de/*",
+    "*://*.zdfmediathek.de/*",
+    "*://*.rtl.de/*",
+    "*://*.rtlplus.com/*",
+    "*://*.tvnow.de/*",
+    "*://*.mubi.com/*",
+    "*://tv.apple.com/*",
+    "*://*.paramount.com/*",
+    "*://*.paramountplus.com/*",
+    "*://*.peacocktv.com/*",
+    "*://*.hbo.com/*",
+    "*://*.max.com/*",
+    "*://*.hulu.com/*",
+    "*://*.vimeo.com/*",
+    "*://*.dailymotion.com/*",
+    "*://*.ard.de/*",
+    "*://*.3sat.de/*",
+    "*://*.arte.tv/*",
+    "*://*.funimation.com/*",
+    "*://*.hidive.com/*",
+    "*://*.wakanim.tv/*",
+    "https://sponsor.ajay.app/*",
+    "https://returnyoutubedislikeapi.com/*",
+    "https://www.googleapis.com/*",
+    "https://oauth2.googleapis.com/*",
+    "https://accounts.google.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.joyn.de/*",
+        "*://*.glomex.com/*",
+        "*://*.youtube.com/*",
+        "*://*.youtu.be/*",
+        "*://*.netflix.com/*",
+        "*://*.primevideo.com/*",
+        "*://*.amazon.de/*",
+        "*://*.amazon.com/*",
+        "*://*.amazon.co.uk/*",
+        "*://*.disneyplus.com/*",
+        "*://*.crunchyroll.com/*",
+        "*://*.dazn.com/*",
+        "*://*.twitch.tv/*",
+        "*://*.ardmediathek.de/*",
+        "*://*.zdf.de/*",
+        "*://*.zdfmediathek.de/*",
+        "*://*.rtl.de/*",
+        "*://*.rtlplus.com/*",
+        "*://*.tvnow.de/*",
+        "*://*.mubi.com/*",
+        "*://tv.apple.com/*",
+        "*://*.paramount.com/*",
+        "*://*.paramountplus.com/*",
+        "*://*.peacocktv.com/*",
+        "*://*.hbo.com/*",
+        "*://*.max.com/*",
+        "*://*.hulu.com/*",
+        "*://*.vimeo.com/*",
+        "*://*.dailymotion.com/*",
+        "*://*.ard.de/*",
+        "*://*.3sat.de/*",
+        "*://*.arte.tv/*",
+        "*://*.funimation.com/*",
+        "*://*.hidive.com/*",
+        "*://*.wakanim.tv/*"
+      ],
+      "js": ["content/speed-patch.js", "content/audio-patch.js"],
+      "run_at": "document_start",
+      "world": "MAIN",
+      "all_frames": true,
+      "match_about_blank": true
+    },
+    {
+      "matches": [
+        "*://*.joyn.de/*",
+        "*://*.glomex.com/*",
+        "*://*.youtube.com/*",
+        "*://*.youtu.be/*",
+        "*://*.netflix.com/*",
+        "*://*.primevideo.com/*",
+        "*://*.amazon.de/*",
+        "*://*.amazon.com/*",
+        "*://*.amazon.co.uk/*",
+        "*://*.disneyplus.com/*",
+        "*://*.crunchyroll.com/*",
+        "*://*.dazn.com/*",
+        "*://*.twitch.tv/*",
+        "*://*.ardmediathek.de/*",
+        "*://*.zdf.de/*",
+        "*://*.zdfmediathek.de/*",
+        "*://*.rtl.de/*",
+        "*://*.rtlplus.com/*",
+        "*://*.tvnow.de/*",
+        "*://*.mubi.com/*",
+        "*://tv.apple.com/*",
+        "*://*.paramount.com/*",
+        "*://*.paramountplus.com/*",
+        "*://*.peacocktv.com/*",
+        "*://*.hbo.com/*",
+        "*://*.max.com/*",
+        "*://*.hulu.com/*",
+        "*://*.vimeo.com/*",
+        "*://*.dailymotion.com/*",
+        "*://*.ard.de/*",
+        "*://*.3sat.de/*",
+        "*://*.arte.tv/*",
+        "*://*.funimation.com/*",
+        "*://*.hidive.com/*",
+        "*://*.wakanim.tv/*"
+      ],
+      "js": ["content/frame-speed.js"],
+      "css": ["styles/overlay.css"],
+      "run_at": "document_start",
+      "all_frames": true,
+      "match_about_blank": true
+    },
+    {
+      "matches": ["*://*.joyn.de/*"],
+      "js": ["content/joyn.js"],
+      "css": ["styles/overlay.css"],
+      "run_at": "document_idle",
+      "all_frames": false
+    },
+    {
+      "matches": [
+        "*://*.youtube.com/*",
+        "*://*.youtu.be/*",
+        "*://*.netflix.com/*",
+        "*://*.primevideo.com/*",
+        "*://*.amazon.de/*",
+        "*://*.amazon.com/*",
+        "*://*.amazon.co.uk/*",
+        "*://*.disneyplus.com/*",
+        "*://*.crunchyroll.com/*",
+        "*://*.dazn.com/*",
+        "*://*.twitch.tv/*",
+        "*://*.ardmediathek.de/*",
+        "*://*.zdf.de/*",
+        "*://*.zdfmediathek.de/*",
+        "*://*.rtl.de/*",
+        "*://*.rtlplus.com/*",
+        "*://*.tvnow.de/*",
+        "*://*.mubi.com/*",
+        "*://tv.apple.com/*",
+        "*://*.paramount.com/*",
+        "*://*.paramountplus.com/*",
+        "*://*.peacocktv.com/*",
+        "*://*.hbo.com/*",
+        "*://*.max.com/*",
+        "*://*.hulu.com/*",
+        "*://*.vimeo.com/*",
+        "*://*.dailymotion.com/*",
+        "*://*.ard.de/*",
+        "*://*.3sat.de/*",
+        "*://*.arte.tv/*",
+        "*://*.funimation.com/*",
+        "*://*.hidive.com/*",
+        "*://*.wakanim.tv/*"
+      ],
+      "js": ["content/universal.js"],
+      "css": ["styles/overlay.css"],
+      "run_at": "document_idle",
+      "all_frames": false
+    },
+    {
+      "matches": ["*://*.youtube.com/*"],
+      "js": ["content/youtube-dislike.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    },
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["content/overlay-search.js"],
+      "run_at": "document_end",
+      "all_frames": false
+    },
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["lib/google-drive.js", "content/notes-overlay.js"],
+      "run_at": "document_end",
+      "all_frames": false
+    }
+  ],
+  "chrome_url_overrides": {
+    "newtab": "ui/redirect.html"
+  },
+  "options_ui": {
+    "page": "ui/options.html",
+    "open_in_tab": true
+  },
+  "side_panel": {
+    "default_path": "ui/sidepanel.html"
+  },
+  "action": {
+    "default_title": "__MSG_appName__",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "icons/icon16.png", 
+        "icons/icon32.png", 
+        "icons/icon48.png", 
+        "icons/icon128.png", 
+        "icons/icon.png", 
+        "ui/tailwind.min.css"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

@@ -1,0 +1,437 @@
+{
+  "appName": {
+    "message": "NINA"
+  },
+  "appDesc": {
+    "message": "NINA — Contrôle de la vitesse, boost audio et saut automatique pour les sites de streaming. Inclut le like automatique, SponsorBlock et les dislikes."
+  },
+  "reset": {
+    "message": "Réinitialiser"
+  },
+  "speed": {
+    "message": "Lecture"
+  },
+  "speed_header": {
+    "message": "Vitesse de lecture"
+  },
+  "ff_speed": {
+    "message": "Avance rapide (Maintenir)"
+  },
+  "audio_boost": {
+    "message": "Boost audio"
+  },
+  "audio_volume": {
+    "message": "Audio (Boost)"
+  },
+  "reset_vol_100": {
+    "message": "Réinitialiser à 100%"
+  },
+  "hint_more_options": {
+    "message": "Appuyez ci-dessus pour plus d'options"
+  },
+  "back": {
+    "message": "Retour"
+  },
+  "settings": {
+    "message": "Paramètres"
+  },
+  "settings_title": {
+    "message": "Paramètres de Nina"
+  },
+  "autoskip_title": {
+    "message": "Passer les intros automatiquement"
+  },
+  "autoskip_desc": {
+    "message": "Passe automatiquement les intros, les résumés et les publicités."
+  },
+  "autolike_title": {
+    "message": "Like automatique (YouTube)"
+  },
+  "autolike_active": {
+    "message": "Activé"
+  },
+  "autolike_prefix": {
+    "message": "Liker après"
+  },
+  "autolike_suffix": {
+    "message": "% de la vidéo"
+  },
+  "autolike_suffix_simple": {
+    "message": "de la vidéo"
+  },
+  "autolike_hint": {
+    "message": "Uniquement déclenché sur les pages /watch de YouTube."
+  },
+  "dislikes_title": {
+    "message": "Dislikes de YouTube"
+  },
+  "dislikes_desc": {
+    "message": "Afficher le nombre de dislikes (Return YouTube Dislike)."
+  },
+  "timer_title": {
+    "message": "Minuteur de vitesse"
+  },
+  "timer_desc": {
+    "message": "Afficher le temps restant ajusté à côté de la durée de la vidéo."
+  },
+  "sponsorblock_title": {
+    "message": "Segments SponsorBlock"
+  },
+  "sponsorblock_desc": {
+    "message": "Afficher les marqueurs publicitaires dans la barre de progression."
+  },
+  "thanks_download_title": {
+    "message": "Thanks & Download"
+  },
+  "thanks_download_desc": {
+    "message": "Afficher les boutons Merci et Télécharger sur YouTube."
+  },
+  "pause_on_open_title": {
+    "message": "Pause de la vidéo dans l'overlay"
+  },
+  "pause_on_open_desc": {
+    "message": "Met la vidéo en pause lorsque l'overlay de contrôle du lecteur est ouvert."
+  },
+  "xray_title": {
+    "message": "Masquer Prime Video X-Ray"
+  },
+  "xray_desc": {
+    "message": "Masque l'overlay X-Ray (acteurs, anecdotes, etc.) sur Prime Video."
+  },
+  "prime_controls_title": {
+    "message": "Masquer la barre de contrôle de Prime Video"
+  },
+  "prime_controls_desc": {
+    "message": "Masque la barre inférieure du lecteur (barre de lecture, boutons, etc.)."
+  },
+  "prime_topbar_title": {
+    "message": "Masquer la barre supérieure de Prime Video"
+  },
+  "prime_topbar_desc": {
+    "message": "Masque la barre supérieure (flèche de retour et titre de la vidéo)."
+  },
+  "prime_nextup_title": {
+    "message": "Masquer \"Épisode suivant\" sur Prime Video"
+  },
+  "prime_nextup_desc": {
+    "message": "Masque les popups automatiques pour l'épisode suivant."
+  },
+  "prime_settings_title": {
+    "message": "Masquer le \"menu à 3 points\" sur Prime Video"
+  },
+  "prime_settings_desc": {
+    "message": "Masque le menu d'options (trois points verticaux) en haut à droite."
+  },
+  "controls_title": {
+    "message": "Masquer la barre de contrôle"
+  },
+  "controls_desc_netflix": {
+    "message": "Masque la barre inférieure du lecteur sur Netflix"
+  },
+  "controls_desc_joyn": {
+    "message": "Masque la barre inférieure du lecteur sur Joyn"
+  },
+  "controls_desc_disney": {
+    "message": "Masque la barre inférieure du lecteur sur Disney+"
+  },
+  "topbar_title": {
+    "message": "Masquer la barre supérieure"
+  },
+  "topbar_desc_netflix": {
+    "message": "Masque la barre supérieure sur Netflix"
+  },
+  "topbar_desc_joyn": {
+    "message": "Masque la barre supérieure sur Joyn"
+  },
+  "topbar_desc_disney": {
+    "message": "Masque la barre supérieure sur Disney+"
+  },
+  "nextup_title": {
+    "message": "Masquer \"Épisode suivant\""
+  },
+  "nextup_desc_netflix": {
+    "message": "Masque les popups automatiques pour l'épisode suivant sur Netflix"
+  },
+  "nextup_desc_joyn": {
+    "message": "Masque les popups automatiques pour l'épisode suivant sur Joyn"
+  },
+  "nextup_desc_disney": {
+    "message": "Masque les popups automatiques pour l'épisode suivant sur Disney+"
+  },
+  "coming_soon": {
+    "message": "(bientôt disponible)"
+  },
+  "in_kuerze": {
+    "message": "Bientôt"
+  },
+  "status_title": {
+    "message": "Statut"
+  },
+  "status_badge_checking": {
+    "message": "— vérification …"
+  },
+  "status_recheck_btn": {
+    "message": "Vérifier à nouveau"
+  },
+  "status_functest_btn": {
+    "message": "Test fonctionnel"
+  },
+  "sb_legend_title": {
+    "message": "SponsorBlock"
+  },
+  "sb_legend_subtitle": {
+    "message": "Légende des couleurs"
+  },
+  "sb_sponsor": {
+    "message": "Publicité / Sponsor"
+  },
+  "sb_selfpromo": {
+    "message": "Auto-promotion"
+  },
+  "sb_interaction": {
+    "message": "Rappel d'interaction"
+  },
+  "sb_intro": {
+    "message": "Intro"
+  },
+  "sb_outro": {
+    "message": "Outro"
+  },
+  "sb_preview": {
+    "message": "Aperçu/Résumé"
+  },
+  "sb_music": {
+    "message": "Musique"
+  },
+  "sb_filler": {
+    "message": "Remplissage"
+  },
+  "dev_support": {
+    "message": "Support développeur"
+  },
+  "dev_support_desc": {
+    "message": "Vous avez des questions ou des suggestions pour Nina ? Contactez directement le développeur."
+  },
+  "toast_saved": {
+    "message": "Enregistré"
+  },
+  "toast_reset": {
+    "message": "Valeurs réinitialisées par défaut"
+  },
+  "toast_autoskip_active": {
+    "message": "Saut automatique actif"
+  },
+  "toast_autoskip_inactive": {
+    "message": "Saut automatique inactif"
+  },
+  "toast_dislikes_active": {
+    "message": "Dislikes de YouTube actifs"
+  },
+  "toast_dislikes_inactive": {
+    "message": "Dislikes de YouTube inactifs"
+  },
+  "toast_timer_active": {
+    "message": "Minuteur de lecture actif"
+  },
+  "toast_timer_inactive": {
+    "message": "Minuteur de lecture inactif"
+  },
+  "toast_sb_active": {
+    "message": "SponsorBlock actif"
+  },
+  "toast_sb_inactive": {
+    "message": "SponsorBlock inactif"
+  },
+  "toast_buttons_shown": {
+    "message": "Boutons affichés"
+  },
+  "toast_buttons_hidden": {
+    "message": "Boutons masqués"
+  },
+  "toast_pause_active": {
+    "message": "Pause dans l'overlay active"
+  },
+  "toast_pause_inactive": {
+    "message": "Pause dans l'overlay inactive"
+  },
+  "toast_xray_hidden": {
+    "message": "X-Ray masqué"
+  },
+  "toast_xray_shown": {
+    "message": "X-Ray affiché"
+  },
+  "toast_prime_controls_hidden": {
+    "message": "Barre de contrôle masquée"
+  },
+  "toast_prime_controls_shown": {
+    "message": "Barre de contrôle affichée"
+  },
+  "toast_prime_topbar_hidden": {
+    "message": "Barre supérieure masquée"
+  },
+  "toast_prime_topbar_shown": {
+    "message": "Barre supérieure affichée"
+  },
+  "toast_prime_nextup_hidden": {
+    "message": "Popup épisode suivant masquée"
+  },
+  "toast_prime_nextup_shown": {
+    "message": "Popup épisode suivant affichée"
+  },
+  "toast_prime_settings_hidden": {
+    "message": "Menu d'options masqué"
+  },
+  "toast_prime_settings_shown": {
+    "message": "Menu d'options affiché"
+  },
+  "toast_autolike_active": {
+    "message": "Like automatique de YouTube actif"
+  },
+  "toast_autolike_inactive": {
+    "message": "Like automatique de YouTube inactif"
+  },
+  "player_control_title": {
+    "message": "Contrôle de lecteur NINA"
+  },
+  "reset_all_title": {
+    "message": "Réinitialiser toutes les valeurs"
+  },
+  "player_features": {
+    "message": "Fonctionnalités du lecteur et de YouTube"
+  },
+  "diag_intercept_inactive": {
+    "message": "playbackRate intercept inactif — le navigateur bloque le patch de prototype."
+  },
+  "diag_gain_not_created": {
+    "message": "Boost audio : GainNode non encore créé — s'activera au clic."
+  },
+  "diag_audio_boost": {
+    "message": "Boost audio"
+  },
+  "diag_target": {
+    "message": "Cible"
+  },
+  "diag_ctx_suspended": {
+    "message": "AudioContext suspendu — le navigateur requiert un clic sur la page."
+  },
+  "diag_active": {
+    "message": "actif"
+  },
+  "diag_inactive": {
+    "message": "inactif"
+  },
+  "diag_all_ok": {
+    "message": "✓ Tout est OK"
+  },
+  "diag_mismatch": {
+    "message": "✗ Différence"
+  },
+  "test_starting": {
+    "message": "Démarrage du test fonctionnel …"
+  },
+  "test_cannot_check": {
+    "message": "Impossible de tester cette page (chrome://, Web Store ou fichier local)."
+  },
+  "test_step1_missing": {
+    "message": "1/5 · Scripts de contenu manquants — l'extension ne se charge pas sur cette page. Vérifiez les permissions / rechargez l'extension."
+  },
+  "test_step1_incomplete_1": {
+    "message": "1/5 · Patch incomplet dans"
+  },
+  "test_step1_incomplete_2": {
+    "message": "frames. Le site bloque MAIN-world Script-Injection (CSP)."
+  },
+  "test_step1_ok_1": {
+    "message": "1/5 · Patch chargé dans"
+  },
+  "test_step1_ok_2": {
+    "message": "frame(s) ✓"
+  },
+  "test_step2_no_video": {
+    "message": "2/5 · Aucun élément <video> trouvé. Ouvrez une vidéo et réessayez."
+  },
+  "test_step2_ok_1": {
+    "message": "2/5 ·"
+  },
+  "test_step2_ok_2": {
+    "message": "vidéo(s) détectée(s) ✓"
+  },
+  "test_step3_ok_1": {
+    "message": "3/5 · Override à"
+  },
+  "test_step3_ok_2": {
+    "message": "réussi ✓"
+  },
+  "test_step3_fail_1": {
+    "message": "3/5 · Override a échoué sur"
+  },
+  "test_step3_fail_2": {
+    "message": "vidéo(s) ✗"
+  },
+  "test_cause_paused": {
+    "message": "Vidéo en pause — la vitesse se rétablit lors de la lecture"
+  },
+  "test_cause_loading": {
+    "message": "Vidéo en cours de chargement (readyState"
+  },
+  "test_cause_overwrite": {
+    "message": "Le lecteur écrase activement playbackRate (typique pour Netflix/Disney+/MediaSource)."
+  },
+  "test_step4_skipped": {
+    "message": "4/5 · Test de retour ignoré (cible à 1x)"
+  },
+  "test_step4_ok": {
+    "message": "4/5 · Intercepteur capture les changements externes de playbackRate ✓"
+  },
+  "test_step4_fail_1": {
+    "message": "4/5 · Retour échoué : le lecteur peut changer la vitesse à"
+  },
+  "test_step4_hint": {
+    "message": "→ Le site utilise probablement un wrapper de prototype personnalisé. Réessayez de recharger la page."
+  },
+  "test_step5_no_audio": {
+    "message": "5/5 · Patch audio non trouvé ⚠"
+  },
+  "test_step5_active": {
+    "message": "5/5 · AudioContext actif ✓"
+  },
+  "test_step5_suspended": {
+    "message": "5/5 · AudioContext suspendu ⚠ — cliquez une fois sur la vidéo et réessayez."
+  },
+  "test_step5_not_init": {
+    "message": "5/5 · AudioContext non encore initialisé (créé lors du premier boost > 100%)."
+  },
+  "test_error": {
+    "message": "Erreur de test :"
+  },
+  "version_hint": {
+    "message": "Paramètres de NINA · v3.1"
+  },
+  "language_select": {
+    "message": "Langue"
+  },
+  "lang_system": {
+    "message": "Langue du système"
+  },
+  "settings_group_general": {
+    "message": "Général & Langue"
+  },
+  "settings_group_playback": {
+    "message": "Lecture & Skipper"
+  },
+  "settings_group_youtube": {
+    "message": "Fonctionnalités de YouTube"
+  },
+  "settings_group_platforms": {
+    "message": "Plateformes de streaming"
+  },
+  "settings_other_platforms": {
+    "message": "Autres plateformes"
+  },
+  "settings_group_newtab_shortcuts": {
+    "message": "Nouvel onglet : Raccourcis et recherche"
+  },
+  "settings_group_newtab_appearance": {
+    "message": "Nouvel onglet : Apparence"
+  }
+}

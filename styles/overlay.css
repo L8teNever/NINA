@@ -1,0 +1,902 @@
+/* NINA — content-script overlay styles (toasts, SponsorBlock skip button) */
+
+:root {
+  --usc-surface: #141218;
+  --usc-surface-container: #211f26;
+  --usc-surface-container-high: #2b2930;
+  --usc-primary: #5bdbdc;
+  --usc-on-primary: #003637;
+  --usc-secondary: #ccc2dc;
+  --usc-outline: #938f99;
+  --usc-success: #b4eeb4;
+}
+
+#usc-overlay {
+  all: initial;
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: auto;
+  height: auto;
+  z-index: 2147483647;
+  font-family: 'Google Sans', Roboto, sans-serif;
+  display: block;
+}
+
+#usc-overlay *, #usc-overlay *::before, #usc-overlay *::after {
+  box-sizing: border-box !important;
+}
+
+#usc-overlay button {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+  line-height: 1.2;
+  text-transform: none;
+  cursor: pointer;
+  outline: none;
+  box-shadow: none;
+}
+
+#usc-badge {
+  background-color: rgba(26, 28, 30, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 9999px !important;
+  padding: 6px 14px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  user-select: none !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
+
+#usc-badge:hover {
+  background-color: rgba(37, 39, 41, 0.95) !important;
+  border-color: #80D8DF !important;
+  transform: translateY(-2px) scale(1.02) !important;
+  box-shadow: 0 0 15px rgba(128, 216, 223, 0.25), 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+}
+
+.usc-icon {
+  color: #80D8DF !important;
+  font-size: 18px !important;
+  transition: color 0.3s ease !important;
+}
+
+.usc-val {
+  font-family: 'Google Sans', Roboto, sans-serif !important;
+  font-weight: 700 !important;
+  color: #80D8DF !important;
+  font-size: 13px !important;
+}
+
+.usc-dot {
+  width: 6px !important;
+  height: 6px !important;
+  background: #a3e635 !important;
+  border-radius: 50% !important;
+  box-shadow: 0 0 8px #a3e635 !important;
+}
+
+/* Panel */
+#usc-panel {
+  all: initial;
+  position: absolute;
+  bottom: calc(100% + 12px);
+  right: 0;
+  width: 320px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  opacity: 0;
+  transform: translateY(20px) scale(0.95);
+  visibility: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: auto;
+}
+
+#usc-panel.usc-visible {
+  opacity: 1 !important;
+  transform: translateY(0) scale(1) !important;
+  visibility: visible !important;
+}
+
+.usc-section-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--usc-outline);
+  margin-bottom: 4px;
+}
+
+/* Presets Grid */
+.usc-presets {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+#usc-overlay .usc-preset {
+  background-color: var(--usc-surface-container) !important;
+  border: 1px solid var(--usc-outline) !important;
+  border-radius: 12px !important;
+  color: var(--usc-secondary) !important;
+  padding: 8px 2px !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  text-align: center !important;
+  transition: all 0.2s !important;
+}
+
+#usc-overlay .usc-preset:hover { border-color: var(--usc-primary) !important; }
+#usc-overlay .usc-preset.usc-active {
+  background-color: var(--usc-primary) !important;
+  color: var(--usc-on-primary) !important;
+  border-color: var(--usc-primary) !important;
+}
+
+/* Slider Row */
+.usc-slider-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--usc-outline);
+  margin-bottom: -4px;
+}
+
+.usc-cur { font-weight: 700; color: var(--usc-primary); font-size: 13px; }
+.usc-green { color: var(--usc-success) !important; }
+
+/* Custom Slider - M3 Pill Style */
+.usc-slider {
+  -webkit-appearance: none;
+  background: transparent !important;
+  width: 100%;
+  height: 44px;
+  outline: none;
+  cursor: pointer;
+  margin: 4px 0;
+}
+
+/* Speed Slider Track and Thumb */
+#usc-speed-slider::-webkit-slider-runnable-track {
+  background: linear-gradient(to right, #80D8DF var(--pct, 0%), rgba(255, 255, 255, 0.15) var(--pct, 0%)) !important;
+  border-radius: 28px;
+  height: 28px;
+  transition: background 0.1s ease;
+}
+
+#usc-speed-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  margin-top: -6px; /* center in 28px track */
+  background-color: #80D8DF !important;
+  height: 40px;
+  width: 10px;
+  border-radius: 9999px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  transition: transform 0.1s ease;
+}
+
+#usc-speed-slider:active::-webkit-slider-thumb {
+  transform: scaleY(1.1) scaleX(1.3);
+}
+
+/* Volume Slider Track and Thumb */
+#usc-vol-slider::-webkit-slider-runnable-track {
+  background: linear-gradient(to right, #a3e635 var(--pct, 0%), rgba(255, 255, 255, 0.15) var(--pct, 0%)) !important;
+  border-radius: 28px;
+  height: 28px;
+  transition: background 0.1s ease;
+}
+
+#usc-vol-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  margin-top: -6px;
+  background-color: #a3e635 !important;
+  height: 40px;
+  width: 10px;
+  border-radius: 9999px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  transition: transform 0.1s ease;
+}
+
+#usc-vol-slider:active::-webkit-slider-thumb {
+  transform: scaleY(1.1) scaleX(1.3);
+}
+
+/* Fine Controls */
+.usc-fine {
+  display: flex;
+  gap: 8px;
+}
+
+#usc-overlay .usc-fine-btn {
+  flex: 1;
+  height: 48px;
+  border-radius: 16px;
+  border: none;
+  background-color: var(--usc-surface-container-high) !important;
+  color: var(--usc-primary) !important;
+  font-size: 24px !important;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+#usc-overlay .usc-vol-btn { color: var(--usc-success) !important; }
+#usc-overlay .usc-fine-btn:active { transform: scale(0.95); }
+
+.usc-fine-num {
+  flex: 1.5;
+  background-color: var(--usc-surface-container);
+  border: 1px solid var(--usc-outline);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.usc-fine-num small { font-size: 8px; color: var(--usc-outline); text-transform: uppercase; }
+
+.usc-divider { height: 1px; background: var(--usc-outline); opacity: 0.2; margin: 4px 0; }
+
+.usc-viz-container {
+  width: 100%;
+  height: 32px;
+  background: rgba(180, 238, 180, 0.05);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: -4px;
+}
+#usc-visualizer { width: 100%; height: 100%; }
+
+#usc-overlay .usc-reset-btn {
+  width: 100%;
+  padding: 10px !important;
+  background-color: var(--usc-surface-container-high) !important;
+  border: 1px solid transparent !important;
+  border-radius: 16px !important;
+  color: #f2b8b5 !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  transition: all 0.2s !important;
+}
+#usc-overlay .usc-reset-btn:hover { border-color: #f2b8b5 !important; }
+
+.usc-skip-btn {
+  width: 100%;
+  padding: 12px;
+  background-color: var(--usc-surface-container-high);
+  border: 1px solid var(--usc-outline);
+  border-radius: 16px;
+  color: var(--usc-secondary);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.usc-skip-btn.usc-skip-on {
+  background-color: var(--usc-primary);
+  color: var(--usc-on-primary);
+  border-color: var(--usc-primary);
+}
+
+.usc-toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background-color: var(--usc-surface-container-high);
+  border: 1px solid var(--usc-primary);
+  border-radius: 20px;
+  padding: 8px 16px;
+  color: var(--usc-primary);
+  font-size: 13px;
+  font-weight: 500;
+  z-index: 2147483647;
+  opacity: 0;
+  transition: all 0.3s;
+  pointer-events: none;
+}
+.usc-toast.usc-toast-show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* YouTube Autoplay and Subtitles hiding */
+.ytp-right-controls .ytp-button[data-tooltip-target-id="ytp-autonav-toggle-button"],
+.ytp-right-controls .ytp-button:has(.ytp-autonav-toggle-button-container),
+.ytp-right-controls .ytp-subtitles-button {
+  display: none !important;
+}
+
+/* Hide Thanks, Download, Share, Save buttons in video action bars - all versions */
+#actions [aria-label*="Danke"],
+#actions [aria-label*="Thanks"],
+#actions [aria-label*="Herunterladen"],
+#actions [aria-label*="Download"],
+#actions [aria-label*="thank"],
+#actions [aria-label*="download"],
+#actions [aria-label*="Teilen"],
+#actions [aria-label*="Share"],
+#actions [aria-label*="Speichern"],
+#actions [aria-label*="Save"],
+#top-level-buttons-computed [aria-label*="Danke"],
+#top-level-buttons-computed [aria-label*="Thanks"],
+#top-level-buttons-computed [aria-label*="Herunterladen"],
+#top-level-buttons-computed [aria-label*="Download"],
+#top-level-buttons-computed [aria-label*="thank"],
+#top-level-buttons-computed [aria-label*="download"],
+#top-level-buttons-computed [aria-label*="Teilen"],
+#top-level-buttons-computed [aria-label*="Share"],
+#top-level-buttons-computed [aria-label*="Speichern"],
+#top-level-buttons-computed [aria-label*="Save"],
+ytd-watch-metadata [aria-label*="Danke"],
+ytd-watch-metadata [aria-label*="Thanks"],
+ytd-watch-metadata [aria-label*="Herunterladen"],
+ytd-watch-metadata [aria-label*="Download"],
+ytd-watch-metadata [aria-label*="thank"],
+ytd-watch-metadata [aria-label*="download"],
+ytd-watch-metadata [aria-label*="Teilen"],
+ytd-watch-metadata [aria-label*="Share"],
+ytd-watch-metadata [aria-label*="Speichern"],
+ytd-watch-metadata [aria-label*="Save"] {
+  display: none !important;
+  visibility: hidden !important;
+  width: 0 !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Show when enabled (Thanks & Download only) */
+.nina-show-thanks-download #actions [aria-label*="Danke"],
+.nina-show-thanks-download #actions [aria-label*="Thanks"],
+.nina-show-thanks-download #actions [aria-label*="Herunterladen"],
+.nina-show-thanks-download #actions [aria-label*="Download"],
+.nina-show-thanks-download #actions [aria-label*="thank"],
+.nina-show-thanks-download #actions [aria-label*="download"],
+.nina-show-thanks-download #top-level-buttons-computed [aria-label*="Danke"],
+.nina-show-thanks-download #top-level-buttons-computed [aria-label*="Thanks"],
+.nina-show-thanks-download #top-level-buttons-computed [aria-label*="Herunterladen"],
+.nina-show-thanks-download #top-level-buttons-computed [aria-label*="Download"],
+.nina-show-thanks-download #top-level-buttons-computed [aria-label*="thank"],
+.nina-show-thanks-download #top-level-buttons-computed [aria-label*="download"],
+.nina-show-thanks-download ytd-watch-metadata [aria-label*="Danke"],
+.nina-show-thanks-download ytd-watch-metadata [aria-label*="Thanks"],
+.nina-show-thanks-download ytd-watch-metadata [aria-label*="Herunterladen"],
+.nina-show-thanks-download ytd-watch-metadata [aria-label*="Download"],
+.nina-show-thanks-download ytd-watch-metadata [aria-label*="thank"],
+.nina-show-thanks-download ytd-watch-metadata [aria-label*="download"] {
+  display: block !important;
+  visibility: visible !important;
+  width: auto !important;
+  height: auto !important;
+  pointer-events: auto !important;
+}
+
+/* YouTube custom speed controls in player bar */
+.ytp-speed-controls {
+  display: inline-flex !important;
+  align-items: center !important;
+  height: 100% !important;
+  vertical-align: top !important;
+  margin-right: 8px !important;
+  user-select: none !important;
+  gap: 4px !important;
+}
+
+/* Dynamic button spacing for balanced layout */
+.ytd-menu-renderer {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0px !important;
+}
+
+ytd-menu-renderer {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0px !important;
+}
+
+.ytp-speed-btn {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  color: #fff !important;
+  opacity: 0.8 !important;
+  cursor: pointer !important;
+  font-family: inherit !important;
+  font-size: 16px !important;
+  font-weight: bold !important;
+  width: 50px !important;
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: opacity 0.1s cubic-bezier(0.4, 0, 0.2, 1), transform 0.1s ease !important;
+}
+
+.ytp-speed-btn:hover {
+  opacity: 1 !important;
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.5) !important;
+}
+
+.ytp-speed-btn:active {
+  transform: scale(0.85) !important;
+}
+
+.ytp-speed-display {
+  color: #fff !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  opacity: 0.9 !important;
+  min-width: 36px !important;
+  text-align: center !important;
+  font-family: 'Roboto', 'Segoe UI', Arial, sans-serif !important;
+  margin: 0 2px !important;
+}
+
+/* YouTube Volume Panel expansion for boost slider */
+.ytp-volume-area {
+  max-width: none !important;
+}
+
+.ytp-volume-panel {
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.ytp-volume-area:hover .ytp-volume-panel,
+.ytp-volume-panel.ytp-volume-panel-active {
+  width: 104px !important;
+}
+
+.ytp-volume-slider {
+  width: 52px !important;
+  overflow: visible !important;
+}
+
+.ytp-volume-slider-handle::before {
+  left: -120px !important;
+  width: 120px !important;
+}
+
+/* Custom Volume Boost Slider (Aqua continuation) */
+.usc-volume-boost-slider {
+  position: absolute !important;
+  left: 56px !important;
+  top: 0 !important;
+  width: 48px !important;
+  height: 100% !important;
+  cursor: pointer !important;
+  z-index: 10 !important;
+}
+
+.usc-volume-boost-track-background {
+  position: absolute !important;
+  left: 0 !important;
+  right: 0 !important;
+  top: 50% !important;
+  margin-top: -1px !important;
+  height: 2px !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-radius: 1px !important;
+}
+
+/* Like/Dislike group spacing */
+[aria-label*="mag ich"]::after,
+[aria-label*="Like"]::after {
+  content: "" !important;
+  width: 8px !important;
+  display: inline-block !important;
+}
+
+/* "Als gesehen markieren" spacing */
+[aria-label*="Als gesehen markieren"] {
+  margin-right: 8px !important;
+}
+
+/* Consistent button margins */
+.yt-spec-button-shape-next,
+yt-button-shape {
+  margin: 0 4px !important;
+}
+
+.usc-volume-boost-track-active {
+  position: absolute !important;
+  left: 0 !important;
+  width: 0% !important;
+  top: 50% !important;
+  margin-top: -1px !important;
+  height: 2px !important;
+  background: #00ffff !important;
+  border-radius: 1px !important;
+}
+
+/* Fullscreen blur backdrop when menu is open */
+#usc-backdrop {
+  all: initial;
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100% !important;
+  height: 100% !important;
+  z-index: 2147483640 !important;
+  background-color: rgba(0, 0, 0, 0.15) !important;
+  backdrop-filter: blur(1.5px) !important;
+  -webkit-backdrop-filter: blur(1.5px) !important;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  pointer-events: auto;
+}
+
+#usc-backdrop.usc-visible {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Site-specific positioning for the floating player control overlay */
+#usc-overlay.usc-youtube {
+  bottom: 72px !important;
+  right: 24px !important;
+}
+
+#usc-overlay.usc-netflix {
+  display: none !important;
+}
+
+/* Re-show only when embedded inside the Netflix controls bar */
+[data-uia="controls-standard"] #usc-overlay.usc-netflix {
+  display: inline-flex !important;
+}
+
+#usc-overlay.usc-prime {
+  bottom: 96px !important;
+  right: 32px !important;
+}
+
+#usc-overlay.usc-disney {
+  bottom: 108px !important;
+  right: 48px !important;
+}
+
+#usc-overlay.usc-joyn {
+  bottom: 96px !important;
+  right: 32px !important;
+}
+
+#usc-overlay.usc-crunchyroll {
+  bottom: 96px !important;
+  right: 32px !important;
+}
+
+/* Card container structures for the overlay panel */
+.usc-card {
+  background-color: #1A1C1E !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-radius: 28px !important;
+  padding: 16px 20px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+}
+
+.usc-card-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.usc-card-title-group {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.usc-card-icon {
+  display: block !important;
+  flex-shrink: 0 !important;
+}
+
+.usc-card-title {
+  font-family: 'Google Sans', Roboto, sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: #FFFFFF !important;
+  line-height: 1.2 !important;
+}
+
+.usc-card-badge {
+  font-family: 'Google Sans', Roboto, sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  padding: 6px 14px !important;
+  border-radius: 9999px !important;
+  line-height: 1.2 !important;
+}
+
+.usc-speed-badge {
+  background-color: rgba(128, 216, 223, 0.15) !important;
+  color: #80D8DF !important;
+}
+
+.usc-vol-badge {
+  background-color: rgba(163, 230, 53, 0.15) !important;
+  color: #a3e635 !important;
+}
+
+.usc-card-body {
+  width: 100% !important;
+}
+
+/* Hide Amazon Prime Video X-Ray */
+.nina-hide-xray .webPlayerXRayElement,
+.nina-hide-xray .atvwebplayersdk-xray-container,
+.nina-hide-xray .wkp-xray-quickview,
+.nina-hide-xray .xray-quick-view,
+.nina-hide-xray .xray-hud,
+.nina-hide-xray .xray-panel,
+.nina-hide-xray [class*="atvwebplayersdk-xray"],
+.nina-hide-xray [class*="webPlayerXRay"],
+.nina-hide-xray [class*="wkp-xray"],
+.nina-hide-xray [class*="atvwebplayersdk-player-container"] [id*="xray"] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+}
+
+/* Hide Amazon Prime Video Player controls / bottom bar */
+.nina-hide-prime-controls .atvwebplayersdk-bottom-panel,
+.nina-hide-prime-controls [class*="atvwebplayersdk-"][class*="bottom-panel" i],
+.nina-hide-prime-controls [class*="atvwebplayersdk-"][class*="bottom-selectors" i],
+.nina-hide-prime-controls .atvwebplayersdk-playpause-button,
+.nina-hide-prime-controls .atvwebplayersdk-volume-control,
+.nina-hide-prime-controls .atvwebplayersdk-progress-container,
+.nina-hide-prime-controls [class*="atvwebplayersdk-"][class*="control-container" i] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+}
+
+/* Hide Amazon Prime Video Topbar / title */
+.nina-hide-prime-topbar .atvwebplayersdk-top-panel,
+.nina-hide-prime-topbar .atvwebplayersdk-back-container,
+.nina-hide-prime-topbar [class*="atvwebplayersdk-"][class*="top-panel" i],
+.nina-hide-prime-topbar [class*="atvwebplayersdk-"][class*="top-selectors" i],
+.nina-hide-prime-topbar [class*="atvwebplayersdk-"][class*="back-button" i],
+.nina-hide-prime-topbar [class*="atvwebplayersdk-"][class*="title-container" i] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+}
+
+/* Hide Amazon Prime Video "Next Up" episode card */
+.nina-hide-prime-nextup .atvwebplayersdk-nextupcard-wrapper,
+.nina-hide-prime-nextup [class*="atvwebplayersdk-"][class*="nextupcard" i],
+.nina-hide-prime-nextup [class*="atvwebplayersdk-"][class*="next-up" i],
+.nina-hide-prime-nextup [class*="atvwebplayersdk-"][class*="nextup" i],
+.nina-hide-prime-nextup .atvwebplayersdk-next-up {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+}
+
+/* Hide Amazon Prime Video Options / Settings Menu (three vertical dots) */
+.nina-hide-prime-settings .atvwebplayersdk-options-menu-button,
+.nina-hide-prime-settings [class*="atvwebplayersdk-"][class*="options-menu" i],
+.nina-hide-prime-settings [class*="atvwebplayersdk-"][class*="overflow-menu" i],
+.nina-hide-prime-settings [class*="atvwebplayersdk-"][class*="settings-button" i],
+.nina-hide-prime-settings [class*="atvwebplayersdk-"][class*="more-options" i],
+.nina-hide-prime-settings [class*="atvwebplayersdk-"][aria-label*="optionen" i],
+.nina-hide-prime-settings [class*="atvwebplayersdk-"][aria-label*="options" i],
+.nina-hide-prime-settings [class*="atvwebplayersdk-"][aria-label*="einstellungen" i],
+.nina-hide-prime-settings [class*="atvwebplayersdk-"][aria-label*="settings" i] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+}
+
+/* NINA Netflix Control Bar Integration */
+[data-uia="controls-standard"] #usc-overlay {
+  position: relative !important;
+  bottom: auto !important;
+  right: auto !important;
+  z-index: 10 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 10px !important;
+  height: 100% !important;
+}
+
+[data-uia="controls-standard"] #usc-badge {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 8px !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  height: 100% !important;
+  align-self: center !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  opacity: 0.75 !important;
+  transition: opacity 0.15s ease !important;
+}
+
+[data-uia="controls-standard"] #usc-badge:hover {
+  background-color: transparent !important;
+  border-radius: 0 !important;
+  transform: none !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+}
+
+/* Hide speed text and dot — only show SVG icon on Netflix */
+[data-uia="controls-standard"] #usc-badge-val,
+[data-uia="controls-standard"] #usc-badge .usc-dot {
+  display: none !important;
+}
+
+/* Style SVG icon to match Netflix's native white icon buttons */
+[data-uia="controls-standard"] #usc-badge .usc-icon {
+  width: 24px !important;
+  height: 24px !important;
+  stroke: #ffffff !important;
+  fill: none !important;
+}
+
+/* Extension icon image shown on Netflix instead of inline SVG */
+[data-uia="controls-standard"] #usc-badge .usc-ext-icon {
+  width: 24px !important;
+  height: 24px !important;
+  object-fit: contain !important;
+  filter: brightness(0) invert(1) !important;
+  pointer-events: none !important;
+}
+
+[data-uia="controls-standard"] #usc-panel {
+  bottom: 90px !important;
+  left: 16px !important;
+  right: auto !important;
+  z-index: 2147483647 !important;
+  position: fixed !important;
+}
+
+#usc-backdrop.usc-netflix {
+  background-color: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  pointer-events: none !important;
+  z-index: 8 !important;
+}
+
+#usc-backdrop.usc-netflix.usc-visible {
+  background-color: rgba(0, 0, 0, 0.25) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+}
+
+
+/* NINA Crunchyroll Control Bar Integration */
+#usc-overlay.usc-crunchyroll {
+  display: none !important;
+}
+
+[data-testid="bottom-controls-autohide"] #usc-overlay.usc-crunchyroll,
+[data-testid="bottom-controls-autohide"] * #usc-overlay.usc-crunchyroll {
+  display: inline-flex !important;
+  position: relative !important;
+  bottom: auto !important;
+  right: auto !important;
+  z-index: 10 !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 6px !important;
+  height: 40px !important;
+}
+
+[data-testid="bottom-controls-autohide"] #usc-badge,
+[data-testid="bottom-controls-autohide"] * #usc-badge {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 6px !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  height: 40px !important;
+  width: 40px !important;
+  align-self: center !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  opacity: 0.75 !important;
+  transition: opacity 0.15s ease !important;
+  border-radius: 4px !important;
+}
+
+[data-testid="bottom-controls-autohide"] #usc-badge:hover,
+[data-testid="bottom-controls-autohide"] * #usc-badge:hover {
+  background-color: rgba(255,255,255,0.1) !important;
+  border-radius: 4px !important;
+  transform: none !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+}
+
+[data-testid="bottom-controls-autohide"] #usc-badge-val,
+[data-testid="bottom-controls-autohide"] * #usc-badge-val,
+[data-testid="bottom-controls-autohide"] #usc-badge .usc-dot,
+[data-testid="bottom-controls-autohide"] * #usc-badge .usc-dot {
+  display: none !important;
+}
+
+[data-testid="bottom-controls-autohide"] #usc-badge .usc-icon,
+[data-testid="bottom-controls-autohide"] * #usc-badge .usc-icon {
+  width: 22px !important;
+  height: 22px !important;
+  stroke: #ffffff !important;
+  fill: none !important;
+}
+
+[data-testid="bottom-controls-autohide"] #usc-badge .usc-ext-icon,
+[data-testid="bottom-controls-autohide"] * #usc-badge .usc-ext-icon {
+  width: 22px !important;
+  height: 22px !important;
+  object-fit: contain !important;
+  filter: brightness(0) invert(1) !important;
+  pointer-events: none !important;
+}
+
+[data-testid="bottom-controls-autohide"] #usc-panel {
+  bottom: 80px !important;
+  left: 16px !important;
+  right: auto !important;
+  z-index: 2147483647 !important;
+  position: fixed !important;
+}
+
+#usc-backdrop.usc-crunchyroll {
+  background-color: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  pointer-events: none !important;
+  z-index: 8 !important;
+}
+
+#usc-backdrop.usc-crunchyroll.usc-visible {
+  background-color: rgba(0, 0, 0, 0.25) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+}

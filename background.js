@@ -1,0 +1,299 @@
+// background.js — Service worker
+// Opens the side panel on toolbar click and re-injects speed/frame scripts
+// after SPA navigations on streaming sites.
+
+const STREAMING_HOSTS = [
+  'joyn.de', 'youtube.com', 'youtu.be', 'netflix.com',
+  'primevideo.com', 'amazon.de', 'amazon.com', 'amazon.co.uk',
+  'disneyplus.com', 'crunchyroll.com', 'dazn.com', 'twitch.tv',
+  'ardmediathek.de', 'zdf.de', 'zdfmediathek.de', 'rtl.de',
+  'rtlplus.com', 'tvnow.de', 'mubi.com', 'tv.apple.com',
+  'paramount.com', 'paramountplus.com', 'peacocktv.com',
+  'hbo.com', 'max.com', 'hulu.com', 'vimeo.com', 'dailymotion.com',
+  'ard.de', '3sat.de', 'arte.tv', 'funimation.com', 'hidive.com',
+  'wakanim.tv',
+];
+
+function isStreamingUrl(url) {
+  if (!url || !/^https?:/i.test(url)) return false;
+  try {
+    const host = new URL(url).hostname;
+    return STREAMING_HOSTS.some((h) => host === h || host.endsWith('.' + h));
+  } catch (_) {
+    return false;
+  }
+}
+
+chrome.action.onClicked.addListener((tab) => {
+  if (tab && tab.id != null) chrome.sidePanel.open({ tabId: tab.id });
+});
+
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  if (changeInfo.status !== 'complete') return;
+  if (!tab || !tab.url || !isStreamingUrl(tab.url)) return;
+
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId, allFrames: true },
+      world: 'MAIN',
+      files: ['content/speed-patch.js', 'content/audio-patch.js'],
+    });
+  } catch (_) {}
+
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId, allFrames: true },
+      files: ['content/frame-speed.js'],
+    });
+  } catch (_) {}
+
+  // Process speed reset / persistence logic
+  const url = tab.url;
+  const platform = getPlatformFromUrl(url);
+  if (!platform) return;
+
+  const videoId = extractIdFromUrl(url, platform);
+  const rawTitle = tab.title || '';
+  const cleanedTitle = cleanTitle(rawTitle, platform);
+  const showName = getShowName(cleanedTitle);
+
+  chrome.storage.local.get(['tab_speeds'], (res) => {
+    const tabSpeeds = res.tab_speeds || {};
+    const current = tabSpeeds[tabId];
+
+    if (current) {
+      let speed = current.speed;
+      let shouldUpdate = false;
+
+      if (platform === 'youtube') {
+        if (videoId && current.videoId !== videoId) {
+          speed = 1.0;
+          shouldUpdate = true;
+        }
+      } else {
+        if (showName && current.showName && current.showName !== showName) {
+          speed = 1.0;
+          shouldUpdate = true;
+        }
+      }
+
+      tabSpeeds[tabId] = {
+        speed: speed,
+        volume: current.volume !== undefined ? current.volume : 1.0,
+        showName: showName || current.showName || '',
+        videoId: videoId || current.videoId || '',
+        platform: platform,
+        url: url
+      };
+
+      chrome.storage.local.set({ tab_speeds: tabSpeeds });
+    } else {
+      tabSpeeds[tabId] = {
+        speed: 1.0,
+        volume: 1.0,
+        showName: showName || '',
+        videoId: videoId || '',
+        platform: platform,
+        url: url
+      };
+      chrome.storage.local.set({ tab_speeds: tabSpeeds });
+    }
+  });
+});
+
+chrome.tabs.onRemoved.addListener((tabId) => {
+  chrome.storage.local.get(['tab_speeds'], (res) => {
+    const tabSpeeds = res.tab_speeds || {};
+    if (tabSpeeds[tabId]) {
+      delete tabSpeeds[tabId];
+      chrome.storage.local.set({ tab_speeds: tabSpeeds });
+    }
+  });
+});
+
+// Broadcast speed, volume, and fast-forward updates to all frames in all active streaming tabs
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== 'local') return;
+
+  const speedChange = changes.joyn_speed;
+  const volumeChange = changes.joyn_volume;
+  const ffSpeedChange = changes.joyn_ff_speed;
+
+  if (speedChange || volumeChange || ffSpeedChange) {
+    chrome.tabs.query({}, (tabs) => {
+      const msg = {
+        type: 'USC_SPEED_UPDATE',
+        speed: speedChange ? speedChange.newValue : undefined,
+        volume: volumeChange ? volumeChange.newValue : undefined,
+        ffSpeed: ffSpeedChange ? ffSpeedChange.newValue : undefined,
+      };
+
+      for (const tab of tabs) {
+        if (isStreamingUrl(tab.url)) {
+          chrome.tabs.sendMessage(tab.id, msg).catch(() => {
+            // Ignore error for tabs where the content script isn't loaded
+          });
+        }
+      }
+    });
+  }
+});
+
+
+
+function normalizeTitleForMatching(title) {
+  if (!title) return '';
+  let t = title.toLowerCase();
+  // Insert space between letters and numbers (e.g. S01E01 -> S 01 E 01)
+  t = t.replace(/([a-z])(\d)/g, '$1 $2').replace(/(\d)([a-z])/g, '$1 $2');
+  // Remove quotes
+  t = t.replace(/['"’“”„]/g, '');
+  // Normalize season/episode keywords with numbers
+  t = t.replace(/\b(staffel|season|st|s)\.?\s*0*(\d+)\b/g, 'season $2');
+  t = t.replace(/\b(folge|episode|ep|flg|e)\.?\s*0*(\d+)\b/g, 'episode $2');
+  // Replace non-alphanumeric chars with space
+  t = t.replace(/[\s\-_|:()[\].,;!?]+/g, ' ');
+  return t.trim();
+}
+
+function cleanShowName(name) {
+  if (!name) return '';
+  return name
+    .replace(/\b(dub|sub|sync|synchro|synchronisation|synchronisiert|german|deutsch|eng|english|omav|original)\b/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  // Google Drive Auth – chrome.identity nur im Background verfügbar
+  if (message.type === 'NINA_GET_TOKEN') {
+    chrome.identity.getAuthToken({ interactive: message.interactive || false }, (token) => {
+      if (chrome.runtime.lastError) {
+        sendResponse({ error: chrome.runtime.lastError.message });
+      } else {
+        sendResponse({ token });
+      }
+    });
+    return true; // async
+  }
+
+  if (message.type === 'NINA_REVOKE_TOKEN') {
+    if (message.token) {
+      // POST statt GET damit Token nicht in URLs/Logs landet
+      fetch('https://oauth2.googleapis.com/revoke', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `token=${encodeURIComponent(message.token)}`
+      }).catch(() => {});
+      chrome.identity.removeCachedAuthToken({ token: message.token }, () => sendResponse({ ok: true }));
+    } else {
+      sendResponse({ ok: true });
+    }
+    return true;
+  }
+
+  if (message.type === 'GET_TAB_SETTINGS') {
+    const tabId = sender.tab ? sender.tab.id : null;
+    if (tabId) {
+      chrome.storage.local.get(['tab_speeds', 'joyn_ff_speed'], (res) => {
+        const tabSpeeds = res.tab_speeds || {};
+        const settings = tabSpeeds[tabId] || { speed: 1.0, volume: 1.0 };
+        const ffSpeed = parseFloat(res.joyn_ff_speed) || 2.0;
+        sendResponse({
+          tabId: tabId,
+          speed: settings.speed,
+          volume: settings.volume,
+          ffSpeed: ffSpeed
+        });
+      });
+      return true; // Keep channel open for async response
+    } else {
+      sendResponse(null);
+    }
+    return;
+  }
+
+});
+
+
+function getPlatformFromUrl(url) {
+  if (!url) return null;
+  try {
+    const hostname = new URL(url).hostname.toLowerCase();
+    if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) {
+      return 'youtube';
+    } else if (hostname.includes('netflix.com')) {
+      return 'netflix';
+    } else if (hostname.includes('crunchyroll.com')) {
+      return 'crunchyroll';
+    } else if (hostname.includes('disneyplus.com')) {
+      return 'disneyplus';
+    } else if (hostname.includes('primevideo.com') || hostname.includes('amazon.')) {
+      if (hostname.includes('primevideo.com') || 
+          new URL(url).pathname.includes('/video/') || 
+          new URL(url).pathname.includes('/dp/') || 
+          new URL(url).pathname.includes('/gp/product/')) {
+        return 'primevideo';
+      }
+    }
+  } catch (_) {}
+  return null;
+}
+
+function extractIdFromUrl(url, platform) {
+  if (!url || !platform) return null;
+  try {
+    const urlObj = new URL(url);
+    if (platform === 'youtube') {
+      if (urlObj.pathname.startsWith('/shorts/')) {
+        return urlObj.pathname.split('/shorts/')[1].split(/[?#]/)[0];
+      }
+      return urlObj.searchParams.get('v');
+    } else if (platform === 'netflix') {
+      const match = urlObj.pathname.match(/\/watch\/(\d+)/);
+      return match ? match[1] : null;
+    } else if (platform === 'crunchyroll') {
+      const match = urlObj.pathname.match(/\/watch\/([a-z0-9]+)/i);
+      return match ? match[1] : null;
+    } else if (platform === 'disneyplus') {
+      const match = urlObj.pathname.match(/\/(video|play)\/([a-z0-9-]+)/i);
+      return match ? match[2] : null;
+    } else if (platform === 'primevideo') {
+      const asin = urlObj.searchParams.get('asin') || urlObj.searchParams.get('itemId') || urlObj.searchParams.get('gti');
+      if (asin) return asin;
+      const match = urlObj.pathname.match(/\/(?:detail|play|watch|dp|gp\/video\/detail|gp\/video\/play|video\/detail|video\/play|gp\/product)\/(?:[a-zA-Z0-9_=-]+\/)*(amzn1\.dv\.gti\.[a-fA-F0-9-]+|[a-zA-Z0-9]{10,30})/);
+      return match ? match[1] : null;
+    }
+  } catch (_) {}
+  return null;
+}
+
+function cleanTitle(title, platform) {
+  if (!title) return '';
+  let t = title;
+  if (platform === 'youtube') {
+    t = t.replace(/\s*-\s*YouTube$/i, '');
+  } else if (platform === 'netflix') {
+    t = t.replace(/^Netflix\s*-\s*/i, '').replace(/\s*\|\s*Netflix$/i, '');
+  } else if (platform === 'crunchyroll') {
+    t = t.replace(/\s*-\s*Watch on Crunchyroll$/i, '');
+  } else if (platform === 'disneyplus') {
+    t = t.replace(/^Watch\s+/i, '').replace(/\s*\|\s*Disney\+$/i, '');
+  } else if (platform === 'primevideo') {
+    t = t.replace(/^(?:Amazon\.[a-z.]{2,6}:\s*|Prime Video:\s*)/i, '');
+    t = t.replace(/\s*[-|]\s*Prime Video$/i, '');
+    t = t.replace(/\s+(?:ansehen|watch|online\s+leihen|kaufen)\s*$/i, '');
+  }
+  return t.trim();
+}
+
+function getShowName(cleanTitle) {
+  if (!cleanTitle) return '';
+  const parts = cleanTitle.split(/[:\-|–]/);
+  if (parts.length > 0) {
+    return cleanShowName(normalizeTitleForMatching(parts[0]));
+  }
+  return '';
+}
+
+
