@@ -6,6 +6,7 @@
     window.__NINA_NOTES_LOADED__ = true;
 
     const STORAGE_KEY = 'nina_notes';
+    const isStandalone = typeof window !== 'undefined' && window.location.protocol === 'chrome-extension:' && window.location.pathname.endsWith('notes.html');
     let notes = [];
     let activeNoteId = null;
     let notesRootContainer = null;
@@ -50,7 +51,7 @@
 
         notesRootContainer = document.createElement('div');
         notesRootContainer.id = 'nina-notes-overlay-root';
-        notesRootContainer.style.cssText = 'all:initial;position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:2147483640;pointer-events:none;';
+        notesRootContainer.style.cssText = 'all:initial;position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:2147483640;' + (isStandalone ? 'pointer-events:auto;' : 'pointer-events:none;');
         document.body.appendChild(notesRootContainer);
 
         notesShadow = notesRootContainer.attachShadow({ mode: 'open' });
@@ -64,62 +65,653 @@
         // Styles
         const style = document.createElement('style');
         style.textContent = `
+            :host {
+                --m3-background-dark: #111214;
+                --m3-surface-dark: #1A1C1E;
+                --m3-surfaceVariant-dark: #2D3133;
+                --m3-primary-dark: #80D8DF;
+                --m3-primaryContainer-dark: #004F54;
+                --m3-onPrimaryContainer-dark: #CCE8EA;
+                --m3-outline-dark: #8A9296;
+            }
+
             #notes-backdrop {
                 position: fixed; inset: 0; z-index: 2147483640;
                 display: flex; align-items: center; justify-content: center;
-                background-color: rgba(11,12,14,0.92);
+                background-color: rgba(17, 18, 20, 0.85);
                 backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
                 opacity: 0; pointer-events: none; visibility: hidden;
-                transition: opacity 0.3s cubic-bezier(0.16,1,0.3,1), visibility 0.3s;
+                transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.35s;
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, 'Helvetica Neue', Arial, sans-serif;
             }
             #notes-backdrop.active {
                 opacity: 1 !important; pointer-events: auto !important; visibility: visible !important;
             }
             .material-glow {
-                background: radial-gradient(circle at 50% 50%, rgba(6,182,212,0.1) 0%, rgba(8,145,178,0.02) 45%, rgba(11,12,14,0) 75%) !important;
+                background: radial-gradient(circle at 50% 50%, rgba(128, 216, 223, 0.1) 0%, rgba(8, 145, 178, 0.02) 45%, rgba(11, 12, 14, 0) 75%) !important;
             }
             .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
             .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255,255,255,0.01); border-radius: 8px; }
-            .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(6,182,212,0.15); border-radius: 8px; }
-            .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #06b6d4; }
+            .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(128, 216, 223, 0.15); border-radius: 8px; }
+            .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--m3-primary-dark); }
+
+            .dashboard-container {
+                position: relative;
+                z-index: 1;
+                width: 100%;
+                max-width: 1100px;
+                padding: 0 1rem;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+            .close-btn-wrapper {
+                width: 100%;
+                display: flex;
+                justify-content: flex-end;
+                margin-bottom: 0.75rem;
+                gap: 8px;
+            }
+
+            #notes-dashboard {
+                width: 100%;
+                height: 82vh;
+                min-height: 500px;
+                max-height: 850px;
+                background: rgba(26, 28, 30, 0.9);
+                border: 1px solid var(--m3-surfaceVariant-dark);
+                border-radius: 28px;
+                box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+                display: flex;
+                overflow: hidden;
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+            }
+
+            #notes-list-panel {
+                width: 30%;
+                border-right: 1px solid var(--m3-surfaceVariant-dark);
+                display: flex;
+                flex-direction: column;
+                padding: 24px;
+                min-width: 240px;
+                max-width: 320px;
+                background: rgba(17, 18, 20, 0.4);
+            }
+
+            .search-bar-row {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                margin-bottom: 20px;
+                flex-shrink: 0;
+            }
+            .search-input-wrapper {
+                position: relative;
+                flex: 1;
+            }
+            .search-icon {
+                position: absolute;
+                left: 14px;
+                top: 50%;
+                transform: translateY(-50%);
+                width: 16px;
+                height: 16px;
+                color: var(--m3-outline-dark);
+            }
+
+            #drive-status-bar {
+                display: none;
+                margin-bottom: 16px;
+                flex-shrink: 0;
+            }
+
+            #notes-list-container {
+                flex: 1;
+                overflow-y: auto;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                padding-right: 4px;
+            }
+
+            #notes-editor-panel {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                padding: 28px;
+                background: transparent;
+                min-width: 0;
+            }
+
             .note-card {
-                background-color: rgba(11,12,14,0.25);
-                border: 1px solid rgba(255,255,255,0.03);
-                transition: all 0.2s cubic-bezier(0.16,1,0.3,1);
-                cursor: pointer; border-radius: 12px; padding: 14px;
+                background-color: rgba(45, 49, 51, 0.2);
+                border: 1px solid rgba(255, 255, 255, 0.02);
+                transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+                cursor: pointer;
+                border-radius: 16px;
+                padding: 16px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             }
             .note-card:hover {
-                border-color: rgba(6,182,212,0.2);
-                background-color: rgba(6,182,212,0.02);
-                transform: translateY(-1px);
+                border-color: var(--m3-surfaceVariant-dark);
+                background-color: rgba(45, 49, 51, 0.45);
+                transform: translateY(-2px);
+                box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
             }
             .note-card.active {
-                border-color: rgba(6,182,212,0.35) !important;
-                background-color: rgba(6,182,212,0.06) !important;
-                box-shadow: inset 0 0 12px rgba(6,182,212,0.05);
+                border-color: var(--m3-primary-dark) !important;
+                background-color: var(--m3-primaryContainer-dark) !important;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2), inset 0 0 8px rgba(128, 216, 223, 0.05);
             }
+
+            .note-card-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                margin-bottom: 4px;
+            }
+
+            .note-card-title {
+                font-weight: 700;
+                font-size: 0.8rem;
+                color: #f1f5f9;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                padding-right: 8px;
+            }
+            .note-card.active .note-card-title {
+                color: var(--m3-onPrimaryContainer-dark);
+            }
+            .note-card-date {
+                font-size: 0.6rem;
+                color: var(--m3-outline-dark);
+                flex-shrink: 0;
+            }
+            .note-card.active .note-card-date {
+                color: var(--m3-onPrimaryContainer-dark);
+                opacity: 0.7;
+            }
+            .note-card-desc {
+                font-size: 0.7rem;
+                color: #94a3b8;
+                overflow: hidden;
+                display: -webkit-box;
+                -webkit-line-clamp: 1;
+                -webkit-box-orient: vertical;
+                line-height: 1.5;
+                margin: 0;
+            }
+            .note-card.active .note-card-desc {
+                color: var(--m3-onPrimaryContainer-dark);
+                opacity: 0.85;
+            }
+
+            #note-search {
+                width: 100%;
+                background: var(--m3-background-dark);
+                border: 1px solid var(--m3-surfaceVariant-dark);
+                color: #fff;
+                border-radius: 9999px;
+                padding: 10px 14px 10px 38px;
+                font-size: 0.8rem;
+                outline: none;
+                font-family: inherit;
+                transition: all 0.2s ease;
+            }
+            #note-search:focus {
+                border-color: var(--m3-primary-dark);
+                box-shadow: 0 0 12px rgba(128, 216, 223, 0.15);
+            }
+
+            #create-note-btn {
+                width: 40px;
+                height: 40px;
+                padding: 0;
+                flex-shrink: 0;
+                background: var(--m3-primaryContainer-dark);
+                border: 1px solid var(--m3-surfaceVariant-dark);
+                color: var(--m3-primary-dark);
+                border-radius: 9999px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+            }
+            #create-note-btn:hover {
+                background: var(--m3-primary-dark);
+                color: var(--m3-background-dark);
+                transform: scale(1.05);
+            }
+            #create-note-btn:active {
+                transform: scale(0.95);
+            }
+
+            #drive-login-btn {
+                width: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                padding: 10px 14px;
+                background: rgba(128, 216, 223, 0.05);
+                border: 1px solid var(--m3-surfaceVariant-dark);
+                border-radius: 12px;
+                color: var(--m3-primary-dark);
+                font-size: 0.75rem;
+                font-weight: 600;
+                font-family: inherit;
+                transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+            }
+            #drive-login-btn:hover {
+                background: rgba(128, 216, 223, 0.12);
+                border-color: var(--m3-primary-dark);
+            }
+            #drive-login-btn.connected {
+                background: var(--m3-primaryContainer-dark);
+                border-color: var(--m3-primary-dark);
+                color: var(--m3-onPrimaryContainer-dark);
+            }
+
+            #editor-placeholder {
+                display: flex;
+                flex-direction: column;
+                flex: 1;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+                padding: 24px;
+            }
+            .placeholder-icon-wrap {
+                width: 64px;
+                height: 64px;
+                border-radius: 16px;
+                background: rgba(128, 216, 223, 0.05);
+                border: 1px solid var(--m3-surfaceVariant-dark);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-bottom: 16px;
+                color: var(--m3-primary-dark);
+                opacity: 0.7;
+            }
+
+            #editor-workspace {
+                display: none;
+                flex-direction: column;
+                flex: 1;
+                min-height: 0;
+            }
+
+            .editor-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 20px;
+                padding-bottom: 14px;
+                border-bottom: 1px solid var(--m3-surfaceVariant-dark);
+                flex-shrink: 0;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            #note-save-status {
+                font-size: 0.75rem;
+                color: var(--m3-outline-dark);
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                user-select: none;
+            }
+            .status-dot {
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                background: #10b981;
+                display: inline-block;
+            }
+            .status-dot.saving {
+                animation: pulse 1s infinite;
+            }
+            @keyframes pulse {
+                0% { opacity: 0.4; }
+                50% { opacity: 1; }
+                100% { opacity: 0.4; }
+            }
+            #note-char-counter {
+                font-size: 0.7rem;
+                color: var(--m3-outline-dark);
+                background: var(--m3-background-dark);
+                border: 1px solid var(--m3-surfaceVariant-dark);
+                padding: 4px 12px;
+                border-radius: 9999px;
+                user-select: none;
+            }
+            #note-delete-btn {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                padding: 8px 16px;
+                border-radius: 12px;
+                background: rgba(239, 68, 68, 0.1);
+                border: 1px solid rgba(239, 68, 68, 0.2);
+                color: #ef4444;
+                font-size: 0.75rem;
+                font-weight: 600;
+                font-family: inherit;
+                transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+            }
+            #note-delete-btn:hover {
+                background: rgba(239, 68, 68, 0.2);
+                border-color: #ef4444;
+            }
+
+            #note-editor-content {
+                width: 100%;
+                flex: 1;
+                overflow-y: auto;
+                border: 1px solid var(--m3-surfaceVariant-dark);
+                border-radius: 20px;
+                padding: 20px;
+                background: var(--m3-background-dark);
+                color: #cbd5e1;
+                font-size: 0.95rem;
+                line-height: 1.7;
+                outline: none;
+                resize: none;
+                font-family: inherit;
+                transition: border-color 0.2s ease;
+            }
+            #note-editor-content:focus {
+                border-color: var(--m3-primary-dark);
+            }
+
+            #notes-expand-btn {
+                background: var(--m3-surface-dark);
+                border: 1px solid var(--m3-surfaceVariant-dark);
+                border-radius: 50%;
+                width: 40px;
+                height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: var(--m3-outline-dark);
+                transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+            }
+            #notes-expand-btn:hover {
+                background: var(--m3-surfaceVariant-dark);
+                color: #fff;
+                transform: scale(1.1);
+            }
+
+            #notes-close-btn {
+                background: var(--m3-surface-dark);
+                border: 1px solid var(--m3-surfaceVariant-dark);
+                border-radius: 50%;
+                width: 40px;
+                height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: var(--m3-outline-dark);
+                font-size: 1.25rem;
+                transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+            }
+            #notes-close-btn:hover {
+                background: var(--m3-surfaceVariant-dark);
+                color: #fff;
+                transform: rotate(90deg);
+            }
+
+            #attachment-bar {
+                display: none;
+                flex-direction: column;
+                gap: 8px;
+                padding-bottom: 16px;
+                margin-bottom: 14px;
+                border-bottom: 1px solid var(--m3-surfaceVariant-dark);
+                flex-shrink: 0;
+            }
+            .attachment-bar-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 4px;
+            }
+            .attachment-bar-title {
+                font-size: 0.625rem;
+                font-weight: 600;
+                color: var(--m3-outline-dark);
+                text-transform: uppercase;
+                letter-spacing: 0.08em;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+            #attachment-count {
+                font-size: 0.5625rem;
+                color: var(--m3-primary-dark);
+                font-weight: 700;
+                background: var(--m3-primaryContainer-dark);
+                padding: 2px 8px;
+                border-radius: 9999px;
+                user-select: none;
+            }
+            #attachment-list {
+                display: flex;
+                gap: 8px;
+                overflow-x: auto;
+                padding: 4px 0;
+            }
+            .attachment-chip {
+                position: relative;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                background: var(--m3-background-dark);
+                border: 1px solid var(--m3-surfaceVariant-dark);
+                padding: 6px 12px 6px 8px;
+                border-radius: 9999px;
+                font-size: 0.75rem;
+                color: #d1d5db;
+                flex-shrink: 0;
+                transition: all 0.2s ease;
+                max-width: 200px;
+            }
+            .attachment-chip:hover {
+                border-color: var(--m3-primary-dark);
+                background: rgba(128, 216, 223, 0.05);
+            }
+
+            .att-chip-btn {
+                padding: 3px;
+                border-radius: 50%;
+                background: transparent;
+                border: 0;
+                color: var(--m3-outline-dark);
+                cursor: pointer;
+                display: flex;
+                transition: all 0.15s ease;
+            }
+            .att-chip-btn:hover {
+                color: #fff;
+                background: var(--m3-surfaceVariant-dark);
+            }
+            .att-chip-btn-del:hover {
+                color: #ef4444;
+                background: rgba(239, 68, 68, 0.15);
+            }
+
+            .att-chip-img {
+                width: 24px;
+                height: 24px;
+                object-fit: cover;
+                border-radius: 6px;
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                flex-shrink: 0;
+                cursor: pointer;
+            }
+            .att-chip-doc-icon {
+                padding: 4px;
+                background: rgba(128, 216, 223, 0.1);
+                border-radius: 6px;
+                flex-shrink: 0;
+                color: var(--m3-primary-dark);
+            }
+            .att-chip-doc-icon svg {
+                width: 14px;
+                height: 14px;
+                display: block;
+            }
+
             .editor-drag-over {
-                border-color: rgba(6,182,212,0.5) !important;
-                background-color: rgba(6,182,212,0.04) !important;
-                box-shadow: 0 0 25px rgba(6,182,212,0.15) !important;
+                border-color: var(--m3-primary-dark) !important;
+                background-color: rgba(128, 216, 223, 0.04) !important;
+                box-shadow: 0 0 25px rgba(128, 216, 223, 0.15) !important;
             }
-            #note-editor-content h1 { font-size:1.75rem!important;font-weight:800!important;color:#ffffff!important;margin-top:1.5rem!important;margin-bottom:0.75rem!important;border-bottom:1px solid rgba(6,182,212,0.1)!important;padding-bottom:0.25rem!important;display:block; }
+
+            .editor-content-wrapper {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                min-height: 0;
+            }
+
+            #notes-backdrop.standalone {
+                position: relative;
+                width: 100vw;
+                height: 100vh;
+                background-color: #111214 !important;
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+                pointer-events: auto !important;
+            }
+            #notes-backdrop.standalone .dashboard-container {
+                width: 100vw;
+                height: 100vh;
+                max-width: none;
+                padding: 0;
+            }
+            #notes-backdrop.standalone .close-btn-wrapper {
+                position: absolute;
+                top: 20px;
+                right: 24px;
+                width: auto;
+                z-index: 100;
+                margin-bottom: 0;
+            }
+            #notes-backdrop.standalone #notes-dashboard {
+                width: 100vw;
+                height: 100vh;
+                max-height: none;
+                max-width: none;
+                border-radius: 0;
+                border: none;
+            }
+            #notes-backdrop.standalone .editor-header {
+                padding-right: 56px;
+            }
+
+            #note-editor-content h1 { font-size:1.75rem!important;font-weight:800!important;color:#ffffff!important;margin-top:1.5rem!important;margin-bottom:0.75rem!important;border-bottom:1px solid var(--m3-surfaceVariant-dark)!important;padding-bottom:0.25rem!important;display:block; }
             #note-editor-content h2 { font-size:1.4rem!important;font-weight:700!important;color:#f3f4f6!important;margin-top:1.25rem!important;margin-bottom:0.5rem!important;display:block; }
             #note-editor-content h3 { font-size:1.15rem!important;font-weight:600!important;color:#e5e7eb!important;margin-top:1rem!important;margin-bottom:0.4rem!important;display:block; }
             #note-editor-content p { font-size:0.95rem!important;color:#cbd5e1!important;line-height:1.7!important;margin-bottom:0.75rem!important;display:block; }
-            #note-editor-content blockquote { border-left:4px solid #06b6d4!important;padding-left:1rem!important;color:#94a3b8!important;font-style:italic!important;background-color:rgba(255,255,255,0.02)!important;padding-top:0.5rem!important;padding-bottom:0.5rem!important;border-radius:0 8px 8px 0!important;margin:1rem 0!important;display:block; }
+            #note-editor-content blockquote { border-left:4px solid var(--m3-primary-dark)!important;padding-left:1rem!important;color:#94a3b8!important;font-style:italic!important;background-color:rgba(255,255,255,0.02)!important;padding-top:0.5rem!important;padding-bottom:0.5rem!important;border-radius:0 8px 8px 0!important;margin:1rem 0!important;display:block; }
             #note-editor-content ul { list-style-type:disc!important;padding-left:1.5rem!important;margin-bottom:0.75rem!important;display:block; }
             #note-editor-content ol { list-style-type:decimal!important;padding-left:1.5rem!important;margin-bottom:0.75rem!important;display:block; }
             #note-editor-content li { font-size:0.95rem!important;color:#cbd5e1!important;margin-bottom:0.35rem!important;display:list-item; }
-            #note-editor-content code { background-color:rgba(6,182,212,0.12)!important;color:#22d3ee!important;padding:0.15rem 0.35rem!important;border-radius:6px!important;font-family:'Fira Code',ui-monospace,monospace!important;font-size:0.85em!important; }
+            #note-editor-content code { background-color:var(--m3-primaryContainer-dark)!important;color:var(--m3-primary-dark)!important;padding:0.15rem 0.35rem!important;border-radius:6px!important;font-family:'Fira Code',ui-monospace,monospace!important;font-size:0.85em!important; }
             #note-editor-content strong { color: #fff !important; }
             #note-editor-content em { color: #a5b4fc !important; }
             #note-editor-content del { text-decoration: line-through; color: #6b7280 !important; }
+            
             .no-scrollbar::-webkit-scrollbar { display: none; }
             .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-            #lightbox-modal { position:fixed;inset:0;background:rgba(0,0,0,0.95);backdrop-filter:blur(8px);z-index:2147483645;display:none;flex-direction:column;align-items:center;justify-content:center;padding:1rem; }
-            #lightbox-modal.open { display: flex; }
+            
+            #lightbox-modal {
+                position: fixed;
+                inset: 0;
+                background: rgba(11, 12, 14, 0.95);
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+                z-index: 2147483645;
+                display: none;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                padding: 24px;
+            }
+            #lightbox-modal.open {
+                display: flex;
+            }
+            #close-lightbox-btn {
+                position: absolute;
+                top: 24px;
+                right: 24px;
+                color: var(--m3-outline-dark);
+                font-size: 2rem;
+                font-weight: 400;
+                border: 0;
+                background: transparent;
+                cursor: pointer;
+                transition: color 0.2s;
+            }
+            #close-lightbox-btn:hover {
+                color: #fff;
+            }
+            #lightbox-img {
+                max-width: 100%;
+                max-height: 70vh;
+                border-radius: 20px;
+                object-fit: contain;
+                box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+                border: 1px solid var(--m3-surfaceVariant-dark);
+            }
+            .lightbox-controls {
+                margin-top: 20px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 12px;
+                background: var(--m3-surface-dark);
+                border: 1px solid var(--m3-surfaceVariant-dark);
+                padding: 16px 24px;
+                border-radius: 20px;
+                max-width: 400px;
+                width: 100%;
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            }
+            #lightbox-title {
+                font-size: 0.8rem;
+                font-weight: 600;
+                color: #f1f5f9;
+                max-width: 100%;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            #lightbox-download-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                padding: 10px 20px;
+                border-radius: 12px;
+                background: var(--m3-primaryContainer-dark);
+                border: 1px solid var(--m3-surfaceVariant-dark);
+                color: var(--m3-primary-dark);
+                font-size: 0.75rem;
+                font-weight: 600;
+                font-family: inherit;
+                transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+            }
+            #lightbox-download-btn:hover {
+                background: var(--m3-primary-dark);
+                color: var(--m3-background-dark);
+            }
+
             * { box-sizing: border-box; }
             button { cursor: pointer; }
             @keyframes nina-spin { to { transform: rotate(360deg); } }
@@ -129,7 +721,7 @@
                 backdrop-filter:blur(4px);z-index:2;
             }
             .nina-spinner svg { animation: nina-spin 0.9s linear infinite; }
-            .nina-spinner span { font-size:0.6rem;color:#67e8f9;font-weight:600;letter-spacing:0.05em; }
+            .nina-spinner span { font-size:0.6rem;color:var(--m3-primary-dark);font-weight:600;letter-spacing:0.05em; }
             .nina-widget-wrap { position:relative; display:inline-flex; vertical-align:top; margin:12px 0; }
         `;
         notesShadow.appendChild(style);
@@ -141,69 +733,72 @@
             <div class="material-glow" style="position:absolute;inset:0;pointer-events:none;z-index:0;"></div>
 
             <!-- Haupt-Container -->
-            <div style="position:relative;z-index:1;width:100%;max-width:1100px;padding:0 1rem;display:flex;flex-direction:column;align-items:center;">
+            <div class="dashboard-container">
                 <!-- Close Button -->
-                <div style="width:100%;display:flex;justify-content:flex-end;margin-bottom:0.75rem;">
-                    <button id="notes-close-btn" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:1.25rem;transition:all 0.2s;" title="Schließen">✕</button>
+                <div class="close-btn-wrapper">
+                    <button id="notes-expand-btn" title="In neuem Tab öffnen">
+                        <svg xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                    </button>
+                    <button id="notes-close-btn" title="Schließen">✕</button>
                 </div>
 
                 <!-- Dashboard -->
-                <div id="notes-dashboard" style="width:100%;height:82vh;min-height:500px;max-height:850px;background:rgba(30,31,34,0.8);border:1px solid rgba(255,255,255,0.05);border-radius:24px;box-shadow:0 25px 50px rgba(0,0,0,0.5);display:flex;overflow:hidden;backdrop-filter:blur(20px);">
+                <div id="notes-dashboard">
 
                     <!-- Linkes Panel: Liste -->
-                    <div id="notes-list-panel" style="width:30%;border-right:1px solid rgba(255,255,255,0.05);display:flex;flex-direction:column;padding:20px;min-width:220px;max-width:300px;">
-                        <div style="display:flex;gap:8px;margin-bottom:16px;flex-shrink:0;">
-                            <div style="position:relative;flex:1;">
-                                <input type="text" id="note-search" placeholder="Suchen..." autocomplete="off"
-                                    style="width:100%;background:rgba(11,12,14,0.5);border:1px solid #3f3f46;color:#fff;border-radius:12px;padding:10px 12px 10px 34px;font-size:0.75rem;outline:none;font-family:inherit;transition:border-color 0.2s;">
-                                <svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:#71717a;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <div id="notes-list-panel">
+                        <div class="search-bar-row">
+                            <div class="search-input-wrapper">
+                                <input type="text" id="note-search" placeholder="Suchen..." autocomplete="off">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="search-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                                 </svg>
                             </div>
-                            <button id="create-note-btn" title="Neue Notiz"
-                                style="padding:0 14px;background:rgba(6,182,212,0.1);border:1px solid rgba(6,182,212,0.3);color:#22d3ee;border-radius:12px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;font-family:inherit;">
+                            <button id="create-note-btn" title="Neue Notiz">
                                 <svg xmlns="http://www.w3.org/2000/svg" style="width:20px;height:20px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
                                 </svg>
                             </button>
                         </div>
                         <!-- Drive Sync Status -->
-                        <div id="drive-status-bar" style="display:none;margin-bottom:12px;flex-shrink:0;">
-                            <button id="drive-login-btn" style="width:100%;display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(6,182,212,0.07);border:1px solid rgba(6,182,212,0.2);border-radius:10px;color:#67e8f9;font-size:0.7rem;font-weight:600;font-family:inherit;transition:all 0.2s;">
+                        <div id="drive-status-bar">
+                            <button id="drive-login-btn">
                                 <svg style="width:14px;height:14px;flex-shrink:0;" viewBox="0 0 24 24" fill="currentColor"><path d="M6.28 3h11.44L24 12l-6.28 9H6.28L0 12z"/></svg>
                                 <span id="drive-btn-label">Mit Google Drive verbinden</span>
                             </button>
                         </div>
-                        <div id="notes-list-container" class="custom-scrollbar" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding-right:4px;">
+                        <div id="notes-list-container" class="custom-scrollbar">
                             <!-- Wird befüllt -->
                         </div>
                     </div>
 
                     <!-- Rechtes Panel: Editor -->
-                    <div id="notes-editor-panel" style="flex:1;display:flex;flex-direction:column;padding:24px;background:rgba(30,31,34,0.3);min-width:0;">
+                    <div id="notes-editor-panel">
 
                         <!-- Placeholder -->
-                        <div id="editor-placeholder" style="display:flex;flex-direction:column;flex:1;align-items:center;justify-content:center;text-align:center;padding:24px;">
-                            <div style="width:64px;height:64px;border-radius:16px;background:rgba(6,182,212,0.05);border:1px solid rgba(6,182,212,0.1);display:flex;align-items:center;justify-content:center;margin-bottom:16px;">
-                                <svg xmlns="http://www.w3.org/2000/svg" style="width:32px;height:32px;color:rgba(6,182,212,0.4);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                        <div id="editor-placeholder">
+                            <div class="placeholder-icon-wrap">
+                                <svg xmlns="http://www.w3.org/2000/svg" style="width:32px;height:32px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                 </svg>
                             </div>
                             <h3 style="color:#fff;font-weight:700;font-size:0.875rem;margin:0 0 4px;">Bereit zum Schreiben</h3>
-                            <p style="color:#71717a;font-size:0.75rem;max-width:240px;line-height:1.6;margin:0;">Wähle links eine Notiz aus oder erstelle eine neue.</p>
+                            <p style="color:var(--m3-outline-dark);font-size:0.75rem;max-width:240px;line-height:1.6;margin:0;">Wähle links eine Notiz aus oder erstelle eine neue.</p>
                         </div>
 
                         <!-- Editor Workspace -->
-                        <div id="editor-workspace" style="display:none;flex-direction:column;flex:1;min-height:0;">
+                        <div id="editor-workspace">
 
                             <!-- Header -->
-                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.05);flex-shrink:0;flex-wrap:wrap;gap:8px;">
-                                <span id="note-save-status" style="font-size:0.7rem;color:#71717a;display:flex;align-items:center;gap:6px;user-select:none;">
-                                    <span style="width:6px;height:6px;border-radius:50%;background:#10b981;display:inline-block;"></span> Bereit
+                            <div class="editor-header">
+                                <span id="note-save-status">
+                                    <span class="status-dot"></span> Bereit
                                 </span>
                                 <div style="display:flex;align-items:center;gap:12px;">
-                                    <span id="note-char-counter" style="font-size:0.625rem;color:#71717a;background:rgba(255,255,255,0.05);padding:4px 10px;border-radius:9999px;user-select:none;">0 Zeichen</span>
-                                    <button id="note-delete-btn" style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;background:rgba(127,29,29,0.2);border:1px solid rgba(127,29,29,0.3);color:#f87171;font-size:0.6875rem;font-weight:600;font-family:inherit;transition:all 0.2s;">
+                                    <span id="note-char-counter">0 Zeichen</span>
+                                    <button id="note-delete-btn">
                                         <svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                         </svg>
@@ -213,24 +808,23 @@
                             </div>
 
                             <!-- Anhangs-Leiste -->
-                            <div id="attachment-bar" style="display:none;flex-direction:column;gap:6px;padding-bottom:14px;margin-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.05);flex-shrink:0;">
-                                <div style="display:flex;align-items:center;justify-content:space-between;padding:0 4px;">
-                                    <span style="font-size:0.625rem;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.08em;display:flex;align-items:center;gap:6px;">
-                                        <svg style="width:14px;height:14px;color:#22d3ee;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+                            <div id="attachment-bar">
+                                <div class="attachment-bar-header">
+                                    <span class="attachment-bar-title">
+                                        <svg style="width:14px;height:14px;color:var(--m3-primary-dark);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
                                         Anhänge
                                     </span>
-                                    <span id="attachment-count" style="font-size:0.5625rem;color:#22d3ee;font-weight:700;background:rgba(6,182,212,0.1);padding:2px 8px;border-radius:9999px;user-select:none;">0</span>
+                                    <span id="attachment-count">0</span>
                                 </div>
-                                <div id="attachment-list" class="no-scrollbar" style="display:flex;gap:8px;overflow-x:auto;padding:4px 0;"></div>
+                                <div id="attachment-list" class="no-scrollbar"></div>
                             </div>
 
                             <!-- Editor -->
-                            <div style="flex:1;display:flex;flex-direction:column;min-height:0;">
+                            <div class="editor-content-wrapper">
                                 <div
                                     id="note-editor-content"
-                                    contenteditable="true"
-                                    style="width:100%;flex:1;overflow-y:auto;border:1px solid rgba(255,255,255,0.05);border-radius:16px;padding:16px;background:rgba(11,12,14,0.3);color:#cbd5e1;font-size:0.95rem;line-height:1.6;outline:none;resize:none;font-family:inherit;transition:border-color 0.2s;"
                                     class="custom-scrollbar"
+                                    contenteditable="true"
                                 ></div>
                             </div>
                         </div>
@@ -241,11 +835,11 @@
 
         <!-- Lightbox -->
         <div id="lightbox-modal">
-            <button id="close-lightbox-btn" style="position:absolute;top:24px;right:24px;color:#9ca3af;font-size:1.75rem;font-weight:600;border:0;background:transparent;cursor:pointer;transition:color 0.2s;" title="Schließen">✕</button>
-            <img id="lightbox-img" style="max-width:100%;max-height:80vh;border-radius:16px;object-fit:contain;box-shadow:0 25px 50px rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.05);" src="" alt="Vorschau">
-            <div style="margin-top:20px;display:flex;flex-direction:column;align-items:center;gap:12px;background:rgba(30,31,34,0.9);border:1px solid rgba(255,255,255,0.05);padding:14px 20px;border-radius:16px;max-width:400px;width:100%;backdrop-filter:blur(8px);">
-                <span id="lightbox-title" style="font-size:0.75rem;font-weight:600;color:#d1d5db;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
-                <button id="lightbox-download-btn" style="display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:12px;background:rgba(6,182,212,0.1);border:1px solid rgba(6,182,212,0.3);color:#22d3ee;font-size:0.75rem;font-weight:600;font-family:inherit;transition:all 0.2s;">
+            <button id="close-lightbox-btn" title="Schließen">✕</button>
+            <img id="lightbox-img" src="" alt="Vorschau">
+            <div class="lightbox-controls">
+                <span id="lightbox-title"></span>
+                <button id="lightbox-download-btn">
                     <svg style="width:16px;height:16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                     Herunterladen
                 </button>
@@ -259,6 +853,14 @@
             renderNotesList();
             showDriveStatusBar();
         });
+
+        if (isStandalone) {
+            const backdrop = notesShadow.getElementById('notes-backdrop');
+            backdrop.classList.add('active', 'standalone');
+
+            const expandBtn = notesShadow.getElementById('notes-expand-btn');
+            if (expandBtn) expandBtn.style.display = 'none';
+        }
     }
 
     // ─── EVENTS ────────────────────────────────────────────────────────────────
@@ -278,7 +880,21 @@
             if (e.target === backdrop) closeNotesOverlay();
         });
 
-        closeBtn.addEventListener('click', closeNotesOverlay);
+        closeBtn.addEventListener('click', () => {
+            if (isStandalone) {
+                window.close();
+            } else {
+                closeNotesOverlay();
+            }
+        });
+
+        const expandBtn = notesShadow.getElementById('notes-expand-btn');
+        if (expandBtn) {
+            expandBtn.addEventListener('click', () => {
+                chrome.runtime.sendMessage({ type: 'NINA_OPEN_NOTES_TAB' });
+                closeNotesOverlay();
+            });
+        }
 
         createBtn.addEventListener('click', createNewNote);
 
@@ -394,7 +1010,7 @@
         container.innerHTML = '';
 
         if (!filtered.length) {
-            container.innerHTML = '<div style="text-align:center;padding:48px 0;color:#52525b;font-size:0.75rem;">Keine Notizen gefunden</div>';
+            container.innerHTML = '<div class="notes-empty-state">Keine Notizen gefunden</div>';
             return;
         }
 
@@ -409,11 +1025,11 @@
             const preview = plain.length > 55 ? plain.substring(0, 55) + '…' : plain || 'Leere Notiz…';
 
             card.innerHTML = `
-                <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
-                    <span style="font-weight:700;font-size:0.75rem;color:#e5e7eb;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:8px;">${escHtml(note.title || 'Neue Notiz')}</span>
-                    <span style="font-size:0.5625rem;color:#71717a;flex-shrink:0;">${date}</span>
+                <div class="note-card-header">
+                    <span class="note-card-title">${escHtml(note.title || 'Neue Notiz')}</span>
+                    <span class="note-card-date">${date}</span>
                 </div>
-                <p style="font-size:0.6875rem;color:#6b7280;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;line-height:1.5;margin:0;">${escHtml(preview)}</p>
+                <p class="note-card-desc">${escHtml(preview)}</p>
             `;
             card.addEventListener('click', () => openNoteInEditor(note.id));
             container.appendChild(card);
@@ -467,9 +1083,9 @@
         renderNotesList();
 
         const status = notesShadow.getElementById('note-save-status');
-        status.innerHTML = '<span style="width:6px;height:6px;border-radius:50%;background:#10b981;display:inline-block;animation:pulse 1s infinite;"></span> Sichernd…';
+        status.innerHTML = '<span class="status-dot saving"></span> Sichernd…';
         setTimeout(() => {
-            status.innerHTML = '<span style="width:6px;height:6px;border-radius:50%;background:#10b981;display:inline-block;"></span> Gespeichert';
+            status.innerHTML = '<span class="status-dot"></span> Gespeichert';
             // Drive-Sync (falls eingeloggt)
             if (window.NinaDrive && window.NinaDrive.isConnected()) {
                 window.NinaDrive.writeNote(notes[idx]).catch(() => {});
@@ -748,33 +1364,33 @@
 
         attachments.forEach(att => {
             const chip = document.createElement('div');
-            chip.style.cssText = 'position:relative;display:flex;align-items:center;gap:8px;background:rgba(11,12,14,0.6);border:1px solid rgba(63,63,70,0.8);padding:6px 8px 6px 6px;border-radius:10px;font-size:0.75rem;color:#d1d5db;flex-shrink:0;transition:all 0.2s;max-width:180px;';
+            chip.className = 'attachment-chip';
 
             // Spinner overlay
             if (att.uploading) {
                 chip.style.opacity = '0.7';
                 chip.innerHTML = `
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2.5" stroke-linecap="round" style="animation:nina-spin 0.9s linear infinite;flex-shrink:0;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--m3-primary-dark)" stroke-width="2.5" stroke-linecap="round" style="animation:nina-spin 0.9s linear infinite;flex-shrink:0;">
                         <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
                     </svg>
-                    <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.65rem;color:#67e8f9;">Hochladen…</span>`;
+                    <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.65rem;color:var(--m3-primary-dark);">Hochladen…</span>`;
                 list.appendChild(chip);
                 return;
             }
 
             const isImg = att.isImage && att.dataUrl;
             const iconHtml = isImg
-                ? `<img src="${att.dataUrl}" style="width:24px;height:24px;object-fit:cover;border-radius:5px;border:1px solid rgba(255,255,255,0.08);flex-shrink:0;" />`
-                : `<div style="padding:3px;background:rgba(6,182,212,0.1);border-radius:5px;flex-shrink:0;"><svg style="width:13px;height:13px;color:#22d3ee;display:block;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h7a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg></div>`;
+                ? `<img src="${att.dataUrl}" class="att-chip-img" />`
+                : `<div class="att-chip-doc-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h7a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg></div>`;
 
             chip.innerHTML = `
                 ${iconHtml}
                 <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;" title="${escHtml(att.filename)}">${escHtml(att.filename)}</span>
                 <div style="display:flex;gap:2px;flex-shrink:0;">
-                    <button class="att-dl" title="Herunterladen" style="padding:3px;border-radius:5px;background:transparent;border:0;color:#9ca3af;cursor:pointer;display:flex;">
+                    <button class="att-dl att-chip-btn" title="Herunterladen">
                         <svg style="width:13px;height:13px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                     </button>
-                    <button class="att-del" title="Entfernen" style="padding:3px;border-radius:5px;background:transparent;border:0;color:#9ca3af;cursor:pointer;display:flex;">
+                    <button class="att-del att-chip-btn att-chip-btn-del" title="Entfernen">
                         <svg style="width:13px;height:13px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                 </div>`;
@@ -799,7 +1415,6 @@
                     e.stopPropagation();
                     openLightbox(att.filename, att.dataUrl);
                 });
-                chip.querySelector('img').style.cursor = 'pointer';
             }
 
             list.appendChild(chip);
@@ -854,11 +1469,14 @@
     }
 
     function updateDriveButton() {
+        const btn = notesShadow.getElementById('drive-login-btn');
         const label = notesShadow.getElementById('drive-btn-label');
         if (window.NinaDrive && window.NinaDrive.isConnected()) {
             label.textContent = 'Google Drive: verbunden ✓';
+            btn.classList.add('connected');
         } else {
             label.textContent = 'Mit Google Drive verbinden';
+            btn.classList.remove('connected');
         }
     }
 
@@ -891,9 +1509,16 @@
 
     // ─── BOOT ─────────────────────────────────────────────────────────────────
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initNotesOverlay);
-    } else {
+    function boot() {
         initNotesOverlay();
+        if (isStandalone) {
+            openNotesOverlay();
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', boot);
+    } else {
+        boot();
     }
 })();

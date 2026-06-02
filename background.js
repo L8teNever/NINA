@@ -165,6 +165,12 @@ function cleanShowName(name) {
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === 'NINA_OPEN_NOTES_TAB') {
+    chrome.tabs.create({ url: chrome.runtime.getURL('ui/notes.html') });
+    sendResponse({ ok: true });
+    return true;
+  }
+
   // Google Drive Auth – chrome.identity nur im Background verfügbar
   if (message.type === 'NINA_GET_TOKEN') {
     chrome.identity.getAuthToken({ interactive: message.interactive || false }, (token) => {
