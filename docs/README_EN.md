@@ -6,7 +6,7 @@
 
 ## 📱 Chrome Web Store
 
-[➜ View NINA on Chrome Web Store](https://chromewebstore.google.com/detail/NINA/[EXTENSION_ID])
+[➜ View NINA on Chrome Web Store](https://chromewebstore.google.com/detail/nina/hodpbndnggncjcpilnjggfjcmnkjmmjp?hl=de&utm_source=ext_sidebar)
 
 ---
 
