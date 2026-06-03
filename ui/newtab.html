@@ -394,6 +394,341 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
+
+        /* Lesezeichen-Widget Custom CSS */
+        .bookmarks-container {
+            backdrop-filter: blur(25px) !important;
+            -webkit-backdrop-filter: blur(25px) !important;
+            height: 75vh !important;
+            max-height: 75vh !important;
+            background-color: rgba(22, 26, 29, 0.8) !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        }
+        
+        .bookmarks-sidebar {
+            width: 260px !important;
+            min-width: 260px !important;
+            background-color: rgba(15, 18, 20, 0.3) !important;
+            border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+        }
+        
+        .bookmarks-main {
+            background-color: rgba(12, 13, 15, 0.2) !important;
+        }
+        
+        .bookmarks-search-input {
+            background-color: rgba(15, 17, 20, 0.8) !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        }
+        .bookmarks-search-input:focus {
+            border-color: rgba(6, 182, 212, 0.5) !important;
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.2) !important;
+        }
+        
+        .bookmarks-folder-card {
+            background-color: rgba(255, 255, 255, 0.03) !important;
+            border: 1px solid rgba(255, 255, 255, 0.06) !important;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        }
+        .bookmarks-folder-card:hover {
+            background-color: rgba(255, 255, 255, 0.06) !important;
+            border-color: rgba(6, 182, 212, 0.3) !important;
+            transform: translateY(-2px) !important;
+            box-shadow: 0 12px 24px -10px rgba(6, 182, 212, 0.15) !important;
+        }
+        
+        .bookmarks-item-card {
+            background-color: rgba(26, 30, 33, 0.35) !important;
+            border: 1px solid rgba(255, 255, 255, 0.06) !important;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        }
+        .bookmarks-item-card:hover {
+            background-color: rgba(255, 255, 255, 0.05) !important;
+            border-color: rgba(6, 182, 212, 0.3) !important;
+            transform: translateY(-2px) !important;
+            box-shadow: 0 12px 24px -10px rgba(6, 182, 212, 0.15) !important;
+        }
+        
+        .folder-tree-node {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .folder-tree-row {
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+        
+        .scroll-left-aligned {
+            direction: ltr;
+        }
+        
+        .folder-tree-label.active {
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+        
+        #bookmarks-breadcrumbs::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* List View styles */
+        .bookmarks-list-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        
+        .bookmarks-list-item {
+            width: 100%;
+            background-color: rgba(26, 30, 33, 0.35) !important;
+            border: 1px solid rgba(255, 255, 255, 0.06) !important;
+            border-radius: 14px;
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: all 0.2s ease !important;
+            position: relative;
+        }
+        
+        .bookmarks-list-item:hover {
+            background-color: rgba(255, 255, 255, 0.05) !important;
+            border-color: rgba(6, 182, 212, 0.3) !important;
+            transform: translateX(2px) !important;
+            box-shadow: 0 8px 16px -6px rgba(6, 182, 212, 0.1) !important;
+        }
+
+        /* Hover action buttons on cards */
+        .bookmarks-folder-card, .bookmarks-item-card, .bookmarks-list-item {
+            position: relative;
+        }
+        
+        .card-actions-overlay {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            display: flex;
+            gap: 4px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            z-index: 20;
+        }
+        
+        .bookmarks-folder-card:hover .card-actions-overlay,
+        .bookmarks-item-card:hover .card-actions-overlay,
+        .bookmarks-list-item:hover .card-actions-overlay {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .bookmarks-list-item .card-actions-overlay {
+            top: 50%;
+            transform: translateY(-50%);
+            right: 16px;
+        }
+        
+        .card-action-btn {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            background-color: rgba(15, 17, 20, 0.85) !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.6) !important;
+            transition: all 0.2s ease !important;
+            cursor: pointer;
+        }
+        
+        .card-action-btn:hover {
+            color: #ffffff !important;
+            background-color: rgba(6, 182, 212, 0.8) !important;
+            border-color: rgba(6, 182, 212, 1) !important;
+        }
+        
+        .card-action-btn.btn-delete:hover {
+            background-color: rgba(239, 68, 68, 0.8) !important;
+            border-color: rgba(239, 68, 68, 1) !important;
+        }
+
+        #bookmarks-dialog-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.65) !important;
+            backdrop-filter: blur(12px) !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+        #bookmarks-dialog-overlay.opacity-100 {
+            pointer-events: auto !important;
+        }
+        #bookmarks-dialog-overlay.hidden {
+            display: none !important;
+        }
+        
+        #bookmarks-dialog-card {
+            background-color: rgba(22, 23, 26, 0.95) !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            border-radius: 20px !important;
+            padding: 24px !important;
+            width: 90% !important;
+            max-width: 420px !important;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+            transition: transform 0.3s ease;
+            transform: scale(0.95);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        #bookmarks-dialog-overlay.opacity-100 {
+            opacity: 1 !important;
+        }
+        #bookmarks-dialog-overlay.opacity-100 #bookmarks-dialog-card {
+            transform: scale(1) !important;
+        }
+        
+        .dialog-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 12px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        #bookmarks-dialog-title {
+            color: #ffffff !important;
+            font-size: 16px !important;
+            font-weight: 700 !important;
+            margin: 0 !important;
+        }
+        
+        #close-bookmarks-dialog {
+            color: rgba(255, 255, 255, 0.4) !important;
+            font-size: 24px !important;
+            background: transparent !important;
+            border: 0 !important;
+            cursor: pointer;
+            line-height: 1;
+            transition: color 0.2s ease;
+            padding: 0 !important;
+        }
+        #close-bookmarks-dialog:hover {
+            color: #ffffff !important;
+        }
+        
+        #bookmarks-dialog-body {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .dialog-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .dialog-label {
+            font-size: 10px !important;
+            color: rgba(255, 255, 255, 0.4) !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.05em;
+            text-align: left;
+        }
+        
+        .dialog-input {
+            width: 100% !important;
+            box-sizing: border-box !important;
+            background-color: #0b0c0e !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            color: #ffffff !important;
+            border-radius: 10px !important;
+            padding: 10px 14px !important;
+            font-size: 13px !important;
+            transition: all 0.2s ease !important;
+        }
+        .dialog-input:focus {
+            outline: none !important;
+            border-color: rgba(6, 182, 212, 0.6) !important;
+            box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.15) !important;
+        }
+        
+        .dialog-select {
+            width: 100% !important;
+            box-sizing: border-box !important;
+            background-color: #0b0c0e !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            color: #ffffff !important;
+            border-radius: 10px !important;
+            padding: 10px 14px !important;
+            font-size: 13px !important;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white' stroke-width='2'><path stroke-linecap='round' stroke-linejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 14px;
+            padding-right: 32px !important;
+        }
+        .dialog-select:focus {
+            outline: none !important;
+            border-color: rgba(6, 182, 212, 0.6) !important;
+        }
+        
+        .dialog-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 8px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .dialog-btn {
+            padding: 8px 16px !important;
+            border-radius: 10px !important;
+            font-size: 12px !important;
+            font-weight: 600 !important;
+            cursor: pointer !important;
+            transition: all 0.2s ease !important;
+            border: 0 !important;
+        }
+        
+        .dialog-btn-cancel {
+            background-color: rgba(255, 255, 255, 0.06) !important;
+            color: rgba(255, 255, 255, 0.8) !important;
+        }
+        .dialog-btn-cancel:hover {
+            background-color: rgba(255, 255, 255, 0.1) !important;
+            color: #ffffff !important;
+        }
+        
+        .dialog-btn-save {
+            background-color: #06b6d4 !important;
+            color: #000000 !important;
+            font-weight: 700 !important;
+        }
+        .dialog-btn-save:hover {
+            background-color: #22d3ee !important;
+            box-shadow: 0 0 12px rgba(6, 182, 212, 0.4) !important;
+        }
     </style>
 </head>
 <body class="text-gray-100 h-screen w-screen flex items-center justify-center relative selection:bg-cyan-500/30 overflow-hidden">
@@ -406,7 +741,7 @@
     <div class="material-glow absolute inset-0 pointer-events-none z-[-1]"></div>
 
     <!-- Haupt-Container (Immer perfekt zentriert) -->
-    <main class="w-full max-w-3xl px-4 z-10 flex flex-col items-center justify-center gap-8" style="transform: translateY(-8vh);">
+    <main id="main-dashboard-container" class="w-full max-w-3xl px-4 z-10 flex flex-col items-center justify-center gap-8 transition-all duration-500 ease-out" style="transform: translateY(-8vh);">
         
         <!-- Hauptuhr (oben über der Suchleiste) -->
         <div class="time-display main-clock anim-clock select-none">
@@ -476,8 +811,76 @@
 
     </main>
 
-    <!-- Einstellungs-Button -->
-    <div id="settings-btn" class="fixed top-6 right-6 z-50 transition-all duration-500 ease-in-out anim-settings">
+    <!-- Lesezeichen-Widget-Container -->
+    <div id="bookmarks-view" class="hidden opacity-0 scale-95 w-full max-w-5xl px-6 py-6 z-10 flex flex-col gap-6 transition-all duration-500 ease-out" style="transform: translateY(-2vh);">
+        <div class="bookmarks-container flex flex-col md:flex-row rounded-3xl overflow-hidden shadow-2xl">
+            <!-- Sidebar: Ordner-Baum -->
+            <aside class="bookmarks-sidebar w-full md:w-72 p-5 flex flex-col shrink-0" style="height: 100%; overflow: hidden;">
+                <h3 class="text-zinc-400 text-xs font-bold uppercase tracking-wider mb-4 px-2 select-none">Ordner</h3>
+                <div id="bookmarks-folder-tree" class="overflow-y-auto space-y-1 pr-1 custom-scrollbar scroll-left-aligned" style="flex-grow: 1;">
+                    <!-- Ordnerliste wird hier dynamisch befüllt -->
+                </div>
+            </aside>
+            
+            <!-- Hauptbereich: Suche, Pfad & Lesezeichen-Grid -->
+            <section class="bookmarks-main flex-grow flex flex-col" style="height: 100%; overflow: hidden;">
+                <!-- Header: Suche & Breadcrumbs -->
+                <div class="p-5 border-b border-white/5 flex flex-col gap-4 shrink-0" style="border-bottom-color: rgba(255, 255, 255, 0.06);">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <!-- Pfad / Breadcrumbs -->
+                        <div id="bookmarks-breadcrumbs" class="flex items-center gap-1.5 text-sm text-zinc-400 overflow-x-auto whitespace-nowrap py-1 no-scrollbar select-none">
+                            <!-- Pfad wird dynamisch befüllt -->
+                        </div>
+                        
+                        <div class="flex items-center gap-3">
+                            <!-- Ansichten-Umschalter (Grid / List) -->
+                            <div class="flex items-center gap-1 bg-[#0b0c0e] border border-zinc-800/80 p-1 rounded-xl shrink-0 select-none">
+                                <button id="view-mode-grid-btn" class="w-8 h-8 flex items-center justify-center rounded-lg text-zinc-500 hover:text-white transition-colors cursor-pointer bg-transparent border-0" title="Rasteransicht">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25A2.25 2.25 0 0113.5 8.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+                                    </svg>
+                                </button>
+                                <button id="view-mode-list-btn" class="w-8 h-8 flex items-center justify-center rounded-lg text-zinc-500 hover:text-white transition-colors cursor-pointer bg-transparent border-0" title="Listenansicht">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 5.25h16.5m-16.5-10.5h16.5" />
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <!-- Suchfeld für Lesezeichen -->
+                            <div class="relative w-full sm:w-64">
+                                <input 
+                                    type="text" 
+                                    id="bookmarks-search-input" 
+                                    placeholder="Lesezeichen durchsuchen..."
+                                    class="bookmarks-search-input w-full text-white rounded-xl pl-9 pr-4 py-2 text-sm focus:outline-none transition-all"
+                                    autocomplete="off"
+                                />
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-zinc-500 absolute left-3 top-3">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.602 10.602z" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Grid / Liste der Lesezeichen -->
+                <div id="bookmarks-content" class="custom-scrollbar p-6" style="flex-grow: 1; overflow-y: auto;">
+                    <!-- Ordner und Lesezeichen werden hier befüllt -->
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Einstellungs- und Navigations-Buttons -->
+    <div id="settings-btn" class="fixed top-6 right-6 z-50 flex items-center gap-4 transition-all duration-500 ease-in-out anim-settings">
+        <!-- Lesezeichen-Toggle-Button -->
+        <button id="toggle-bookmarks-btn" class="w-10 h-10 flex items-center justify-center text-zinc-400 hover:text-cyan-400 transition-colors duration-300 cursor-pointer bg-transparent border-0" title="Lesezeichen">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 transition-transform duration-300 hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+            </svg>
+        </button>
+        <!-- Einstellungs-Button -->
         <button id="open-settings-btn" class="w-10 h-10 flex items-center justify-center text-zinc-400 hover:text-cyan-400 transition-colors duration-300 cursor-pointer bg-transparent border-0" title="Einstellungen">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hover:rotate-45 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -704,6 +1107,50 @@
             <button id="finish-settings-btn" class="w-full py-3.5 rounded-xl bg-[#0b0c0e] hover:bg-[#1a1d21] border border-zinc-800 text-white font-medium text-sm transition-colors cursor-pointer">
                 Fertig
             </button>
+        </div>
+    </div>
+
+    <!-- Bookmarks Action Dialog Modal -->
+    <div id="bookmarks-dialog-overlay" class="hidden" style="z-index: 9999;">
+        <div id="bookmarks-dialog-card">
+            <div class="dialog-header">
+                <h3 id="bookmarks-dialog-title">Lesezeichen bearbeiten</h3>
+                <button id="close-bookmarks-dialog">×</button>
+            </div>
+            
+            <!-- Content section -->
+            <div id="bookmarks-dialog-body">
+                <!-- Inputs for Edit -->
+                <div id="bookmarks-dialog-edit-fields" class="space-y-3.5">
+                    <div class="dialog-field">
+                        <label class="dialog-label">NAME</label>
+                        <input type="text" id="dialog-item-title" class="dialog-input" autocomplete="off" />
+                    </div>
+                    <div id="dialog-item-url-container" class="dialog-field">
+                        <label class="dialog-label">URL</label>
+                        <input type="text" id="dialog-item-url" class="dialog-input" autocomplete="off" />
+                    </div>
+                </div>
+                
+                <!-- Dropdown for Move -->
+                <div id="bookmarks-dialog-move-fields" class="dialog-field hidden">
+                    <label class="dialog-label">ZIELORDNER</label>
+                    <select id="dialog-item-parent" class="dialog-select">
+                        <!-- Dynamic options of all folders -->
+                    </select>
+                </div>
+                
+                <!-- Text for Delete -->
+                <div id="bookmarks-dialog-delete-text" class="text-sm text-zinc-300 hidden">
+                    Möchtest du <strong id="dialog-delete-name" class="text-white"></strong> wirklich löschen?
+                </div>
+            </div>
+            
+            <!-- Actions section -->
+            <div class="dialog-footer">
+                <button id="dialog-cancel-btn" class="dialog-btn dialog-btn-cancel">Abbrechen</button>
+                <button id="dialog-save-btn" class="dialog-btn dialog-btn-save">Speichern</button>
+            </div>
         </div>
     </div>
 

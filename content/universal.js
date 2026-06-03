@@ -328,10 +328,6 @@
     '.ytp-next-button',
     '.ytp-autonav-endscreen-upnext-play-button',
 
-    // Crunchyroll (next episode only, not previous)
-    '.erc-prev-next-episode a:last-of-type',
-    '.rc-prev-next-episode a:last-of-type',
-
     // Joyn next
     '.next-episode-btn',
 
@@ -1548,9 +1544,7 @@
         showToast('⏭ Intro übersprungen');
         return;
       }
-    }
 
-    if (main.duration > 10 && (main.currentTime / main.duration) > 0.75) {
       const nb = findSkippable(NEXT_SELECTORS, NEXT_TEXTS);
       if (nb && location.href !== lastNextHref) {
         lastNextHref = location.href;

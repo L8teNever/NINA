@@ -1238,17 +1238,39 @@
         const cb = e.clipboardData || window.clipboardData;
         if (cb.files && cb.files.length) { e.preventDefault(); handleUploadedFiles(cb.files); return; }
         e.preventDefault();
+        
         const html = cb.getData('text/html');
         const text = cb.getData('text/plain');
-        let content = '';
+        
         if (html) {
             const doc = new DOMParser().parseFromString(html, 'text/html');
-            doc.body.querySelectorAll('*').forEach(el => { el.removeAttribute('style'); el.removeAttribute('class'); });
-            content = doc.body.innerHTML;
+            // Bereinige das HTML von Styles, Klassen und IDs, um das Design einheitlich zu halten
+            doc.body.querySelectorAll('*').forEach(el => {
+                el.removeAttribute('style');
+                el.removeAttribute('class');
+                el.removeAttribute('id');
+            });
+            const cleanHtml = doc.body.innerHTML;
+            if (cleanHtml) {
+                try {
+                    // Verwende native Browser-Methode, die Absätze trennt, ohne ungültige Schachtelungen zu erzeugen
+                    document.execCommand('insertHTML', false, cleanHtml);
+                } catch (err) {
+                    // Fallback, falls execCommand blockiert wird
+                    insertHtmlAtCaret(cleanHtml);
+                }
+            }
         } else if (text) {
-            content = text.split(/\r?\n/).map(l => l.trim() ? `<p>${escHtml(l)}</p>` : '<p><br></p>').join('');
+            try {
+                // Fügt den bereinigten Text an der Cursorposition ein (erstellt automatisch <p>-Tags nach Bedarf)
+                document.execCommand('insertText', false, text);
+            } catch (err) {
+                // Fallback mit manuellem Absatz-Wrapping, falls execCommand fehlschlägt
+                const content = text.split(/\r?\n/).map(l => l.trim() ? `<p>${escHtml(l)}</p>` : '<p><br></p>').join('');
+                insertHtmlAtCaret(content);
+            }
         }
-        if (content) insertHtmlAtCaret(content);
+        
         saveActiveNote();
         updateCharCount();
         updateAttachmentBar();
