@@ -377,16 +377,11 @@ Wir können diese Datenschutzerklärung jederzeit ändern.
 
 ---
 
-## 📞 Kontakt & Beschwerde
+## 📞 Kontakt 
 
 **Bei Fragen:**
 - Kontaktieren Sie uns unter: support-chrome@l8tenever.com
 - GitHub Issues: https://github.com/L8teNever/NINA/issues
-
-**Bei Beschwerde bei der Aufsichtsbehörde:**
-- Zuständige Datenschutzbehörde: Deutschland
-- Sie haben das Recht, eine Beschwerde bei der zuständigen Datenschutzbehörde einzureichen
-
 ---
 
 ## ✅ Zusammenfassung – Das Wichtigste
