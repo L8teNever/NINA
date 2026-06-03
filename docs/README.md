@@ -6,7 +6,7 @@
 
 ## 📱 Chrome Web Store
 
-[➜ NINA im Chrome Web Store anschauen]([https://chromewebstore.google.com/detail/nina/hodpbndnggncjcpilnjggfjcmnkjmmjp?hl=de&utm_source=ext_sidebar])
+[➜ NINA im Chrome Web Store anschauen](https://chromewebstore.google.com/detail/nina/hodpbndnggncjcpilnjggfjcmnkjmmjp?hl=de&utm_source=ext_sidebar)
 
 ---
 
