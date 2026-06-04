@@ -7,6 +7,7 @@ const DEFAULT_SETTINGS = {
   pauseOnOpen: false,
   ffSpeed: 2.0,
   autoSkip: true,
+  autoSkipDelay: 0,
   dislikes: true,
   speedTimer: true,
   sponsorBlock: true,
@@ -38,7 +39,14 @@ const DEFAULT_SETTINGS = {
     { name: 'gemini', url: 'https://gemini.google.com' },
     { name: 'notebooklm', url: 'https://notebooklm.google.com' },
     { name: 'claude', url: 'https://claude.ai' }
-  ]
+  ],
+  aiTextUseShortcut: true,
+  aiTextShortcut: 'Alt+P',
+  aiTextUseButton: true,
+  aiTextSpelling: true,
+  aiTextPunctuation: true,
+  aiTextCustomActive: false,
+  aiTextCustomPrompt: ''
 };
 
 let currentSettings = { ...DEFAULT_SETTINGS };
@@ -103,8 +111,18 @@ function loadSettings() {
     if (result[STORAGE_KEY]) {
       currentSettings = { ...DEFAULT_SETTINGS, ...result[STORAGE_KEY] };
     }
-    initializeUI();
-    setupEventListeners();
+    chrome.storage.local.set({
+      joyn_autoskip: currentSettings.autoSkip,
+      joyn_autoskip_delay: currentSettings.autoSkipDelay
+    });
+    // load Gemini API key from sync storage
+    chrome.storage.sync.get(['gemini_api_key'], (syncRes) => {
+      if (syncRes.gemini_api_key) {
+        $('gemini-api-key').value = syncRes.gemini_api_key;
+      }
+      initializeUI();
+      setupEventListeners();
+    });
   });
 }
 
@@ -118,6 +136,7 @@ function initializeUI() {
   $('ffSpeedVal').textContent = currentSettings.ffSpeed.toFixed(2) + 'x';
   updateSliderProgress($('ffSpeedSlider'), currentSettings.ffSpeed);
   $('toggleAutoSkip').checked = currentSettings.autoSkip;
+  updateAutoSkipDelaySlider(currentSettings.autoSkipDelay || 0);
   $('toggleDislikes').checked = currentSettings.dislikes;
   $('toggleSpeedTimer').checked = currentSettings.speedTimer;
   $('toggleSponsorBlock').checked = currentSettings.sponsorBlock;
@@ -139,6 +158,16 @@ function initializeUI() {
   updateChromeFilterVisibility();
   updateClearBgButtonVisibility();
   updateBookmarksList();
+
+  // AI Text Improvement settings
+  $('toggleAiTextShortcut').checked = currentSettings.aiTextUseShortcut;
+  $('aiTextShortcutInput').value = currentSettings.aiTextShortcut || 'Alt+P';
+  $('toggleAiTextButton').checked = currentSettings.aiTextUseButton;
+  $('toggleAiTextSpelling').checked = currentSettings.aiTextSpelling;
+  $('toggleAiTextPunctuation').checked = currentSettings.aiTextPunctuation;
+  $('toggleAiTextCustomActive').checked = currentSettings.aiTextCustomActive;
+  $('aiTextCustomPrompt').value = currentSettings.aiTextCustomPrompt || '';
+  updateAiTextBlocksVisibility();
 }
 
 // ==========================================
@@ -171,8 +200,26 @@ function setupEventListeners() {
 
   $('toggleAutoSkip').addEventListener('change', (e) => {
     currentSettings.autoSkip = e.target.checked;
+    updateAutoSkipDelaySliderVisibility();
+    chrome.storage.local.set({ joyn_autoskip: e.target.checked });
     saveSettings();
   });
+
+  $('autoSkipDelaySlider').addEventListener('input', (e) => {
+    const value = parseInt(e.target.value);
+    updateAutoSkipDelaySlider(value);
+    chrome.storage.local.set({ joyn_autoskip_delay: value });
+    saveSettings();
+  });
+
+  $('autoSkipDelaySlider').addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const step = 1;
+    const val = Math.max(0, Math.min(10, parseInt($('autoSkipDelaySlider').value) + (e.deltaY < 0 ? step : -step)));
+    updateAutoSkipDelaySlider(val);
+    chrome.storage.local.set({ joyn_autoskip_delay: val });
+    saveSettings();
+  }, { passive: false });
 
   $('toggleDislikes').addEventListener('change', (e) => {
     currentSettings.dislikes = e.target.checked;
@@ -306,6 +353,60 @@ function setupEventListeners() {
 
   $('btnResetAll').addEventListener('click', resetAllSettings);
 
+  // AI Text Improvement listeners
+  $('toggle-api-key-visibility').addEventListener('click', () => {
+    const input = $('gemini-api-key');
+    const eyeIcon = $('toggle-api-key-visibility').querySelector('svg');
+    if (input.type === 'password') {
+      input.type = 'text';
+      eyeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.822 7.822L21 21m-2.228-2.228l-3.65-3.65m0 0a3 3 0 10-5.196-5.196m5.196 5.196l-5.196-5.196" />`;
+    } else {
+      input.type = 'password';
+      eyeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />`;
+    }
+  });
+
+  $('gemini-api-key').addEventListener('input', (e) => {
+    const val = e.target.value.trim();
+    chrome.storage.sync.set({ gemini_api_key: val });
+  });
+
+  $('btn-verify-api-key').addEventListener('click', verifyGeminiApiKey);
+
+  $('toggleAiTextShortcut').addEventListener('change', (e) => {
+    currentSettings.aiTextUseShortcut = e.target.checked;
+    updateAiTextBlocksVisibility();
+    saveSettings();
+  });
+
+  $('toggleAiTextButton').addEventListener('change', (e) => {
+    currentSettings.aiTextUseButton = e.target.checked;
+    saveSettings();
+  });
+
+  $('toggleAiTextSpelling').addEventListener('change', (e) => {
+    currentSettings.aiTextSpelling = e.target.checked;
+    saveSettings();
+  });
+
+  $('toggleAiTextPunctuation').addEventListener('change', (e) => {
+    currentSettings.aiTextPunctuation = e.target.checked;
+    saveSettings();
+  });
+
+  $('toggleAiTextCustomActive').addEventListener('change', (e) => {
+    currentSettings.aiTextCustomActive = e.target.checked;
+    updateAiTextBlocksVisibility();
+    saveSettings();
+  });
+
+  $('aiTextCustomPrompt').addEventListener('input', (e) => {
+    currentSettings.aiTextCustomPrompt = e.target.value;
+    saveSettings();
+  });
+
+  setupShortcutRecorder();
+
   setupDropdown();
   setupSidebarNavigation();
   setupSearch();
@@ -357,6 +458,28 @@ function setupDropdown() {
 function updateAutoLikeSliderVisibility() {
   const block = $('autoLikeSliderBlock');
   if (currentSettings.autoLike) {
+    block.classList.remove('hidden');
+  } else {
+    block.classList.add('hidden');
+  }
+}
+
+function updateAutoSkipDelaySlider(val) {
+  val = parseInt(val) || 0;
+  currentSettings.autoSkipDelay = val;
+  $('autoSkipDelaySlider').value = val;
+  if (val === 0) {
+    $('autoSkipDelayVal').textContent = getMessage('autoskip_delay_instant') || 'Sofort';
+  } else {
+    $('autoSkipDelayVal').textContent = val + 's';
+  }
+  updateSliderProgress($('autoSkipDelaySlider'), val);
+  updateAutoSkipDelaySliderVisibility();
+}
+
+function updateAutoSkipDelaySliderVisibility() {
+  const block = $('autoSkipDelaySliderBlock');
+  if (currentSettings.autoSkip) {
     block.classList.remove('hidden');
   } else {
     block.classList.add('hidden');
@@ -696,3 +819,121 @@ document.addEventListener('DOMContentLoaded', () => {
   loadSettings();
   initDriveUI();
 });
+
+// ==========================================
+// AI TEXT IMPROVEMENT HELPERS
+// ==========================================
+function updateAiTextBlocksVisibility() {
+  const shortcutBlock = $('aiTextShortcutInputBlock');
+  if (currentSettings.aiTextUseShortcut) {
+    shortcutBlock.classList.remove('hidden');
+  } else {
+    shortcutBlock.classList.add('hidden');
+  }
+
+  const customBlock = $('aiTextCustomPromptBlock');
+  if (currentSettings.aiTextCustomActive) {
+    customBlock.classList.remove('hidden');
+  } else {
+    customBlock.classList.add('hidden');
+  }
+}
+
+function verifyGeminiApiKey() {
+  const apiKey = $('gemini-api-key').value.trim();
+  const statusEl = $('api-key-status');
+  
+  if (!apiKey) {
+    statusEl.textContent = 'Bitte gib einen API-Schlüssel ein.';
+    statusEl.className = 'text-xs font-semibold text-red-500 block';
+    return;
+  }
+
+  statusEl.textContent = getMessage('verify_key_checking') || 'Prüfe...';
+  statusEl.className = 'text-xs font-semibold text-slate-500 block';
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+  fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: 'Hello' }] }]
+    })
+  })
+  .then(async (response) => {
+    if (response.ok) {
+      statusEl.textContent = getMessage('verify_key_success') || 'API-Schlüssel ist gültig!';
+      statusEl.className = 'text-xs font-semibold text-green-500 block';
+      chrome.storage.sync.set({ gemini_api_key: apiKey });
+    } else {
+      const errData = await response.json().catch(() => ({}));
+      const errMsg = errData.error?.message || `Fehlercode ${response.status}`;
+      statusEl.textContent = (getMessage('verify_key_error') || 'API-Schlüssel ungültig: ') + errMsg;
+      statusEl.className = 'text-xs font-semibold text-red-500 block';
+    }
+  })
+  .catch((err) => {
+    statusEl.textContent = (getMessage('verify_key_error') || 'API-Schlüssel ungültig: ') + err.message;
+    statusEl.className = 'text-xs font-semibold text-red-500 block';
+  });
+}
+
+function setupShortcutRecorder() {
+  const input = $('aiTextShortcutInput');
+  let isRecording = false;
+
+  input.addEventListener('click', () => {
+    if (isRecording) return;
+    isRecording = true;
+    input.value = getMessage('keyboard_shortcut_recorder_placeholder') || 'Klicke zum Aufnehmen...';
+    input.classList.add('bg-m3-primaryContainer-light', 'dark:bg-m3-primaryContainer-dark', 'text-m3-onPrimaryContainer-light', 'dark:text-m3-onPrimaryContainer-dark');
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if (!isRecording) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    const key = e.key;
+
+    if (['Control', 'Shift', 'Alt', 'Meta'].includes(key)) {
+      return;
+    }
+
+    const parts = [];
+    if (e.ctrlKey) parts.push('Ctrl');
+    if (e.altKey) parts.push('Alt');
+    if (e.shiftKey) parts.push('Shift');
+    if (e.metaKey) parts.push('Meta');
+
+    let finalKey = key;
+    if (key.length === 1) {
+      finalKey = key.toUpperCase();
+    } else if (key.startsWith('Arrow')) {
+      finalKey = key.replace('Arrow', '');
+    }
+
+    parts.push(finalKey);
+
+    const shortcutStr = parts.join('+');
+    input.value = shortcutStr;
+    currentSettings.aiTextShortcut = shortcutStr;
+    
+    isRecording = false;
+    input.classList.remove('bg-m3-primaryContainer-light', 'dark:bg-m3-primaryContainer-dark', 'text-m3-onPrimaryContainer-light', 'dark:text-m3-onPrimaryContainer-dark');
+    input.blur();
+    
+    saveSettings();
+    showToast('Tastenkombination gespeichert: ' + shortcutStr);
+  });
+
+  input.addEventListener('blur', () => {
+    setTimeout(() => {
+      if (isRecording) {
+        isRecording = false;
+        input.value = currentSettings.aiTextShortcut || 'Alt+P';
+        input.classList.remove('bg-m3-primaryContainer-light', 'dark:bg-m3-primaryContainer-dark', 'text-m3-onPrimaryContainer-light', 'dark:text-m3-onPrimaryContainer-dark');
+      }
+    }, 150);
+  });
+}

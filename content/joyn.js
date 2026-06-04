@@ -6,6 +6,7 @@
   'use strict';
 
   let autoSkipEnabled = true;
+  let autoSkipDelay = 0;
   const SPEED_MIN = 0.25, SPEED_MAX = 10, SPEED_STEP = 0.25;
   const VOL_MIN = 0, VOL_MAX = 6, VOL_STEP = 0.1;
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.round(v * 100) / 100));
@@ -137,10 +138,12 @@
     }, 50);
   }
 
-  chrome.storage.local.get(['joyn_autoskip', 'joyn_pause_on_open'], (res) => {
+  chrome.storage.local.get(['joyn_autoskip', 'joyn_autoskip_delay', 'joyn_pause_on_open'], (res) => {
     if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.id) return;
     const resSafe = res || {};
     autoSkipEnabled = resSafe.joyn_autoskip !== undefined ? !!resSafe.joyn_autoskip : true;
+    const delay = parseInt(resSafe.joyn_autoskip_delay);
+    autoSkipDelay = isFinite(delay) ? delay : 0;
     pauseOnOpenSetting = resSafe.joyn_pause_on_open !== undefined ? !!resSafe.joyn_pause_on_open : false;
 
     chrome.runtime.sendMessage({ type: 'GET_TAB_SETTINGS' }, (tabRes) => {
@@ -156,6 +159,9 @@
     if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.id) return;
     if (changes.joyn_autoskip && changes.joyn_autoskip.newValue !== undefined) {
       autoSkipEnabled = !!changes.joyn_autoskip.newValue;
+    }
+    if (changes.joyn_autoskip_delay && changes.joyn_autoskip_delay.newValue !== undefined) {
+      autoSkipDelay = parseInt(changes.joyn_autoskip_delay.newValue) || 0;
     }
     if (changes.joyn_pause_on_open && changes.joyn_pause_on_open.newValue !== undefined) {
       pauseOnOpenSetting = !!changes.joyn_pause_on_open.newValue;
@@ -665,9 +671,12 @@
     if (!main.paused && (now - lastSkipTime) > SKIP_COOLDOWN) {
       const skip = queryShadow(document, SKIP_SELECTOR);
       if (skip && isVisible(skip)) {
-        lastSkipTime = now;
-        robustClick(skip);
-        showToast('⏭ Intro übersprungen');
+        if (!skip._detectedAt) skip._detectedAt = now;
+        if (now - skip._detectedAt >= autoSkipDelay * 1000) {
+          lastSkipTime = now;
+          robustClick(skip);
+          showToast('⏭ Intro übersprungen');
+        }
         return;
       }
     }
@@ -675,9 +684,12 @@
     if (main.duration > 10 && (main.currentTime / main.duration) > 0.75) {
       const nextBtn = queryShadow(document, NEXT_SELECTOR);
       if (nextBtn && isVisible(nextBtn) && location.href !== lastNextHref) {
-        lastNextHref = location.href;
-        showToast('▶ Nächste Folge');
-        robustClick(nextBtn);
+        if (!nextBtn._detectedAt) nextBtn._detectedAt = now;
+        if (now - nextBtn._detectedAt >= autoSkipDelay * 1000) {
+          lastNextHref = location.href;
+          showToast('▶ Nächste Folge');
+          robustClick(nextBtn);
+        }
       }
     }
   }

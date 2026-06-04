@@ -44,6 +44,12 @@
   "autoskip_desc": {
     "message": "Überspringt Intros, Recaps & Werbung automatisch."
   },
+  "autoskip_delay_prefix": {
+    "message": "Verzögerung:"
+  },
+  "autoskip_delay_instant": {
+    "message": "Sofort"
+  },
   "autolike_title": {
     "message": "Auto-Like (YouTube)"
   },
@@ -433,5 +439,59 @@
   },
   "settings_group_newtab_appearance": {
     "message": "Neuer Tab: Aussehen"
+  },
+  "settings_group_ai_text": {
+    "message": "KI-Textverbesserung"
+  },
+  "gemini_api_key_title": {
+    "message": "Gemini API-Schlüssel"
+  },
+  "gemini_api_key_desc": {
+    "message": "Trage deinen Gemini API-Schlüssel ein, um die KI-Textverbesserung zu aktivieren. Der Schlüssel wird sicher in deinem Google-Konto synchronisiert."
+  },
+  "verify_key_btn": {
+    "message": "Schlüssel prüfen"
+  },
+  "verify_key_success": {
+    "message": "API-Schlüssel ist gültig!"
+  },
+  "verify_key_error": {
+    "message": "API-Schlüssel ungültig: "
+  },
+  "verify_key_checking": {
+    "message": "Prüfe..."
+  },
+  "keyboard_shortcut_title": {
+    "message": "Tastenkombination aktivieren"
+  },
+  "keyboard_shortcut_input_label": {
+    "message": "Tastenkombination konfigurieren"
+  },
+  "keyboard_shortcut_recorder_placeholder": {
+    "message": "Klicke zum Aufnehmen..."
+  },
+  "floating_button_title": {
+    "message": "Verbessern-Button über markiertem Text anzeigen"
+  },
+  "rechtschreibung_title": {
+    "message": "Rechtschreibung korrigieren"
+  },
+  "rechtschreibung_desc": {
+    "message": "Korrigiert Tippfehler und Rechtschreibfehler der Wörter."
+  },
+  "kommapunkt_title": {
+    "message": "Kommas und Zeichensetzung hinzufügen"
+  },
+  "kommapunkt_desc": {
+    "message": "Fügt korrekte Kommas und Satzzeichen hinzu, ohne den Satzbau stark zu verändern."
+  },
+  "custom_prompt_title": {
+    "message": "Eigenen Prompt verwenden"
+  },
+  "custom_prompt_desc": {
+    "message": "Fügt zusätzliche Anweisungen für die KI hinzu (z. B. 'In höfliches Deutsch umwandeln')."
+  },
+  "custom_prompt_placeholder": {
+    "message": "z. B. 'Übersetze den Text in professionelles Englisch'"
   }
 }

@@ -27,6 +27,7 @@
                     id: 'welcome-' + Date.now(),
                     title: 'Willkommen 🚀',
                     content: '<h1>Echtzeit-Schreibbereich & Dateiablage</h1><p>Hier kannst du direkt loslegen. Der Editor passt sich vollautomatisch deinen Wünschen an.</p><ul><li><strong>Automatischer Titel:</strong> Der Titel passt sich live deiner ersten geschriebenen Zeile an!</li><li><strong>Dateien & Bilder:</strong> Ziehe Dokumente, PDF-Dateien oder Bilder einfach per Drag-and-Drop in dieses Schreibfeld.</li><li>Tippe <code># </code> für eine große Überschrift, <code>- </code> für eine Liste.</li></ul>',
+                    created: Date.now(),
                     updated: Date.now(),
                     driveFileId: null
                 }
@@ -807,6 +808,14 @@
                                 </div>
                             </div>
 
+                            <!-- Datums-Info -->
+                            <div id="note-metadata-row" style="display:flex; gap:16px; margin-bottom: 12px; padding: 0 4px; flex-shrink: 0; user-select: none;">
+                                <div style="display:flex; gap:16px; font-size: 0.7rem; color: var(--m3-outline-dark);">
+                                    <span id="note-created-time">Erstellt: -</span>
+                                    <span id="note-updated-time">Geändert: -</span>
+                                </div>
+                            </div>
+
                             <!-- Anhangs-Leiste -->
                             <div id="attachment-bar">
                                 <div class="attachment-bar-header">
@@ -981,7 +990,16 @@
         const backdrop = notesShadow.getElementById('notes-backdrop');
         backdrop.classList.add('active');
         loadNotes(() => {
-            renderNotesList();
+            let urlNoteId = null;
+            if (isStandalone) {
+                const params = new URLSearchParams(window.location.search);
+                urlNoteId = params.get('noteId');
+            }
+            if (urlNoteId && notes.some(n => n.id === urlNoteId)) {
+                openNoteInEditor(urlNoteId);
+            } else {
+                createNewNote();
+            }
             showDriveStatusBar();
         });
     }
@@ -1043,9 +1061,20 @@
         const note = notes.find(n => n.id === id);
         if (!note) return;
 
+        // Fallback für Abwärtskompatibilität
+        if (!note.created) {
+            note.created = note.updated || Date.now();
+        }
+
         notesShadow.getElementById('editor-placeholder').style.display = 'none';
         const ws = notesShadow.getElementById('editor-workspace');
         ws.style.display = 'flex';
+
+        // Formatieren und Anzeigen der Datumsangaben
+        const createdDate = new Date(note.created).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        const updatedDate = new Date(note.updated).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        notesShadow.getElementById('note-created-time').textContent = `Erstellt: ${createdDate}`;
+        notesShadow.getElementById('note-updated-time').textContent = `Geändert: ${updatedDate}`;
 
         const editorContent = notesShadow.getElementById('note-editor-content');
         if (!note.attachments) note.attachments = [];
@@ -1060,7 +1089,8 @@
 
     function createNewNote() {
         const id = 'note-' + Date.now();
-        notes.unshift({ id, title: 'Neue Notiz', content: '<p><br></p>', updated: Date.now(), driveFileId: null });
+        const now = Date.now();
+        notes.unshift({ id, title: 'Neue Notiz', content: '<p><br></p>', created: now, updated: now, driveFileId: null });
         saveNotes(() => {
             openNoteInEditor(id);
         });
@@ -1078,9 +1108,16 @@
         notes[idx].title = title;
         notes[idx].content = content;
         notes[idx].updated = Date.now();
+        if (!notes[idx].created) {
+            notes[idx].created = notes[idx].updated;
+        }
 
         saveNotes();
         renderNotesList();
+
+        // Datumsangabe für Änderungen im Editor live aktualisieren
+        const updatedDate = new Date(notes[idx].updated).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        notesShadow.getElementById('note-updated-time').textContent = `Geändert: ${updatedDate}`;
 
         const status = notesShadow.getElementById('note-save-status');
         status.innerHTML = '<span class="status-dot saving"></span> Sichernd…';

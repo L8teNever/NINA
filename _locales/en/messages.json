@@ -44,6 +44,12 @@
   "autoskip_desc": {
     "message": "Automatically skips intros, recaps & ads."
   },
+  "autoskip_delay_prefix": {
+    "message": "Delay:"
+  },
+  "autoskip_delay_instant": {
+    "message": "Instant"
+  },
   "autolike_title": {
     "message": "Auto-Like (YouTube)"
   },
@@ -433,5 +439,59 @@
   },
   "settings_group_newtab_appearance": {
     "message": "New Tab: Appearance"
+  },
+  "settings_group_ai_text": {
+    "message": "AI Text Improvement"
+  },
+  "gemini_api_key_title": {
+    "message": "Gemini API Key"
+  },
+  "gemini_api_key_desc": {
+    "message": "Enter your Gemini API key to enable AI text improvement. The key is securely synced across your devices using Google Chrome Sync."
+  },
+  "verify_key_btn": {
+    "message": "Verify Key"
+  },
+  "verify_key_success": {
+    "message": "API Key is valid!"
+  },
+  "verify_key_error": {
+    "message": "API Key invalid: "
+  },
+  "verify_key_checking": {
+    "message": "Verifying..."
+  },
+  "keyboard_shortcut_title": {
+    "message": "Enable Keyboard Shortcut"
+  },
+  "keyboard_shortcut_input_label": {
+    "message": "Configure Keyboard Shortcut"
+  },
+  "keyboard_shortcut_recorder_placeholder": {
+    "message": "Click to record..."
+  },
+  "floating_button_title": {
+    "message": "Show Floating Button Over Selected Text"
+  },
+  "rechtschreibung_title": {
+    "message": "Correct Spelling"
+  },
+  "rechtschreibung_desc": {
+    "message": "Fixes typos and spelling mistakes."
+  },
+  "kommapunkt_title": {
+    "message": "Add Commas & Punctuation"
+  },
+  "kommapunkt_desc": {
+    "message": "Adds proper commas and punctuation marks without heavily altering sentence structure."
+  },
+  "custom_prompt_title": {
+    "message": "Use Custom Prompt"
+  },
+  "custom_prompt_desc": {
+    "message": "Adds custom instructions for the AI (e.g., 'Rewrite in polite German')."
+  },
+  "custom_prompt_placeholder": {
+    "message": "e.g., 'Translate text into professional English'"
   }
 }

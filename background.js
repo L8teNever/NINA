@@ -71,7 +71,9 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
           shouldUpdate = true;
         }
       } else {
-        if (showName && current.showName && current.showName !== showName) {
+        const currentSeries = getSeriesName(current.showName);
+        const newSeries = getSeriesName(showName);
+        if (newSeries && currentSeries && currentSeries !== newSeries) {
           speed = 1.0;
           shouldUpdate = true;
         }
@@ -166,7 +168,11 @@ function cleanShowName(name) {
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'NINA_OPEN_NOTES_TAB') {
-    chrome.tabs.create({ url: chrome.runtime.getURL('ui/notes.html') });
+    let url = 'ui/notes.html';
+    if (message.noteId) {
+      url += '?noteId=' + encodeURIComponent(message.noteId);
+    }
+    chrome.tabs.create({ url: chrome.runtime.getURL(url) });
     sendResponse({ ok: true });
     return true;
   }
@@ -196,6 +202,25 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse({ ok: true });
     }
     return true;
+  }
+
+  if (message.type === 'NINA_IMPROVE_TEXT') {
+    const { text, settings } = message;
+    chrome.storage.sync.get(['gemini_api_key'], (syncRes) => {
+      const apiKey = syncRes.gemini_api_key;
+      if (!apiKey) {
+        sendResponse({ error: 'Kein API-Key konfiguriert. Bitte trage einen Gemini API-Key in den Nina-Einstellungen ein.' });
+        return;
+      }
+      callGeminiApi(text, apiKey, settings)
+        .then((resultText) => {
+          sendResponse({ success: true, text: resultText });
+        })
+        .catch((err) => {
+          sendResponse({ error: err.message });
+        });
+    });
+    return true; // Keep channel open for async response
   }
 
   if (message.type === 'GET_TAB_SETTINGS') {
@@ -300,6 +325,78 @@ function getShowName(cleanTitle) {
     return cleanShowName(normalizeTitleForMatching(parts[0]));
   }
   return '';
+}
+
+function getSeriesName(showName) {
+  if (!showName) return '';
+  let s = showName.toLowerCase();
+  // Strip common season/episode/volume/book/volume indicators followed by numbers
+  s = s.replace(/\b(?:season|staffel|st|s|book|buch|vol|volume)\s*\d+\b/g, '');
+  s = s.replace(/\b(?:episode|folge|ep|e|flg)\s*\d+\b/g, '');
+  // Strip standalone numbers (often episode/season/year numbers)
+  s = s.replace(/\b\d+\b/g, '');
+  // Clean up extra spaces
+  return s.replace(/\s+/g, ' ').trim();
+}
+
+async function callGeminiApi(text, apiKey, settings) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+  
+  let systemInstruction = "Du bist ein präziser Text-Korrektor. Deine Aufgabe ist es, den bereitgestellten Text zu korrigieren. Gib ausschließlich den korrigierten Text zurück, ohne Kommentare, ohne Einleitung, ohne Anführungszeichen und ohne Markdown-Formatierung. Wenn keine Korrekturen notwendig sind, gib den Text exakt unverändert zurück.";
+  
+  if (settings.aiTextSpelling && !settings.aiTextPunctuation) {
+    systemInstruction += " Korrigiere NUR Tippfehler und die Rechtschreibung der einzelnen Wörter. Lass den Satzbau und die Zeichensetzung (Kommas, Punkte) unverändert.";
+  } else if (!settings.aiTextSpelling && settings.aiTextPunctuation) {
+    systemInstruction += " Korrigiere NUR die Zeichensetzung (füge korrekte Kommas und Punkte hinzu). Lass den Satzbau und die Schreibweise der Wörter unverändert.";
+  } else if (settings.aiTextSpelling && settings.aiTextPunctuation) {
+    systemInstruction += " Korrigiere Rechtschreibung, Tippfehler und Zeichensetzung (Kommas/Punkte). Verändere den grundlegenden Satzbau nicht.";
+  }
+  
+  if (settings.aiTextCustomActive && settings.aiTextCustomPrompt) {
+    systemInstruction += ` Berücksichtige zusätzlich diese Anweisung: ${settings.aiTextCustomPrompt}`;
+  }
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      contents: [
+        {
+          parts: [
+            {
+              text: text
+            }
+          ]
+        }
+      ],
+      systemInstruction: {
+        parts: [
+          {
+            text: systemInstruction
+          }
+        ]
+      },
+      generationConfig: {
+        temperature: 0.1
+      }
+    })
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    const errorMsg = errorData.error?.message || `API-Fehler (${response.status})`;
+    throw new Error(errorMsg);
+  }
+
+  const data = await response.json();
+  const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!resultText) {
+    throw new Error("Ungültige Antwort von der Gemini API.");
+  }
+  
+  return resultText.trim();
 }
 
 

@@ -16,13 +16,14 @@ NINA is a Chrome extension that enhances and optimizes streaming platforms. This
 
 ## 🎯 What Does NINA Do?
 
-NINA provides the following features on video streaming platforms:
+NINA provides the following features on video streaming platforms and webpages:
 
 - **Video Speed Control** – Adjusts playback speed
 - **Audio Enhancements** – Improves audio quality and settings
 - **YouTube Dislikes Display** – Shows historical dislike counts
 - **Notes Feature** – Allows creating notes on videos (optionally with Google Drive sync)
 - **Overlay Search** – Provides quick search function on websites
+- **AI Text Improvement** – Enhances selected text directly in input fields and notes (optionally via Gemini API)
 - **Platform-Specific Improvements** – Optimizes features on supported streaming sites
 
 ---
@@ -31,9 +32,10 @@ NINA provides the following features on video streaming platforms:
 
 All data that NINA collects is stored **exclusively locally** in your browser:
 
-### Stored Data (Chrome Local Storage)
+### Stored Data (Chrome Local & Sync Storage)
 
-- **User Settings:** Your video speed, audio settings, and interface preferences
+- **User Settings:** Your video speed, audio settings, text improvement preferences, and interface preferences
+- **Gemini API Key:** The API key specified for AI text improvement (synchronized securely across your devices using `chrome.storage.sync`)
 - **Notes:** Locally created notes on videos (only transferred when explicitly syncing to Google Drive)
 - **Bookmarks & Favorites:** Locally saved video favorites
 - **Cache Data:** Technical cache information to optimize the extension
@@ -73,6 +75,14 @@ NINA only connects to the following external APIs, and **only when the feature i
 - **Activation:** Only when you explicitly enable Google Drive integration
 - **Data:** Notes that you manually sync to Google Drive
 - **Control:** You can disable this feature anytime
+
+### Google Gemini API (Optional)
+
+- **Purpose:** AI-powered correction of spelling, punctuation, and text formatting
+- **Source:** `https://generativelanguage.googleapis.com/`
+- **Activation:** Only when you add a custom API key in the settings and trigger text improvement via shortcut or button
+- **Data:** Only the text selection you have highlighted and your API key for authorization
+- **Control:** You decide when text is sent to the API. No data is transmitted without your API key or explicit action. Google processes API data in accordance with the Gemini API Terms (data is not used for model training by default).
 
 ### YouTube Dislikes API
 

@@ -6,6 +6,7 @@ const state = {
   audio: 100,
   ffSpeed: 2.0,
   autoSkip: true,
+  autoSkipDelay: 0,
   ytDislikes: true,
   speedTimer: true,
   sponsorBlock: true,
@@ -133,6 +134,9 @@ const ffSpeedSlider = $('ffSpeedSlider');
 const ffSpeedVal = $('ffSpeedVal');
 
 const toggleAutoSkip = $('toggleAutoSkip');
+const autoSkipDelaySlider = $('autoSkipDelaySlider');
+const autoSkipDelayVal = $('autoSkipDelayVal');
+const autoSkipDelaySliderBlock = $('autoSkipDelaySliderBlock');
 const toggleDislikes = $('toggleDislikes');
 const toggleSpeedTimer = $('toggleSpeedTimer');
 const toggleSponsorBlock = $('toggleSponsorBlock');
@@ -248,6 +252,17 @@ function updateAutoLikeSlider(val) {
   updateSliderProgress(autoLikeSlider, val);
 }
 
+function updateAutoSkipDelaySlider(val) {
+  state.autoSkipDelay = parseInt(val);
+  autoSkipDelaySlider.value = val;
+  if (val === 0) {
+    autoSkipDelayVal.innerText = getMessage('autoskip_delay_instant') || 'Sofort';
+  } else {
+    autoSkipDelayVal.innerText = `${val}s`;
+  }
+  updateSliderProgress(autoSkipDelaySlider, val);
+}
+
 function setFFSpeed(ffSpeed) {
   ffSpeed = Math.max(1.0, Math.min(10.0, parseFloat(ffSpeed)));
   state.ffSpeed = ffSpeed;
@@ -272,6 +287,7 @@ async function init() {
     'tab_speeds',
     'joyn_ff_speed',
     'joyn_autoskip',
+    'joyn_autoskip_delay',
     'joyn_show_dislikes',
     'joyn_show_timer',
     'joyn_sponsorblock_enabled',
@@ -308,6 +324,8 @@ async function init() {
     state.ffSpeed = isFinite(ff) ? ff : 2.0;
     
     state.autoSkip = resSafe.joyn_autoskip !== undefined ? !!resSafe.joyn_autoskip : true;
+    const delayVal = parseInt(resSafe.joyn_autoskip_delay);
+    state.autoSkipDelay = isFinite(delayVal) ? delayVal : 0;
     state.ytDislikes = resSafe.joyn_show_dislikes !== undefined ? !!resSafe.joyn_show_dislikes : true;
     state.speedTimer = resSafe.joyn_show_timer !== undefined ? !!resSafe.joyn_show_timer : true;
     state.sponsorBlock = resSafe.joyn_sponsorblock_enabled !== undefined ? !!resSafe.joyn_sponsorblock_enabled : true;
@@ -337,6 +355,15 @@ async function init() {
     
     // Apply settings values to toggles
     toggleAutoSkip.checked = state.autoSkip;
+    autoSkipDelaySlider.value = state.autoSkipDelay;
+    updateAutoSkipDelaySlider(state.autoSkipDelay);
+    if (state.autoSkip) {
+      autoSkipDelaySliderBlock.style.opacity = "1";
+      autoSkipDelaySliderBlock.style.pointerEvents = "auto";
+    } else {
+      autoSkipDelaySliderBlock.style.opacity = "0.4";
+      autoSkipDelaySliderBlock.style.pointerEvents = "none";
+    }
     toggleDislikes.checked = state.ytDislikes;
     toggleSpeedTimer.checked = state.speedTimer;
     toggleSponsorBlock.checked = state.sponsorBlock;
@@ -474,8 +501,29 @@ btnBackToDashboard.addEventListener('click', () => {
 toggleAutoSkip.addEventListener('change', (e) => {
   const enabled = !!e.target.checked;
   chrome.storage.local.set({ joyn_autoskip: enabled });
+  if (enabled) {
+    autoSkipDelaySliderBlock.style.opacity = "1";
+    autoSkipDelaySliderBlock.style.pointerEvents = "auto";
+  } else {
+    autoSkipDelaySliderBlock.style.opacity = "0.4";
+    autoSkipDelaySliderBlock.style.pointerEvents = "none";
+  }
   showToast(enabled ? getMessage('toast_autoskip_active') : getMessage('toast_autoskip_inactive'));
 });
+
+autoSkipDelaySlider.addEventListener('input', (e) => {
+  const val = parseInt(e.target.value);
+  updateAutoSkipDelaySlider(val);
+  chrome.storage.local.set({ joyn_autoskip_delay: val });
+});
+
+autoSkipDelaySlider.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const step = 1;
+  const val = Math.max(0, Math.min(10, parseInt(autoSkipDelaySlider.value) + (e.deltaY < 0 ? step : -step)));
+  updateAutoSkipDelaySlider(val);
+  chrome.storage.local.set({ joyn_autoskip_delay: val });
+}, { passive: false });
 
 toggleDislikes.addEventListener('change', (e) => {
   const enabled = !!e.target.checked;
@@ -631,7 +679,13 @@ if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged)
       setFFSpeed(parseFloat(changes.joyn_ff_speed.newValue));
     }
     if (changes.joyn_autoskip) {
-      toggleAutoSkip.checked = !!changes.joyn_autoskip.newValue;
+      const enabled = !!changes.joyn_autoskip.newValue;
+      toggleAutoSkip.checked = enabled;
+      autoSkipDelaySliderBlock.style.opacity = enabled ? "1" : "0.4";
+      autoSkipDelaySliderBlock.style.pointerEvents = enabled ? "auto" : "none";
+    }
+    if (changes.joyn_autoskip_delay) {
+      updateAutoSkipDelaySlider(parseInt(changes.joyn_autoskip_delay.newValue) || 0);
     }
     if (changes.joyn_show_dislikes) {
       toggleDislikes.checked = !!changes.joyn_show_dislikes.newValue;

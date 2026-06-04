@@ -16,13 +16,14 @@ NINA ist eine Chrome-Erweiterung, die Streaming-Plattformen verbessert und optim
 
 ## 🎯 Was macht NINA?
 
-NINA bietet folgende Funktionen auf Video-Streaming-Plattformen:
+NINA bietet folgende Funktionen auf Video-Streaming-Plattformen und Webseiten:
 
 - **Video-Geschwindigkeitsregelung** – Passt die Wiedergabegeschwindigkeit an
 - **Audio-Optimierungen** – Verbessert Audioqualität und -einstellungen
 - **YouTube-Dislikes-Anzeige** – Zeigt historische Dislike-Zahlen an
 - **Notizen-Funktion** – Ermöglicht Notizen zu Videos (optional mit Google Drive Sync)
 - **Overlay-Suche** – Bietet schnelle Suchfunktion auf Websites
+- **KI-Textverbesserung** – Verbessert markierten Text direkt in Eingabefeldern und Notizen (optional via Gemini API)
 - **Plattform-spezifische Verbesserungen** – Optimiert Funktionen auf unterstützten Streaming-Seiten
 
 ---
@@ -31,9 +32,10 @@ NINA bietet folgende Funktionen auf Video-Streaming-Plattformen:
 
 Alle Daten, die NINA erfasst, werden **ausschließlich lokal** in deinem Browser gespeichert:
 
-### Gespeicherte Daten (Chrome Local Storage)
+### Gespeicherte Daten (Chrome Local & Sync Storage)
 
-- **Nutzereinstellungen:** Deine Video-Geschwindigkeit, Audioeinstellungen und Oberflächeneinstellungen
+- **Nutzereinstellungen:** Deine Video-Geschwindigkeit, Audioeinstellungen, Textverbesserungs-Präferenzen und Oberflächeneinstellungen
+- **Gemini API-Schlüssel:** Der für die KI-Textverbesserung angegebene API-Schlüssel (wird gesichert über `chrome.storage.sync` geräteübergreifend synchronisiert)
 - **Notizen:** Lokal erstellte Notizen zu Videos (werden nur bei explizitem Google Drive Sync übertragen)
 - **Bookmarks & Favoriten:** Lokal gespeicherte Video-Favoriten
 - **Cache-Daten:** Technische Cache-Informationen zur Optimierung der Erweiterung
@@ -73,6 +75,14 @@ NINA verbindet sich nur zu folgenden externen APIs, und **nur wenn die Funktion 
 - **Aktivierung:** Nur, wenn du die Google Drive-Integration explizit aktivierst
 - **Daten:** Notizen, die du manuell zu Google Drive synchronisierst
 - **Kontrolle:** Du kannst diese Funktion jederzeit deaktivieren
+
+### Google Gemini API (Optional)
+
+- **Zweck:** KI-gestützte Verbesserung von Rechtschreibung, Zeichensetzung und Texten
+- **Quelle:** `https://generativelanguage.googleapis.com/`
+- **Aktivierung:** Nur, wenn du einen eigenen API-Schlüssel in den Einstellungen einträgst und die Verbesserung via Shortcut oder Button ausführst
+- **Daten:** Nur der aktuell von dir markierte Textabschnitt sowie dein API-Schlüssel zur Autorisierung
+- **Kontrolle:** Du bestimmst, wann Text an die API gesendet wird. Ohne API-Schlüssel oder explizite Aktion findet keine Übermittlung statt. Google verwendet API-Daten gemäß den Gemini API Terms (Daten werden standardmäßig nicht für das Modell-Training verwendet).
 
 ### YouTube Dislikes API
 

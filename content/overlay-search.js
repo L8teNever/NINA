@@ -9,6 +9,7 @@ let chromeBookmarks = [];
 let useChromeFavorites = false;
 let chromeBookmarkFilterMode = 'exclude';
 let chromeBookmarkFilterList = [];
+let notes = [];
 
 function updateBookmarks() {
     if (chrome.storage && chrome.storage.local) {
@@ -17,7 +18,8 @@ function updateBookmarks() {
             'chromeBookmarks',
             'useChromeFavorites',
             'chromeBookmarkFilterMode',
-            'chromeBookmarkFilterList'
+            'chromeBookmarkFilterList',
+            'nina_notes'
         ], (result) => {
             if (result.bookmarks && result.bookmarks.length > 0) {
                 bookmarks = result.bookmarks;
@@ -33,6 +35,9 @@ function updateBookmarks() {
             }
             if (result.chromeBookmarkFilterList) {
                 chromeBookmarkFilterList = result.chromeBookmarkFilterList;
+            }
+            if (result.nina_notes) {
+                notes = result.nina_notes;
             }
         });
     }
@@ -416,6 +421,12 @@ let shadow = null;function initOverlay() {
             border-bottom: 2px solid rgba(6, 182, 212, 0.4) !important;
             color: #67e8f9 !important;
         }
+        .kbd-badge-purple {
+            background-color: rgba(139, 92, 246, 0.15) !important;
+            border: 1px solid rgba(139, 92, 246, 0.25) !important;
+            border-bottom: 2px solid rgba(139, 92, 246, 0.4) !important;
+            color: #c4b5fd !important;
+        }
 
         /* Eigene Lesezeichen (Smaragd/Grün) */
         .suggestion-item.bg-emerald-user {
@@ -426,6 +437,17 @@ let shadow = null;function initOverlay() {
         .suggestion-item.bg-emerald-user:hover {
             background-color: rgba(16, 185, 129, 0.18) !important;
             color: #d1fae5 !important;
+        }
+
+        /* Notizen (Lila) */
+        .suggestion-item.bg-purple-note {
+            background-color: rgba(139, 92, 246, 0.05) !important;
+            color: #c4b5fd !important;
+        }
+        .suggestion-item.bg-purple-note.active, 
+        .suggestion-item.bg-purple-note:hover {
+            background-color: rgba(139, 92, 246, 0.18) !important;
+            color: #ddd6fe !important;
         }
 
         /* System-Lesezeichen (Cyan) */
@@ -669,6 +691,18 @@ function handleInput(value) {
         matches = matches.concat(chromeSuggestions);
     }
 
+    // Passende Notizen ermitteln
+    const matchingNotes = notes
+        .filter(n => n.title && n.title.toLowerCase().includes(val))
+        .map(n => ({
+            name: n.title,
+            url: chrome.runtime.getURL(`ui/notes.html?noteId=${encodeURIComponent(n.id)}`),
+            type: 'note',
+            id: n.id
+        }));
+
+    matches = matches.concat(matchingNotes);
+
     currentMatches = matches;
 
     renderDropdown(currentMatches, val);
@@ -705,7 +739,17 @@ function renderDropdown(matches, query) {
             
             setSuggestionItemStyle(li, index === activeSuggestionIndex);
             
-            if (type === "user") {
+            if (type === "note") {
+                li.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4 text-purple-400" style="display: inline-block;">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                        </svg>
+                        <span>Notiz <strong>${escapeHtml(displayName)}</strong> öffnen</span>
+                    </div>
+                    <span class="kbd-badge kbd-badge-purple">Notiz</span>
+                `;
+            } else if (type === "user") {
                 li.innerHTML = `
                     <div class="flex items-center gap-3">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="w-4 h-4 text-emerald-400" style="display: inline-block;">
@@ -743,7 +787,13 @@ function renderDropdown(matches, query) {
 function setSuggestionItemStyle(li, isActive) {
     const bookmarkType = li.dataset.bookmarkType;
     
-    if (bookmarkType === 'user') {
+    if (bookmarkType === 'note') {
+        if (isActive) {
+            li.className = "suggestion-item bg-purple-note active";
+        } else {
+            li.className = "suggestion-item bg-purple-note";
+        }
+    } else if (bookmarkType === 'user') {
         if (isActive) {
             li.className = "suggestion-item bg-emerald-user active";
         } else {
@@ -875,7 +925,17 @@ function toggleSearchOverlay(forceState) {
 function triggerShortcut(url) {
     hideDropdown();
     toggleSearchOverlay(false); 
-    window.open(url, '_blank'); 
+    if (url && url.startsWith('chrome-extension:')) {
+        try {
+            const urlObj = new URL(url);
+            const noteId = urlObj.searchParams.get('noteId');
+            chrome.runtime.sendMessage({ type: 'NINA_OPEN_NOTES_TAB', noteId: noteId });
+        } catch (e) {
+            window.open(url, '_blank');
+        }
+    } else {
+        window.open(url, '_blank'); 
+    }
 }
 
 // Google Suche im neuen Tab ausführen

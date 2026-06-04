@@ -142,6 +142,10 @@
         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 15l4-8 5 9H3zm5 0h13l-4-8-9 0zm6.5 0L12 7"/></svg>
         <span>Notizen & Drive Sync</span>
       </a>
+      <a href="#cat-ai-text" class="sidebar-link" data-target="cat-ai-text">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+        <span data-i18n="settings_group_ai_text">KI-Textverbesserung</span>
+      </a>
       <a href="#cat-support" class="sidebar-link" data-target="cat-support">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" /></svg>
         <span data-i18n="dev_support">Entwickler Support</span>
@@ -231,15 +235,25 @@
 
           <div class="border-t border-slate-100 dark:border-slate-800/80 my-2"></div>
 
-          <div class="setting-item flex items-center justify-between">
-            <div class="flex flex-col max-w-[70%]">
-              <span class="text-sm font-medium" data-i18n="autoskip_title">Auto-Skip Intros</span>
-              <span class="text-xs text-m3-outline-light dark:text-m3-outline-dark mt-0.5" data-i18n="autoskip_desc">Überspringt Intros, Recaps & Werbung automatisch.</span>
+          <div class="setting-item space-y-4">
+            <div class="flex items-center justify-between">
+              <div class="flex flex-col max-w-[70%]">
+                <span class="text-sm font-medium" data-i18n="autoskip_title">Auto-Skip Intros</span>
+                <span class="text-xs text-m3-outline-light dark:text-m3-outline-dark mt-0.5" data-i18n="autoskip_desc">Überspringt Intros, Recaps & Werbung automatisch.</span>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                <input type="checkbox" id="toggleAutoSkip" class="sr-only peer" checked>
+                <div class="relative w-12 h-6 bg-m3-surfaceVariant-light dark:bg-m3-surfaceVariant-dark peer-focus:outline-none rounded-full peer peer-checked:bg-m3-primary-light dark:peer-checked:bg-m3-primary-dark border border-transparent transition-colors duration-200 after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-slate-500 dark:after:bg-slate-400 peer-checked:after:bg-white dark:peer-checked:after:bg-m3-background-dark after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-6"></div>
+              </label>
             </div>
-            <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
-              <input type="checkbox" id="toggleAutoSkip" class="sr-only peer" checked>
-              <div class="relative w-12 h-6 bg-m3-surfaceVariant-light dark:bg-m3-surfaceVariant-dark peer-focus:outline-none rounded-full peer peer-checked:bg-m3-primary-light dark:peer-checked:bg-m3-primary-dark border border-transparent transition-colors duration-200 after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-slate-500 dark:after:bg-slate-400 peer-checked:after:bg-white dark:peer-checked:after:bg-m3-background-dark after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-6"></div>
-            </label>
+
+            <!-- Slider für Auto-Skip Verzögerung -->
+            <div id="autoSkipDelaySliderBlock" class="flex flex-col space-y-2 pt-2 border-t border-dashed border-m3-surfaceVariant-light dark:border-m3-surfaceVariant-dark transition-all duration-200">
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-medium text-m3-outline-light dark:text-m3-outline-dark"><span data-i18n="autoskip_delay_prefix">Verzögerung:</span> <span id="autoSkipDelayVal" class="font-bold text-m3-primary-light dark:text-m3-primary-dark text-sm">0s</span></span>
+              </div>
+              <input type="range" id="autoSkipDelaySlider" min="0" max="10" step="1" value="0" class="w-full slider-aqua">
+            </div>
           </div>
         </section>
 
@@ -575,6 +589,120 @@
               <li>Nur Dateien, die NINA selbst erstellt hat, werden gelesen (<code class="text-xs bg-slate-100 dark:bg-white/5 px-1 rounded">drive.file</code> Scope)</li>
               <li>Beim Öffnen des Notizen-Overlays wird automatisch synchronisiert</li>
             </ul>
+          </div>
+        </section>
+
+        <!-- 9: KI-Textverbesserung -->
+        <section id="cat-ai-text" class="setting-section bg-m3-surface-light dark:bg-m3-surface-dark rounded-[28px] p-5 shadow-sm space-y-4 relative">
+          <h2 class="text-xs font-semibold uppercase tracking-wider text-m3-primary-light dark:text-m3-primary-dark flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+            <span data-i18n="settings_group_ai_text">KI-Textverbesserung</span>
+          </h2>
+
+          <!-- Gemini API Key Input -->
+          <div class="space-y-3">
+            <div class="flex flex-col">
+              <span class="text-sm font-medium" data-i18n="gemini_api_key_title">Gemini API-Schlüssel</span>
+              <span class="text-xs text-m3-outline-light dark:text-m3-outline-dark mt-0.5" data-i18n="gemini_api_key_desc">Gib deinen Gemini API-Schlüssel ein, um die KI-Textverbesserung zu aktivieren.</span>
+            </div>
+            <div class="flex gap-2">
+              <div class="relative flex-1">
+                <input type="password" id="gemini-api-key" placeholder="AIzaSy..." class="w-full bg-slate-100 dark:bg-m3-background-dark text-slate-800 dark:text-slate-100 rounded-xl px-4 py-2.5 pr-10 border border-slate-200 dark:border-white/5 focus:border-m3-primary-light dark:focus:border-m3-primary-dark focus:bg-white dark:focus:bg-m3-background-dark outline-none transition-all duration-200">
+                <button id="toggle-api-key-visibility" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 bg-transparent border-0 cursor-pointer" type="button" title="Passwort anzeigen">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" id="eye-icon">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </button>
+              </div>
+              <button id="btn-verify-api-key" class="bg-m3-primaryContainer-light dark:bg-m3-primaryContainer-dark hover:brightness-110 text-m3-onPrimaryContainer-light dark:text-m3-onPrimaryContainer-dark font-semibold px-4 py-2.5 rounded-xl transition-all active:scale-[0.98] cursor-pointer text-sm shrink-0 border-0" data-i18n="verify_key_btn">Schlüssel prüfen</button>
+            </div>
+            <p id="api-key-status" class="text-xs font-semibold hidden"></p>
+          </div>
+
+          <div class="border-t border-slate-100 dark:border-slate-800/80 my-2"></div>
+
+          <!-- Trigger Options -->
+          <div class="space-y-4">
+            <div class="setting-item flex items-center justify-between">
+              <div class="flex flex-col max-w-[70%]">
+                <span class="text-sm font-medium" data-i18n="keyboard_shortcut_title">Tastenkombination aktivieren</span>
+                <span class="text-xs text-m3-outline-light dark:text-m3-outline-dark mt-0.5" data-i18n="keyboard_shortcut_input_label">Tastenkombination konfigurieren</span>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                <input type="checkbox" id="toggleAiTextShortcut" class="sr-only peer" checked>
+                <div class="relative w-12 h-6 bg-m3-surfaceVariant-light dark:bg-m3-surfaceVariant-dark peer-focus:outline-none rounded-full peer peer-checked:bg-m3-primary-light dark:peer-checked:bg-m3-primary-dark border border-transparent transition-colors duration-200 after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-slate-500 dark:after:bg-slate-400 peer-checked:after:bg-white dark:peer-checked:after:bg-m3-background-dark after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-6"></div>
+              </label>
+            </div>
+
+            <!-- Shortcut input block -->
+            <div id="aiTextShortcutInputBlock" class="flex flex-col space-y-2 pt-2 border-t border-dashed border-m3-surfaceVariant-light dark:border-m3-surfaceVariant-dark transition-all duration-200">
+              <div class="flex items-center gap-3">
+                <input type="text" id="aiTextShortcutInput" readonly placeholder="Alt+P" class="w-full bg-slate-100 dark:bg-m3-background-dark text-slate-800 dark:text-slate-100 rounded-xl px-4 py-2.5 border border-slate-200 dark:border-white/5 outline-none font-mono text-center text-sm cursor-pointer hover:bg-slate-200/50 dark:hover:bg-m3-surfaceVariant-dark transition-colors">
+              </div>
+            </div>
+
+            <div class="border-t border-slate-100 dark:border-slate-800/80 my-2"></div>
+
+            <div class="setting-item flex items-center justify-between">
+              <div class="flex flex-col max-w-[70%]">
+                <span class="text-sm font-medium" data-i18n="floating_button_title">Verbessern-Button über markiertem Text anzeigen</span>
+                <span class="text-xs text-m3-outline-light dark:text-m3-outline-dark mt-0.5">Zeigt ein kleines Icon über ausgewähltem Text in Eingabefeldern an.</span>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                <input type="checkbox" id="toggleAiTextButton" class="sr-only peer" checked>
+                <div class="relative w-12 h-6 bg-m3-surfaceVariant-light dark:bg-m3-surfaceVariant-dark peer-focus:outline-none rounded-full peer peer-checked:bg-m3-primary-light dark:peer-checked:bg-m3-primary-dark border border-transparent transition-colors duration-200 after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-slate-500 dark:after:bg-slate-400 peer-checked:after:bg-white dark:peer-checked:after:bg-m3-background-dark after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-6"></div>
+              </label>
+            </div>
+          </div>
+
+          <div class="border-t border-slate-100 dark:border-slate-800/80 my-2"></div>
+
+          <!-- Feature Switches -->
+          <div class="space-y-4">
+            <h3 class="text-xs font-semibold text-m3-outline-light dark:text-m3-outline-dark uppercase tracking-wider">Korrektur-Filter</h3>
+
+            <div class="setting-item flex items-center justify-between">
+              <div class="flex flex-col max-w-[70%]">
+                <span class="text-sm font-medium" data-i18n="rechtschreibung_title">Rechtschreibung korrigieren</span>
+                <span class="text-xs text-m3-outline-light dark:text-m3-outline-dark mt-0.5" data-i18n="rechtschreibung_desc">Korrigiert Tippfehler und Rechtschreibfehler der Wörter.</span>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                <input type="checkbox" id="toggleAiTextSpelling" class="sr-only peer" checked>
+                <div class="relative w-12 h-6 bg-m3-surfaceVariant-light dark:bg-m3-surfaceVariant-dark peer-focus:outline-none rounded-full peer peer-checked:bg-m3-primary-light dark:peer-checked:bg-m3-primary-dark border border-transparent transition-colors duration-200 after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-slate-500 dark:after:bg-slate-400 peer-checked:after:bg-white dark:peer-checked:after:bg-m3-background-dark after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-6"></div>
+              </label>
+            </div>
+
+            <div class="flex items-center justify-between">
+              <div class="flex flex-col max-w-[70%]">
+                <span class="text-sm font-medium" data-i18n="kommapunkt_title">Kommas und Zeichensetzung hinzufügen</span>
+                <span class="text-xs text-m3-outline-light dark:text-m3-outline-dark mt-0.5" data-i18n="kommapunkt_desc">Fügt korrekte Kommas und Satzzeichen hinzu.</span>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                <input type="checkbox" id="toggleAiTextPunctuation" class="sr-only peer" checked>
+                <div class="relative w-12 h-6 bg-m3-surfaceVariant-light dark:bg-m3-surfaceVariant-dark peer-focus:outline-none rounded-full peer peer-checked:bg-m3-primary-light dark:peer-checked:bg-m3-primary-dark border border-transparent transition-colors duration-200 after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-slate-500 dark:after:bg-slate-400 peer-checked:after:bg-white dark:peer-checked:after:bg-m3-background-dark after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-6"></div>
+              </label>
+            </div>
+
+            <div class="border-t border-slate-100 dark:border-slate-800/80 my-2"></div>
+
+            <div class="setting-item space-y-4">
+              <div class="flex items-center justify-between">
+                <div class="flex flex-col max-w-[70%]">
+                  <span class="text-sm font-medium" data-i18n="custom_prompt_title">Eigenen Prompt verwenden</span>
+                  <span class="text-xs text-m3-outline-light dark:text-m3-outline-dark mt-0.5" data-i18n="custom_prompt_desc">Fügt zusätzliche Anweisungen für die KI hinzu.</span>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                  <input type="checkbox" id="toggleAiTextCustomActive" class="sr-only peer">
+                  <div class="relative w-12 h-6 bg-m3-surfaceVariant-light dark:bg-m3-surfaceVariant-dark peer-focus:outline-none rounded-full peer peer-checked:bg-m3-primary-light dark:peer-checked:bg-m3-primary-dark border border-transparent transition-colors duration-200 after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-slate-500 dark:after:bg-slate-400 peer-checked:after:bg-white dark:peer-checked:after:bg-m3-background-dark after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-6"></div>
+                </label>
+              </div>
+
+              <!-- Custom Prompt textarea block -->
+              <div id="aiTextCustomPromptBlock" class="hidden flex flex-col space-y-2 pt-2 border-t border-dashed border-m3-surfaceVariant-light dark:border-m3-surfaceVariant-dark transition-all duration-200">
+                <textarea id="aiTextCustomPrompt" rows="3" placeholder="z. B. 'Übersetze den Text in professionelles Englisch'" class="w-full bg-slate-100 dark:bg-m3-background-dark text-slate-800 dark:text-slate-100 rounded-xl p-4 border border-slate-200 dark:border-white/5 focus:border-m3-primary-light dark:focus:border-m3-primary-dark focus:bg-white dark:focus:bg-m3-background-dark outline-none transition-all duration-200 text-sm resize-none"></textarea>
+              </div>
+            </div>
           </div>
         </section>
 

@@ -44,6 +44,12 @@
   "autoskip_desc": {
     "message": "Passe automatiquement les intros, les résumés et les publicités."
   },
+  "autoskip_delay_prefix": {
+    "message": "Délai :"
+  },
+  "autoskip_delay_instant": {
+    "message": "Immédiat"
+  },
   "autolike_title": {
     "message": "Like automatique (YouTube)"
   },

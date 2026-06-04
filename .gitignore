@@ -1,5 +1,11 @@
-# Google OAuth Credential-Dateien (niemals committen)
+# Google OAuth Credential-Dateien & Secrets (niemals committen)
 client_secret_*.json
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+secrets.json
 
 # Gepackte Extension
 *.zip
@@ -8,10 +14,30 @@ client_secret_*.json
 # OS-Dateien
 .DS_Store
 Thumbs.db
+desktop.ini
 
-# Editor
+# Editor & IDEs
 .vscode/
+.idea/
+.claude/
+.project
+.classpath
+.settings/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.user
 *.swp
 
-# Node (falls später build tools genutzt werden)
+# Node & Debug Logs
 node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Lokale Test-Profile
+.chrome-profile/
+test-profile/

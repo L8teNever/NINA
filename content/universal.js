@@ -17,6 +17,7 @@
   let currentSpeed = 1;
   let currentVolume = 1;
   let autoSkipEnabled = true;
+  let autoSkipDelay = 0;
   let pauseOnOpenSetting = false;
   let wasPlayingOnOpen = false;
 
@@ -27,6 +28,7 @@
   // ── Storage sync ─────────────────────────────────────────────────────────────
   chrome.storage.local.get([
     'joyn_autoskip', 
+    'joyn_autoskip_delay',
     'joyn_show_thanks_download', 
     'joyn_pause_on_open', 
     'joyn_hide_xray',
@@ -37,6 +39,8 @@
   ], (res) => {
     const resSafe = res || {};
     autoSkipEnabled = resSafe.joyn_autoskip !== undefined ? !!resSafe.joyn_autoskip : true;
+    const delay = parseInt(resSafe.joyn_autoskip_delay);
+    autoSkipDelay = isFinite(delay) ? delay : 0;
     const showThanksDownload = resSafe.joyn_show_thanks_download !== undefined ? !!resSafe.joyn_show_thanks_download : false;
     if (showThanksDownload) {
       document.body.classList.add('nina-show-thanks-download');
@@ -104,6 +108,9 @@
     }
     if (changes.joyn_autoskip && changes.joyn_autoskip.newValue !== undefined) {
       autoSkipEnabled = !!changes.joyn_autoskip.newValue;
+    }
+    if (changes.joyn_autoskip_delay && changes.joyn_autoskip_delay.newValue !== undefined) {
+      autoSkipDelay = parseInt(changes.joyn_autoskip_delay.newValue) || 0;
     }
     if (changes.joyn_pause_on_open && changes.joyn_pause_on_open.newValue !== undefined) {
       pauseOnOpenSetting = !!changes.joyn_pause_on_open.newValue;
@@ -441,15 +448,49 @@
     return out;
   }
 
+  function isYouTubeForbiddenElement(el) {
+    if (!isYouTube) return false;
+    let curr = el;
+    while (curr && curr !== document.body) {
+      if (curr.classList && curr.classList.length > 0) {
+        for (let i = 0; i < curr.classList.length; i++) {
+          const cls = curr.classList[i];
+          if (typeof cls === 'string' && (cls.includes('ytp-chapter') || cls.includes('ytp-chapters'))) {
+            return true;
+          }
+        }
+      }
+      if (curr.id === 'panels' || curr.tagName === 'YTD-ENGAGEMENT-PANEL-SECTION-LIST-RENDERER') {
+        return true;
+      }
+      const tag = curr.tagName;
+      if (tag === 'YTD-MACRO-MARKERS-LIST-ITEM-RENDERER' || 
+          tag === 'YTD-PLAYLIST-PANEL-VIDEO-RENDERER' ||
+          (curr.classList && curr.classList.contains('ytd-structured-description-content-renderer'))) {
+        return true;
+      }
+      curr = curr.parentElement;
+    }
+    return false;
+  }
+
   function findSkippable(selectors, texts) {
     for (const sel of selectors) {
       const hits = queryAllShadow(document, sel);
-      for (const el of hits) if (isVisible(el)) return el;
+      for (const el of hits) {
+        if (isVisible(el)) {
+          if (isYouTubeForbiddenElement(el)) continue;
+          return el;
+        }
+      }
     }
     try {
       const btns = collectButtons(document);
       for (const el of btns) {
-        if (isVisible(el) && textMatches(el, texts)) return el;
+        if (isVisible(el) && textMatches(el, texts)) {
+          if (isYouTubeForbiddenElement(el)) continue;
+          return el;
+        }
       }
     } catch (_) { }
     return null;
@@ -723,22 +764,31 @@
     // 1. Skip Intro
     const skipIntroBtn = document.querySelector('[data-uia="player-skip-intro"]');
     if (skipIntroBtn && isVisible(skipIntroBtn)) {
-      robustClick(skipIntroBtn);
-      showToast('⏭ Intro übersprungen');
+      if (!skipIntroBtn._detectedAt) skipIntroBtn._detectedAt = Date.now();
+      if (Date.now() - skipIntroBtn._detectedAt >= autoSkipDelay * 1000) {
+        robustClick(skipIntroBtn);
+        showToast('⏭ Intro übersprungen');
+      }
     }
 
     // 2. Skip Recap
     const skipRecapBtn = document.querySelector('[data-uia="player-skip-recap"], [data-uia="player-skip-preplay"]');
     if (skipRecapBtn && isVisible(skipRecapBtn)) {
-      robustClick(skipRecapBtn);
-      showToast('⏭ Recap übersprungen');
+      if (!skipRecapBtn._detectedAt) skipRecapBtn._detectedAt = Date.now();
+      if (Date.now() - skipRecapBtn._detectedAt >= autoSkipDelay * 1000) {
+        robustClick(skipRecapBtn);
+        showToast('⏭ Recap übersprungen');
+      }
     }
 
     // 3. Skip Credits / Next Episode
     const nextEpBtn = document.querySelector('[data-uia="next-episode-seamless-button-draining"]');
     if (nextEpBtn && isVisible(nextEpBtn)) {
-      robustClick(nextEpBtn);
-      showToast('▶ Nächste Folge');
+      if (!nextEpBtn._detectedAt) nextEpBtn._detectedAt = Date.now();
+      if (Date.now() - nextEpBtn._detectedAt >= autoSkipDelay * 1000) {
+        robustClick(nextEpBtn);
+        showToast('▶ Nächste Folge');
+      }
     }
 
     // 4. Blocked Autoplay Continue
@@ -838,16 +888,19 @@
       const nextUpBtn = document.querySelector("[class*=nextupcard-button]");
       
       if (skipBtn && isVisible(skipBtn) && !nextUpBtn) {
-        const time = Math.floor(video.currentTime);
-        lastIntroTime = time;
-        setTimeout(() => { lastIntroTime = -1; }, 5000);
+        if (!skipBtn._detectedAt) skipBtn._detectedAt = Date.now();
+        if (Date.now() - skipBtn._detectedAt >= autoSkipDelay * 1000) {
+          const time = Math.floor(video.currentTime);
+          lastIntroTime = time;
+          setTimeout(() => { lastIntroTime = -1; }, 5000);
 
-        robustClick(skipBtn);
-        showToast('⏭ Intro übersprungen');
+          robustClick(skipBtn);
+          showToast('⏭ Intro übersprungen');
 
-        setTimeout(() => {
-          createAmazonRewindButton(video, skipBtn.parentElement?.parentElement?.parentElement, time, video.currentTime);
-        }, 50);
+          setTimeout(() => {
+            createAmazonRewindButton(video, skipBtn.parentElement?.parentElement?.parentElement, time, video.currentTime);
+          }, 50);
+        }
       }
     }
 
@@ -860,10 +913,13 @@
       const epText = epTextEl ? (epTextEl.textContent || '') : '';
       const isEp1 = /(?<!\S)1(?!\S)/.test(epText);
       if (epText && !isEp1 && lastAmazonEpText !== epText) {
-        lastAmazonEpText = epText;
-        setTimeout(() => { lastAmazonEpText = ''; }, 5000);
-        robustClick(nextEpBtn);
-        showToast('▶ Nächste Folge');
+        if (!nextEpBtn._detectedAt) nextEpBtn._detectedAt = Date.now();
+        if (Date.now() - nextEpBtn._detectedAt >= autoSkipDelay * 1000) {
+          lastAmazonEpText = epText;
+          setTimeout(() => { lastAmazonEpText = ''; }, 5000);
+          robustClick(nextEpBtn);
+          showToast('▶ Nächste Folge');
+        }
       }
     }
 
@@ -1539,17 +1595,23 @@
     if (!main.paused && (now - lastSkipTime) > SKIP_COOLDOWN) {
       const btn = findSkippable(SKIP_SELECTORS, SKIP_TEXTS);
       if (btn) {
-        lastSkipTime = now;
-        robustClick(btn);
-        showToast('⏭ Intro übersprungen');
+        if (!btn._detectedAt) btn._detectedAt = now;
+        if (now - btn._detectedAt >= autoSkipDelay * 1000) {
+          lastSkipTime = now;
+          robustClick(btn);
+          showToast('⏭ Intro übersprungen');
+        }
         return;
       }
 
       const nb = findSkippable(NEXT_SELECTORS, NEXT_TEXTS);
       if (nb && location.href !== lastNextHref) {
-        lastNextHref = location.href;
-        showToast('▶ Nächste Folge');
-        robustClick(nb);
+        if (!nb._detectedAt) nb._detectedAt = now;
+        if (now - nb._detectedAt >= autoSkipDelay * 1000) {
+          lastNextHref = location.href;
+          showToast('▶ Nächste Folge');
+          robustClick(nb);
+        }
       }
     }
   }

@@ -313,17 +313,29 @@
         <!-- Subtle Divider Line -->
         <div class="border-t border-slate-100 dark:border-slate-800/80 my-2"></div>
 
-        <!-- Toggle: Auto-Skip Intros -->
-        <div class="flex items-center justify-between">
-          <div class="flex flex-col max-w-[70%]">
-            <span class="text-sm font-medium" data-i18n="autoskip_title">Auto-Skip Intros</span>
-            <span class="text-xs text-m3-outline-light dark:text-m3-outline-dark" data-i18n="autoskip_desc">Überspringt Intros, Recaps & Werbung automatisch.</span>
+        <!-- Auto-Skip Block -->
+        <div class="space-y-4">
+          <div class="flex items-center justify-between">
+            <div class="flex flex-col max-w-[70%]">
+              <span class="text-sm font-medium" data-i18n="autoskip_title">Auto-Skip Intros</span>
+              <span class="text-xs text-m3-outline-light dark:text-m3-outline-dark" data-i18n="autoskip_desc">Überspringt Intros, Recaps & Werbung automatisch.</span>
+            </div>
+            <!-- M3 Switch -->
+            <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+              <input type="checkbox" id="toggleAutoSkip" class="sr-only peer" checked>
+              <div class="relative w-12 h-6 bg-m3-surfaceVariant-light dark:bg-m3-surfaceVariant-dark peer-focus:outline-none rounded-full peer peer-checked:bg-m3-primary-light dark:peer-checked:bg-m3-primary-dark border border-transparent transition-colors duration-200 after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-slate-500 dark:after:bg-slate-400 peer-checked:after:bg-white dark:peer-checked:after:bg-m3-background-dark after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-6"></div>
+            </label>
           </div>
-          <!-- M3 Switch -->
-          <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
-            <input type="checkbox" id="toggleAutoSkip" class="sr-only peer" checked>
-            <div class="relative w-12 h-6 bg-m3-surfaceVariant-light dark:bg-m3-surfaceVariant-dark peer-focus:outline-none rounded-full peer peer-checked:bg-m3-primary-light dark:peer-checked:bg-m3-primary-dark border border-transparent transition-colors duration-200 after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-slate-500 dark:after:bg-slate-400 peer-checked:after:bg-white dark:peer-checked:after:bg-m3-background-dark after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-6"></div>
-          </label>
+
+          <!-- Slider für Auto-Skip Verzögerung -->
+          <div id="autoSkipDelaySliderBlock" class="flex flex-col space-y-2 pt-2 border-t border-dashed border-m3-surfaceVariant-light dark:border-m3-surfaceVariant-dark transition-all duration-200">
+            <div class="flex items-center justify-between text-xs font-medium">
+              <span><span data-i18n="autoskip_delay_prefix">Verzögerung:</span> <span id="autoSkipDelayVal" class="font-bold text-m3-primary-light dark:text-m3-primary-dark text-sm">0s</span></span>
+            </div>
+            <div class="relative w-full flex items-center">
+              <input type="range" id="autoSkipDelaySlider" min="0" max="10" step="1" value="0" class="w-full slider-aqua">
+            </div>
+          </div>
         </div>
       </div>
 
