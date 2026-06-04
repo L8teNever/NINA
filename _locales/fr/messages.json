@@ -439,5 +439,80 @@
   },
   "settings_group_newtab_appearance": {
     "message": "Nouvel onglet : Apparence"
+  },
+  "settings_group_ai_text": {
+    "message": "Amélioration de texte par IA"
+  },
+  "gemini_api_key_title": {
+    "message": "Clé API Gemini"
+  },
+  "gemini_api_key_desc": {
+    "message": "Saisissez votre clé API Gemini pour activer l'amélioration de texte par IA. La clé est synchronisée en toute sécurité avec votre compte Google."
+  },
+  "verify_key_btn": {
+    "message": "Vérifier la clé"
+  },
+  "verify_key_success": {
+    "message": "La clé API est valide !"
+  },
+  "verify_key_error": {
+    "message": "Clé API non valide : "
+  },
+  "verify_key_checking": {
+    "message": "Vérification..."
+  },
+  "keyboard_shortcut_title": {
+    "message": "Activer le raccourci clavier"
+  },
+  "keyboard_shortcut_input_label": {
+    "message": "Configurer le raccourci clavier"
+  },
+  "keyboard_shortcut_recorder_placeholder": {
+    "message": "Cliquez pour enregistrer..."
+  },
+  "floating_button_title": {
+    "message": "Afficher le bouton flottant sur le texte sélectionné"
+  },
+  "rechtschreibung_title": {
+    "message": "Corriger l'orthographe"
+  },
+  "rechtschreibung_desc": {
+    "message": "Corrige les fautes de frappe et d'orthographe."
+  },
+  "kommapunkt_title": {
+    "message": "Ajouter virgules & ponctuation"
+  },
+  "kommapunkt_desc": {
+    "message": "Ajoute des virgules et des signes de ponctuation appropriés sans trop altérer la structure des phrases."
+  },
+  "custom_prompt_title": {
+    "message": "Utiliser une consigne personnalisée"
+  },
+  "custom_prompt_desc": {
+    "message": "Ajoute des consignes personnalisées pour l'IA (par ex. 'Réécrire en allemand poli')."
+  },
+  "custom_prompt_placeholder": {
+    "message": "par ex. 'Traduire le texte en anglais professionnel'"
+  },
+  "gemini_guide_title": {
+    "message": "Comment obtenir une clé API ?"
+  },
+  "gemini_guide_step1": {
+    "message": "Allez sur Google AI Studio :"
+  },
+  "gemini_guide_step2": {
+    "message": "Connectez-vous avec votre compte Google."
+  },
+  "gemini_guide_step3": {
+    "message": "Cliquez sur \"Get API key\" en haut à gauche, puis sur \"Create API key\"."
+  },
+  "gemini_guide_step4": {
+    "message": "Sélectionnez ou créez un projet, puis copiez la clé générée."
+  },
+  "gemini_guide_note_prefix": {
+    "message": "Remarque :"
+  },
+  "gemini_guide_note_text": {
+    "message": "L'utilisation de la clé API Gemini sous les limites standard (Free Tier) dans Google AI Studio est totalement gratuite et largement suffisante pour l'amélioration de texte."
   }
 }

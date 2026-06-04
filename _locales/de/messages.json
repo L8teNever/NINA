@@ -493,5 +493,26 @@
   },
   "custom_prompt_placeholder": {
     "message": "z. B. 'Übersetze den Text in professionelles Englisch'"
+  },
+  "gemini_guide_title": {
+    "message": "Wie bekomme ich einen API-Schlüssel?"
+  },
+  "gemini_guide_step1": {
+    "message": "Gehe zum Google AI Studio:"
+  },
+  "gemini_guide_step2": {
+    "message": "Melde dich mit deinem normalen Google-Konto an."
+  },
+  "gemini_guide_step3": {
+    "message": "Klicke oben links auf \"Get API key\" und dann auf \"Create API key\"."
+  },
+  "gemini_guide_step4": {
+    "message": "Wähle ein Projekt aus (oder erstelle ein neues) und kopiere den generierten Schlüssel."
+  },
+  "gemini_guide_note_prefix": {
+    "message": "Hinweis:"
+  },
+  "gemini_guide_note_text": {
+    "message": "Die Nutzung des API-Schlüssels im Google AI Studio ist in den Standard-Freigrenzen (Free Tier) komplett kostenlos und für die Textverbesserung völlig ausreichend."
   }
 }

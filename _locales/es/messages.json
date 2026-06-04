@@ -439,5 +439,80 @@
   },
   "settings_group_newtab_appearance": {
     "message": "Nueva pestaña: Aspecto"
+  },
+  "settings_group_ai_text": {
+    "message": "Mejora de texto con IA"
+  },
+  "gemini_api_key_title": {
+    "message": "Clave de API de Gemini"
+  },
+  "gemini_api_key_desc": {
+    "message": "Introduce tu clave de API de Gemini para activar la mejora de texto con IA. La clave se sincroniza de forma segura en tu cuenta de Google."
+  },
+  "verify_key_btn": {
+    "message": "Verificar clave"
+  },
+  "verify_key_success": {
+    "message": "¡La clave de API es válida!"
+  },
+  "verify_key_error": {
+    "message": "Clave de API no válida: "
+  },
+  "verify_key_checking": {
+    "message": "Verificando..."
+  },
+  "keyboard_shortcut_title": {
+    "message": "Activar acceso directo de teclado"
+  },
+  "keyboard_shortcut_input_label": {
+    "message": "Configurar acceso directo de teclado"
+  },
+  "keyboard_shortcut_recorder_placeholder": {
+    "message": "Haz clic para grabar..."
+  },
+  "floating_button_title": {
+    "message": "Mostrar botón flotante sobre el texto seleccionado"
+  },
+  "rechtschreibung_title": {
+    "message": "Corregir ortografía"
+  },
+  "rechtschreibung_desc": {
+    "message": "Corrige errores ortográficos y de escritura."
+  },
+  "kommapunkt_title": {
+    "message": "Añadir comas y puntuación"
+  },
+  "kommapunkt_desc": {
+    "message": "Añade comas y signos de puntuación correctos sin alterar demasiado la estructura de las frases."
+  },
+  "custom_prompt_title": {
+    "message": "Usar instrucción personalizada"
+  },
+  "custom_prompt_desc": {
+    "message": "Añade instrucciones personalizadas para la IA (p. ej. 'Traducir al inglés formal')."
+  },
+  "custom_prompt_placeholder": {
+    "message": "p. ej. 'Traducir texto a inglés profesional'"
+  },
+  "gemini_guide_title": {
+    "message": "¿Cómo obtengo una clave de API?"
+  },
+  "gemini_guide_step1": {
+    "message": "Ve a Google AI Studio:"
+  },
+  "gemini_guide_step2": {
+    "message": "Inicia sesión con tu cuenta de Google."
+  },
+  "gemini_guide_step3": {
+    "message": "Haz clic en \"Get API key\" en la esquina superior izquierda, luego en \"Create API key\"."
+  },
+  "gemini_guide_step4": {
+    "message": "Selecciona o crea un proyecto, luego copia la clave generada."
+  },
+  "gemini_guide_note_prefix": {
+    "message": "Nota:"
+  },
+  "gemini_guide_note_text": {
+    "message": "El uso de la clave de API de Gemini bajo los límites estándar (Free Tier) en Google AI Studio es completamente gratuito y más que suficiente para la mejora de texto."
   }
 }

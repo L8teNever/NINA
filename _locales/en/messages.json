@@ -493,5 +493,26 @@
   },
   "custom_prompt_placeholder": {
     "message": "e.g., 'Translate text into professional English'"
+  },
+  "gemini_guide_title": {
+    "message": "How do I get an API key?"
+  },
+  "gemini_guide_step1": {
+    "message": "Go to Google AI Studio:"
+  },
+  "gemini_guide_step2": {
+    "message": "Sign in with your standard Google account."
+  },
+  "gemini_guide_step3": {
+    "message": "Click \"Get API key\" in the top-left corner, then click \"Create API key\"."
+  },
+  "gemini_guide_step4": {
+    "message": "Select or create a project, then copy the generated key."
+  },
+  "gemini_guide_note_prefix": {
+    "message": "Note:"
+  },
+  "gemini_guide_note_text": {
+    "message": "Using the Gemini API key under standard limits (Free Tier) in Google AI Studio is completely free and more than enough for text improvement."
   }
 }
