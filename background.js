@@ -143,6 +143,48 @@ chrome.storage.onChanged.addListener((changes, area) => {
 
 
 
+// ── Einstellungen geräteübergreifend anwenden ────────────────────────────────
+// Das Master-Objekt 'nina-settings' liegt in chrome.storage.sync und wird von
+// Chrome automatisch über alle Geräte mit demselben Konto abgeglichen.
+// Die Content-Skripte lesen jedoch einzelne joyn_*-Schlüssel aus storage.local.
+// Deshalb spiegeln wir die synchronisierten Werte auf JEDEM Gerät nach local,
+// sobald sie sich ändern (bzw. beim Start des Service Workers).
+const NINA_SETTINGS_KEY = 'nina-settings';
+
+function mirrorSyncedSettingsToLocal(settings) {
+  if (!settings) return;
+  const local = {};
+  if (settings.pauseOnOpen !== undefined)     local.joyn_pause_on_open = !!settings.pauseOnOpen;
+  if (settings.autoSkip !== undefined)        local.joyn_autoskip = !!settings.autoSkip;
+  if (settings.autoSkipDelay !== undefined)   local.joyn_autoskip_delay = settings.autoSkipDelay;
+  if (settings.dislikes !== undefined)        local.joyn_show_dislikes = !!settings.dislikes;
+  if (settings.speedTimer !== undefined)      local.joyn_show_timer = !!settings.speedTimer;
+  if (settings.sponsorBlock !== undefined)    local.joyn_sponsorblock_enabled = !!settings.sponsorBlock;
+  if (settings.thanksDownload !== undefined)  local.joyn_show_thanks_download = !!settings.thanksDownload;
+  if (settings.autoLike !== undefined)        local.joyn_autolike_enabled = !!settings.autoLike;
+  if (settings.autoLikePercent !== undefined) local.joyn_autolike_threshold = settings.autoLikePercent;
+  if (settings.hideXRay !== undefined)        local.joyn_hide_xray = !!settings.hideXRay;
+  if (settings.ffSpeed !== undefined)         local.joyn_ff_speed = settings.ffSpeed;
+  if (settings.language !== undefined)        local.joyn_language = settings.language;
+  if (Object.keys(local).length) chrome.storage.local.set(local);
+}
+
+function refreshSettingsMirror() {
+  chrome.storage.sync.get([NINA_SETTINGS_KEY], (res) => {
+    if (chrome.runtime.lastError) return;
+    mirrorSyncedSettingsToLocal(res[NINA_SETTINGS_KEY]);
+  });
+}
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'sync' && changes[NINA_SETTINGS_KEY]) {
+    mirrorSyncedSettingsToLocal(changes[NINA_SETTINGS_KEY].newValue);
+  }
+});
+
+chrome.runtime.onStartup.addListener(refreshSettingsMirror);
+chrome.runtime.onInstalled.addListener(refreshSettingsMirror);
+
 function normalizeTitleForMatching(title) {
   if (!title) return '';
   let t = title.toLowerCase();

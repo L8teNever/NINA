@@ -44,15 +44,24 @@
     return window.getSelection();
   }
 
-  // Load Settings
+  // Load Settings (primär aus chrome.storage.sync – geräteübergreifend;
+  // Fallback auf alte gerätelokale Daten, falls noch nicht migriert)
   function loadLocalSettings() {
     try {
-      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-        chrome.storage.local.get(STORAGE_KEY, (result) => {
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync) {
+        chrome.storage.sync.get(STORAGE_KEY, (result) => {
           if (chrome.runtime.lastError) return;
           if (result[STORAGE_KEY]) {
             settings = { ...DEFAULT_SETTINGS, ...result[STORAGE_KEY] };
+            return;
           }
+          // Fallback: noch nicht migrierte lokale Einstellungen
+          chrome.storage.local.get(STORAGE_KEY, (localRes) => {
+            if (chrome.runtime.lastError) return;
+            if (localRes && localRes[STORAGE_KEY]) {
+              settings = { ...DEFAULT_SETTINGS, ...localRes[STORAGE_KEY] };
+            }
+          });
         });
       }
     } catch (_) {}
@@ -60,11 +69,11 @@
 
   loadLocalSettings();
 
-  // Listen for settings changes
+  // Listen for settings changes (sync = anderes Gerät / Optionsseite, local = Legacy)
   try {
     if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged) {
       chrome.storage.onChanged.addListener((changes, area) => {
-        if (area === 'local' && changes[STORAGE_KEY]) {
+        if ((area === 'sync' || area === 'local') && changes[STORAGE_KEY] && changes[STORAGE_KEY].newValue) {
           settings = { ...DEFAULT_SETTINGS, ...changes[STORAGE_KEY].newValue };
           removeButton();
         }

@@ -146,6 +146,10 @@
         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
         <span data-i18n="settings_group_ai_text">KI-Textverbesserung</span>
       </a>
+      <a href="#cat-permissions" class="sidebar-link" data-target="cat-permissions">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" /></svg>
+        <span>Berechtigungen &amp; Status</span>
+      </a>
       <a href="#cat-support" class="sidebar-link" data-target="cat-support">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" /></svg>
         <span data-i18n="dev_support">Entwickler Support</span>
@@ -720,6 +724,36 @@
                 <textarea id="aiTextCustomPrompt" rows="3" placeholder="z. B. 'Übersetze den Text in professionelles Englisch'" class="w-full bg-slate-100 dark:bg-m3-background-dark text-slate-800 dark:text-slate-100 rounded-xl p-4 border border-slate-200 dark:border-white/5 focus:border-m3-primary-light dark:focus:border-m3-primary-dark focus:bg-white dark:focus:bg-m3-background-dark outline-none transition-all duration-200 text-sm resize-none"></textarea>
               </div>
             </div>
+          </div>
+        </section>
+
+        <!-- 10: Berechtigungen & Status -->
+        <section id="cat-permissions" class="setting-section bg-m3-surface-light dark:bg-m3-surface-dark rounded-[28px] p-5 shadow-sm space-y-4 relative">
+          <h2 class="text-xs font-semibold uppercase tracking-wider text-m3-primary-light dark:text-m3-primary-dark flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" /></svg>
+            <span>Berechtigungen &amp; Status</span>
+          </h2>
+
+          <p class="text-xs text-slate-500 dark:text-slate-400">Hier siehst du, ob NINA alle Berechtigungen hat, die es zum Funktionieren braucht. Fehlt der Zugriff auf bestimmte Webseiten, laufen die Funktionen dort nicht.</p>
+
+          <!-- Zusammenfassung -->
+          <div id="permissions-summary"></div>
+
+          <!-- Liste der Berechtigungen (dynamisch befüllt) -->
+          <div id="permissions-list" class="space-y-2"></div>
+
+          <div class="flex gap-3 pt-1">
+            <button id="btn-request-permissions" class="hidden flex-1 bg-m3-primaryContainer-light dark:bg-m3-primaryContainer-dark hover:brightness-110 text-m3-onPrimaryContainer-light dark:text-m3-onPrimaryContainer-dark font-bold py-3 rounded-xl transition-all active:scale-[0.98] cursor-pointer border-0">
+              Fehlende Berechtigungen erteilen
+            </button>
+            <button id="btn-recheck-permissions" class="px-5 bg-m3-surfaceVariant-light dark:bg-m3-surfaceVariant-dark hover:brightness-110 text-slate-800 dark:text-slate-100 font-semibold py-3 rounded-xl transition-all active:scale-[0.98] cursor-pointer">
+              Erneut prüfen
+            </button>
+          </div>
+
+          <div class="p-4 rounded-2xl border border-slate-200 dark:border-white/5 space-y-1.5">
+            <p class="text-xs font-semibold text-slate-600 dark:text-slate-300">Berechtigung trotzdem rot?</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Öffne <code class="text-xs bg-slate-100 dark:bg-white/5 px-1 rounded">chrome://extensions</code> → NINA → <strong class="text-slate-700 dark:text-slate-200">Details</strong> → „Website-Zugriff" und stelle auf <strong class="text-slate-700 dark:text-slate-200">„Auf allen Websites"</strong>. Bei API-Berechtigungen hilft nur, die Erweiterung neu zu installieren.</p>
           </div>
         </section>
 

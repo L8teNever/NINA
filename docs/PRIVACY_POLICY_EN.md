@@ -42,8 +42,9 @@ All data that NINA collects is stored **exclusively locally** in your browser:
 
 ### Data Processing
 
-- All settings are managed through `chrome.storage.local`
-- Data **does not leave** your browser without explicit action
+- Settings are managed through `chrome.storage.sync` and automatically synced by Chrome across your devices signed in with the same Google/Chrome account (the background image stays device-local in `chrome.storage.local`)
+- Device-specific data (e.g. last used playback speed per tab) stays local in `chrome.storage.local`
+- Data **does not leave** your browser without explicit action (apart from the Chrome-native account sync mentioned above)
 - Data is **immediately deleted** when you uninstall NINA
 
 ---
@@ -54,7 +55,7 @@ NINA requires the following permissions to function properly:
 
 | Permission | Reason | Data Usage |
 |---|---|---|
-| **`storage`** | Stores your settings locally | All user settings, notes, and preferences are stored in `chrome.storage.local` |
+| **`storage`** | Stores your settings | Settings are stored in `chrome.storage.sync` and synced across devices via Chrome; notes and device-specific data are stored in `chrome.storage.local` |
 | **`activeTab`** | Detects the active website | Only necessary to recognize which video you're currently watching (not logged) |
 | **`tabs`** | Access to tab information | Manages tab metadata locally; no data is transmitted |
 | **`scripting`** | Modifies video players | Injects scripts into streaming sites to adjust speed and audio |

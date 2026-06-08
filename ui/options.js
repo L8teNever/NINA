@@ -3,6 +3,10 @@
 const $ = (id) => document.getElementById(id);
 
 const STORAGE_KEY = 'nina-settings';
+// Einstellungen liegen in chrome.storage.sync (geräteübergreifend mit demselben
+// Google-/Chrome-Konto). Das Hintergrundbild ist als Data-URL zu groß für Sync
+// (8 KB-Limit pro Eintrag) und bleibt deshalb gerätelokal.
+const BG_IMAGE_KEY = 'nina_bg_image';
 const DEFAULT_SETTINGS = {
   pauseOnOpen: false,
   ffSpeed: 2.0,
@@ -107,27 +111,61 @@ function updateSliderProgress(slider, val) {
 }
 
 function loadSettings() {
-  chrome.storage.local.get(STORAGE_KEY, (result) => {
-    if (result[STORAGE_KEY]) {
-      currentSettings = { ...DEFAULT_SETTINGS, ...result[STORAGE_KEY] };
-    }
-    chrome.storage.local.set({
-      joyn_autoskip: currentSettings.autoSkip,
-      joyn_autoskip_delay: currentSettings.autoSkipDelay
-    });
-    // load Gemini API key from sync storage
-    chrome.storage.sync.get(['gemini_api_key'], (syncRes) => {
-      if (syncRes.gemini_api_key) {
-        $('gemini-api-key').value = syncRes.gemini_api_key;
+  chrome.storage.sync.get([STORAGE_KEY], (syncResult) => {
+    chrome.storage.local.get([STORAGE_KEY, BG_IMAGE_KEY], (localResult) => {
+      const synced = syncResult && syncResult[STORAGE_KEY];
+      const legacyLocal = localResult && localResult[STORAGE_KEY];
+
+      if (synced) {
+        currentSettings = { ...DEFAULT_SETTINGS, ...synced };
+      } else if (legacyLocal) {
+        // Migration: alte gerätelokale Einstellungen → Sync übernehmen
+        currentSettings = { ...DEFAULT_SETTINGS, ...legacyLocal };
+        const { bgImage, ...syncable } = currentSettings;
+        chrome.storage.sync.set({ [STORAGE_KEY]: syncable });
       }
-      initializeUI();
-      setupEventListeners();
+
+      // Hintergrundbild bleibt gerätelokal
+      if (localResult && localResult[BG_IMAGE_KEY]) {
+        currentSettings.bgImage = localResult[BG_IMAGE_KEY];
+      } else if (legacyLocal && legacyLocal.bgImage) {
+        currentSettings.bgImage = legacyLocal.bgImage;
+        chrome.storage.local.set({ [BG_IMAGE_KEY]: legacyLocal.bgImage });
+      }
+
+      // joyn_* Spiegel für die Content-Skripte aktualisieren
+      chrome.storage.local.set({
+        joyn_autoskip: currentSettings.autoSkip,
+        joyn_autoskip_delay: currentSettings.autoSkipDelay
+      });
+
+      // load Gemini API key from sync storage
+      chrome.storage.sync.get(['gemini_api_key'], (syncRes) => {
+        if (syncRes.gemini_api_key) {
+          $('gemini-api-key').value = syncRes.gemini_api_key;
+        }
+        initializeUI();
+        setupEventListeners();
+      });
     });
   });
 }
 
+// Markiert eigene Schreibvorgänge, damit der Live-Listener nicht das eigene
+// Echo erneut anwendet (würde sonst beim Tippen den Cursor zurücksetzen).
+let _ignoreSyncEcho = 0;
+
 function saveSettings() {
-  chrome.storage.local.set({ [STORAGE_KEY]: currentSettings });
+  _ignoreSyncEcho = Date.now();
+  // bgImage (Data-URL) ist zu groß für storage.sync → gerätelokal speichern
+  const { bgImage, ...syncable } = currentSettings;
+  chrome.storage.sync.set({ [STORAGE_KEY]: syncable }, () => {
+    if (chrome.runtime.lastError) {
+      // Fallback (z.B. Quota überschritten): wenigstens lokal sichern
+      chrome.storage.local.set({ [STORAGE_KEY]: syncable });
+    }
+  });
+  chrome.storage.local.set({ [BG_IMAGE_KEY]: bgImage || null });
 }
 
 function initializeUI() {
@@ -738,9 +776,25 @@ function searchBookmarksRecursive(node, query) {
 function resetAllSettings() {
   if (!confirm('Alle Einstellungen auf Standard zurücksetzen?')) return;
   currentSettings = { ...DEFAULT_SETTINGS };
-  chrome.storage.local.remove(STORAGE_KEY);
+  _ignoreSyncEcho = Date.now();
+  chrome.storage.sync.remove(STORAGE_KEY);
+  chrome.storage.local.remove([STORAGE_KEY, BG_IMAGE_KEY]);
   initializeUI();
   showToast('Alle Einstellungen zurückgesetzt');
+}
+
+// Live-Übernahme: Wird eine Einstellung auf einem anderen Gerät geändert,
+// aktualisiert sich diese Seite automatisch.
+if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged) {
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'sync' || !changes[STORAGE_KEY] || !changes[STORAGE_KEY].newValue) return;
+    if (Date.now() - _ignoreSyncEcho < 1500) return; // eigener Schreibvorgang → ignorieren
+    const incoming = changes[STORAGE_KEY].newValue;
+    const localBg = currentSettings.bgImage; // bgImage bleibt gerätelokal
+    currentSettings = { ...DEFAULT_SETTINGS, ...incoming, bgImage: localBg };
+    initializeUI();
+    showToast('Einstellungen von anderem Gerät übernommen');
+  });
 }
 
 // ==========================================
@@ -818,7 +872,139 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   loadSettings();
   initDriveUI();
+  setupPermissionsUI();
 });
+
+// ==========================================
+// BERECHTIGUNGEN & STATUS
+// ==========================================
+
+// Klartext-Beschreibungen für die API-Berechtigungen aus dem Manifest
+const PERM_LABELS = {
+  bookmarks:  { name: 'Lesezeichen',          desc: 'Damit deine Chrome-Lesezeichen in der Suche & im Lesezeichen-Widget erscheinen.' },
+  storage:    { name: 'Speicher',             desc: 'Speichert deine Einstellungen und Notizen.' },
+  tabs:       { name: 'Tabs',                 desc: 'Für neuen Tab, Seitenleiste und das Öffnen des Notiz-Tabs.' },
+  scripting:  { name: 'Skripte ausführen',    desc: 'Steuert Player & Funktionen auf Streaming-Seiten.' },
+  sidePanel:  { name: 'Seitenleiste',         desc: 'Zeigt die NINA-Seitenleiste an.' },
+  identity:   { name: 'Google-Anmeldung',     desc: 'Für die Google-Drive-Synchronisierung der Notizen.' },
+  favicon:    { name: 'Favicons',             desc: 'Zeigt die Webseiten-Symbole bei Lesezeichen an.' },
+  activeTab:  { name: 'Aktiver Tab',          desc: 'Zugriff auf die aktuell geöffnete Seite bei Bedarf.' }
+};
+
+let _missingOrigins = [];
+
+function permContains(query) {
+  return new Promise((resolve) => {
+    try {
+      chrome.permissions.contains(query, (res) => resolve(!!res && !chrome.runtime.lastError));
+    } catch (e) {
+      resolve(false);
+    }
+  });
+}
+
+function renderPermRow(name, desc, state) {
+  const badges = {
+    ok:   '<span class="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">✓ Erteilt</span>',
+    fail: '<span class="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full bg-red-500/15 text-red-500">✗ Fehlt</span>',
+    info: '<span class="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400">Optional</span>'
+  };
+  return `
+    <div class="flex items-start justify-between gap-3 p-3 rounded-xl bg-m3-surfaceVariant-light dark:bg-m3-surfaceVariant-dark/40">
+      <div class="min-w-0">
+        <p class="text-sm font-medium text-slate-800 dark:text-slate-100">${name}</p>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">${desc}</p>
+      </div>
+      ${badges[state] || badges.info}
+    </div>`;
+}
+
+function setupPermissionsUI() {
+  const recheck = $('btn-recheck-permissions');
+  const request = $('btn-request-permissions');
+  if (recheck) recheck.addEventListener('click', () => checkPermissions());
+  if (request) request.addEventListener('click', requestMissingPermissions);
+  checkPermissions();
+}
+
+async function checkPermissions() {
+  const listEl = $('permissions-list');
+  const summaryEl = $('permissions-summary');
+  const requestBtn = $('btn-request-permissions');
+  if (!listEl) return;
+
+  const manifest = chrome.runtime.getManifest();
+  const rows = [];
+  let problems = 0;
+
+  // 1) API-Berechtigungen
+  for (const p of (manifest.permissions || [])) {
+    const meta = PERM_LABELS[p] || { name: p, desc: '' };
+    const ok = await permContains({ permissions: [p] });
+    if (!ok) problems++;
+    rows.push(renderPermRow(meta.name, meta.desc, ok ? 'ok' : 'fail'));
+  }
+
+  // 2) Webseiten-Zugriff (host permissions) gesammelt prüfen
+  const origins = manifest.host_permissions || [];
+  _missingOrigins = [];
+  for (const o of origins) {
+    const ok = await permContains({ origins: [o] });
+    if (!ok) _missingOrigins.push(o);
+  }
+  const hostOk = _missingOrigins.length === 0;
+  if (!hostOk) problems++;
+  rows.push(renderPermRow(
+    'Zugriff auf Streaming- & Webseiten',
+    hostOk
+      ? 'Voller Zugriff auf alle benötigten Seiten.'
+      : `${_missingOrigins.length} von ${origins.length} Seiten sind nicht freigegeben – Funktionen auf diesen Seiten laufen dann nicht.`,
+    hostOk ? 'ok' : 'fail'
+  ));
+
+  // 3) Google Drive (funktionaler Status, optional)
+  const driveConnected = await new Promise((r) =>
+    chrome.storage.local.get([DRIVE_AUTH_KEY], (res) => r(!!res[DRIVE_AUTH_KEY]))
+  );
+  rows.push(renderPermRow(
+    'Google Drive verbunden',
+    driveConnected ? 'Notizen werden über Geräte synchronisiert.' : 'Optional – verbinden, um Notizen geräteübergreifend zu synchronisieren.',
+    driveConnected ? 'ok' : 'info'
+  ));
+
+  listEl.innerHTML = rows.join('');
+  if (requestBtn) requestBtn.classList.toggle('hidden', _missingOrigins.length === 0);
+
+  if (summaryEl) {
+    if (problems === 0) {
+      summaryEl.innerHTML = `<div class="flex items-center gap-2 p-3 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-sm font-semibold">
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+        Alles in Ordnung – alle benötigten Berechtigungen sind erteilt.</div>`;
+    } else {
+      summaryEl.innerHTML = `<div class="flex items-center gap-2 p-3 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 text-sm font-semibold">
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
+        ${problems} Punkt(e) brauchen deine Aufmerksamkeit.</div>`;
+    }
+  }
+}
+
+function requestMissingPermissions() {
+  if (!_missingOrigins.length) { checkPermissions(); return; }
+  try {
+    chrome.permissions.request({ origins: _missingOrigins }, (granted) => {
+      if (chrome.runtime.lastError) {
+        showToast('Anfrage fehlgeschlagen: ' + chrome.runtime.lastError.message);
+      } else if (granted) {
+        showToast('Berechtigungen erteilt ✓');
+      } else {
+        showToast('Berechtigungen wurden nicht erteilt');
+      }
+      checkPermissions();
+    });
+  } catch (e) {
+    showToast('Anfrage nicht möglich – bitte über chrome://extensions freigeben');
+  }
+}
 
 // ==========================================
 // AI TEXT IMPROVEMENT HELPERS
