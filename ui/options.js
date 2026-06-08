@@ -787,7 +787,17 @@ function resetAllSettings() {
 // aktualisiert sich diese Seite automatisch.
 if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged) {
   chrome.storage.onChanged.addListener((changes, area) => {
-    if (area !== 'sync' || !changes[STORAGE_KEY] || !changes[STORAGE_KEY].newValue) return;
+    if (area !== 'sync') return;
+
+    // Gemini API-Schlüssel von einem anderen Gerät übernehmen
+    if (changes.gemini_api_key && changes.gemini_api_key.newValue !== undefined) {
+      const field = $('gemini-api-key');
+      if (field && document.activeElement !== field) {
+        field.value = changes.gemini_api_key.newValue || '';
+      }
+    }
+
+    if (!changes[STORAGE_KEY] || !changes[STORAGE_KEY].newValue) return;
     if (Date.now() - _ignoreSyncEcho < 1500) return; // eigener Schreibvorgang → ignorieren
     const incoming = changes[STORAGE_KEY].newValue;
     const localBg = currentSettings.bgImage; // bgImage bleibt gerätelokal
