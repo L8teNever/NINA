@@ -436,11 +436,20 @@ function fetchSuggestions(query) {
     let suggestions = bookmarks.filter(bm => matchBookmark(bm, lowerQuery));
 
     if (useChromeFavorites) {
-        const chromeSuggestions = chromeBookmarks.filter(bm => {
-            if (!bm.name.toLowerCase().startsWith(lowerQuery)) return false;
+        let chromeSuggestions = chromeBookmarks.filter(bm => {
+            const title = (bm.original || bm.name || '').toLowerCase();
+            const url = (bm.url || '').toLowerCase();
+            // Treffer in Titel ODER URL (konsistent mit der Lesezeichen-Widget-Suche)
+            if (!title.includes(lowerQuery) && !url.includes(lowerQuery)) return false;
             if (suggestions.some(s => s.url === bm.url)) return false;
             const isInFilter = isUrlInFilter(bm.url);
             return chromeBookmarkFilterMode === 'include' ? isInFilter : !isInFilter;
+        });
+        // Treffer mit passendem Wortanfang im Titel zuerst anzeigen (relevanter)
+        chromeSuggestions.sort((a, b) => {
+            const aStarts = (a.original || a.name || '').toLowerCase().startsWith(lowerQuery) ? 0 : 1;
+            const bStarts = (b.original || b.name || '').toLowerCase().startsWith(lowerQuery) ? 0 : 1;
+            return aStarts - bStarts;
         });
         suggestions = suggestions.concat(chromeSuggestions);
     }
