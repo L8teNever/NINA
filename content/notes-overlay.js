@@ -861,6 +861,7 @@
         loadNotes(() => {
             renderNotesList();
             showDriveStatusBar();
+            autoSync();
         });
 
         if (isStandalone) {
@@ -1555,6 +1556,37 @@
                     renderNotesList();
                 }
             }).catch(err => console.warn('NINA Drive:', err));
+        }
+    }
+
+    // Synchronisiert beim Laden automatisch mit Drive, sobald (auto-)verbunden.
+    // Ohne das werden auf anderen Geräten die Drive-Notizen nie heruntergeladen.
+    function runDriveSync() {
+        if (!window.NinaDrive || !window.NinaDrive.isConnected()) return;
+        window.NinaDrive.syncAll(notes).then(merged => {
+            if (!merged) return;
+            // Notizen behalten, die seit Sync-Start lokal hinzugekommen sind
+            const mergedIds = new Set(merged.map(n => n.id));
+            for (const n of notes) {
+                if (!mergedIds.has(n.id)) merged.push(n);
+            }
+            notes = merged;
+            saveNotes();
+            renderNotesList();
+            updateDriveButton();
+        }).catch(err => console.warn('NINA Drive auto-sync:', err));
+    }
+
+    function autoSync() {
+        if (!window.NinaDrive) return;
+        if (window.NinaDrive.isConnected()) {
+            runDriveSync();
+        } else if (window.NinaDrive.tryAutoConnect) {
+            // Auto-Reconnect abwarten, dann synchronisieren
+            window.NinaDrive.tryAutoConnect().then(ok => {
+                updateDriveButton();
+                if (ok) runDriveSync();
+            }).catch(() => {});
         }
     }
 
