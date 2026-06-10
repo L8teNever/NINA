@@ -144,7 +144,29 @@ function escapeHtml(str) {
               .replace(/'/g, "&#039;");
 }
 
-function syncSettingsToStorage() {
+function saveAllSettings() {
+    const syncable = {
+        shortcuts: bookmarks,
+        secondsDisplay: showSeconds,
+        chromeBookmarks: useChromeFavorites,
+        chromeFilterMode: chromeBookmarkFilterMode,
+        chromeFilterList: chromeBookmarkFilterList,
+        bgColor: bgColorPicker ? bgColorPicker.value : '#0f1113',
+        bgImageOverlay: overlaySlider ? parseInt(overlaySlider.value, 10) : 50
+    };
+    
+    if (chrome.storage && chrome.storage.sync) {
+        chrome.storage.sync.get(['nina-settings'], (res) => {
+            const current = res && res['nina-settings'] ? res['nina-settings'] : {};
+            const updated = { ...current, ...syncable };
+            chrome.storage.sync.set({ 'nina-settings': updated }, () => {
+                if (chrome.runtime.lastError) {
+                    chrome.storage.local.set({ 'nina-settings': updated });
+                }
+            });
+        });
+    }
+
     if (chrome.storage && chrome.storage.local) {
         chrome.storage.local.set({
             bookmarks: bookmarks,
@@ -282,8 +304,7 @@ function saveBookmark() {
         bookmarks.push({ name: nameInput, url: urlInput });
     }
 
-    localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
-    syncSettingsToStorage();
+    saveAllSettings();
 
     bookmarkNameInput.value = '';
     bookmarkUrlInput.value = '';
@@ -295,8 +316,7 @@ function saveBookmark() {
 
 function deleteBookmark(index) {
     bookmarks.splice(index, 1);
-    localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
-    syncSettingsToStorage();
+    saveAllSettings();
     renderSettingsList();
 }
 
@@ -312,13 +332,17 @@ function toggleSecondsOption() {
         secSep.style.display = 'none';
         secGroup.style.display = 'none';
     }
-    localStorage.setItem('showSeconds', showSeconds);
+    saveAllSettings();
     update();
 }
 
-function handleBgColorChange(colorVal) {
+function handleBgColorChangeStyleOnly(colorVal) {
     document.documentElement.style.setProperty('--bg-color', colorVal);
-    localStorage.setItem('bgColor', colorVal);
+}
+
+function handleBgColorChange(colorVal) {
+    handleBgColorChangeStyleOnly(colorVal);
+    saveAllSettings();
 }
 
 function resetBgColor() {
@@ -335,10 +359,8 @@ function handleBgUpload(input) {
     reader.onload = function(e) {
         const imgData = e.target.result;
         setBgImageStyle(imgData);
-        try {
-            localStorage.setItem('bgImage', imgData);
-        } catch(error) {
-            console.warn("Das Bild ist zu groß für localStorage.");
+        if (chrome.storage && chrome.storage.local) {
+            chrome.storage.local.set({ 'nina_bg_image': imgData });
         }
     };
     reader.readAsDataURL(file);
@@ -357,7 +379,7 @@ function setBgImageStyle(imgData) {
     overlayControl.classList.remove('hidden');
 }
 
-function clearBgImage() {
+function clearBgImageStyleOnly() {
     const container = document.getElementById('bg-image-container');
     const overlay = document.getElementById('bg-overlay');
 
@@ -369,15 +391,24 @@ function clearBgImage() {
     btnClearBg.classList.add('hidden');
     overlayControl.classList.add('hidden');
     bgUpload.value = '';
+}
 
-    localStorage.removeItem('bgImage');
+function clearBgImage() {
+    clearBgImageStyleOnly();
+    if (chrome.storage && chrome.storage.local) {
+        chrome.storage.local.remove('nina_bg_image');
+    }
+}
+
+function updateOverlayOpacityStyleOnly(val) {
+    const overlay = document.getElementById('bg-overlay');
+    if (overlayVal) overlayVal.textContent = val + '%';
+    if (overlay) overlay.style.backgroundColor = `rgba(0, 0, 0, ${val / 100})`;
 }
 
 function updateOverlayOpacity(val) {
-    const overlay = document.getElementById('bg-overlay');
-    overlayVal.textContent = val + '%';
-    overlay.style.backgroundColor = `rgba(0, 0, 0, ${val / 100})`;
-    localStorage.setItem('bgOverlayOpacity', val);
+    updateOverlayOpacityStyleOnly(val);
+    saveAllSettings();
 }
 
 function focusSearch() {
@@ -1241,9 +1272,8 @@ function renderChromeFilterList() {
             const idx = parseInt(e.currentTarget.getAttribute('data-remove-filter'), 10);
             if (!isNaN(idx)) {
                 chromeBookmarkFilterList.splice(idx, 1);
-                localStorage.setItem('chromeBookmarkFilterList', JSON.stringify(chromeBookmarkFilterList));
                 renderChromeFilterList();
-                syncSettingsToStorage();
+                saveAllSettings();
             }
         });
     });
@@ -1412,7 +1442,6 @@ function handleResize() {
 
 function toggleChromeFavorites() {
     useChromeFavorites = chromeBookmarksToggle.checked;
-    localStorage.setItem('useChromeFavorites', useChromeFavorites);
     if (chromeBookmarksFilterContainer) {
         if (useChromeFavorites) {
             chromeBookmarksFilterContainer.classList.remove('hidden');
@@ -1420,107 +1449,167 @@ function toggleChromeFavorites() {
             chromeBookmarksFilterContainer.classList.add('hidden');
         }
     }
-    syncSettingsToStorage();
+    saveAllSettings();
 }
 
 function loadSavedSettings() {
-    const savedBookmarks = localStorage.getItem('bookmarks');
-    if (savedBookmarks) {
-        bookmarks = JSON.parse(savedBookmarks);
-        
-        // Migration: Ensure AI tools are included once
-        if (!localStorage.getItem('ai_migrated_v1')) {
-            const aiBookmarks = [
-                { name: "gemini", url: "https://gemini.google.com" },
-                { name: "chatgpt, gpt", url: "https://chatgpt.com" },
-                { name: "claude", url: "https://claude.ai" }
-            ];
-            
-            aiBookmarks.forEach(ai => {
-                if (!bookmarks.some(bm => bm.url === ai.url)) {
-                    bookmarks.push(ai);
+    if (chrome.storage && chrome.storage.sync) {
+        chrome.storage.sync.get(['nina-settings'], (syncResult) => {
+            chrome.storage.local.get(['nina-settings', 'nina_bg_image', 'chromeBookmarks'], (localResult) => {
+                let settings = syncResult && syncResult['nina-settings'];
+                if (!settings && localResult && localResult['nina-settings']) {
+                    settings = localResult['nina-settings'];
                 }
+
+                if (localResult && localResult['chromeBookmarks']) {
+                    chromeBookmarks = localResult['chromeBookmarks'];
+                }
+
+                if (settings) {
+                    bookmarks = settings.shortcuts || bookmarks;
+                    showSeconds = settings.secondsDisplay !== undefined ? settings.secondsDisplay : showSeconds;
+                    useChromeFavorites = settings.chromeBookmarks !== undefined ? settings.chromeBookmarks : useChromeFavorites;
+                    chromeBookmarkFilterMode = settings.chromeFilterMode || chromeBookmarkFilterMode;
+                    chromeBookmarkFilterList = settings.chromeFilterList || chromeBookmarkFilterList;
+
+                    const bgColor = settings.bgColor || '#0f1113';
+                    if (bgColorPicker) bgColorPicker.value = bgColor;
+                    handleBgColorChangeStyleOnly(bgColor);
+
+                    const bgImageOverlay = settings.bgImageOverlay !== undefined ? settings.bgImageOverlay : 50;
+                    if (overlaySlider) overlaySlider.value = bgImageOverlay;
+                    updateOverlayOpacityStyleOnly(bgImageOverlay);
+                } else {
+                    // FALLBACK / MIGRATION FROM LOCALSTORAGE
+                    const savedBookmarks = localStorage.getItem('bookmarks');
+                    if (savedBookmarks) {
+                        bookmarks = JSON.parse(savedBookmarks);
+                        
+                        // Migration: Ensure AI tools are included once
+                        if (!localStorage.getItem('ai_migrated_v1')) {
+                            const aiBookmarks = [
+                                { name: "gemini", url: "https://gemini.google.com" },
+                                { name: "chatgpt, gpt", url: "https://chatgpt.com" },
+                                { name: "claude", url: "https://claude.ai" }
+                            ];
+                            
+                            aiBookmarks.forEach(ai => {
+                                if (!bookmarks.some(bm => bm.url === ai.url)) {
+                                    bookmarks.push(ai);
+                                }
+                            });
+                            localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
+                            localStorage.setItem('ai_migrated_v1', 'true');
+                        }
+                    }
+
+                    // Migration V2: Ensure user's trigger-rich bookmarks are set
+                    if (!localStorage.getItem('bookmarks_migrated_v2')) {
+                        const defaultTriggers = [
+                            { name: "Google Mail, ma, mai, mail, mails, gmail", url: "https://mail.google.com" },
+                            { name: "YouTube, yt, youtube, vids, video", url: "https://youtube.com" },
+                            { name: "GitHub, gh, github, git, code", url: "https://github.com" },
+                            { name: "Wikipedia Deutschland, deutschland, de, germany, deu", url: "https://de.wikipedia.org/wiki/Deutschland" }
+                        ];
+
+                        defaultTriggers.forEach(defaultBm => {
+                            const idx = bookmarks.findIndex(bm => bm.url.includes(new URL(defaultBm.url).hostname));
+                            if (idx !== -1) {
+                                bookmarks[idx].name = defaultBm.name;
+                                bookmarks[idx].url = defaultBm.url;
+                            } else {
+                                bookmarks.push(defaultBm);
+                            }
+                        });
+                        localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
+                        localStorage.setItem('bookmarks_migrated_v2', 'true');
+                    }
+
+                    const savedSeconds = localStorage.getItem('showSeconds');
+                    if (savedSeconds !== null) {
+                        showSeconds = (savedSeconds === 'true');
+                    }
+
+                    const savedFilterMode = localStorage.getItem('chromeBookmarkFilterMode');
+                    if (savedFilterMode) {
+                        chromeBookmarkFilterMode = savedFilterMode;
+                    }
+
+                    const savedFilterList = localStorage.getItem('chromeBookmarkFilterList');
+                    if (savedFilterList) {
+                        chromeBookmarkFilterList = JSON.parse(savedFilterList);
+                    }
+
+                    const savedChromeFavorites = localStorage.getItem('useChromeFavorites');
+                    if (savedChromeFavorites !== null) {
+                        useChromeFavorites = (savedChromeFavorites === 'true');
+                    }
+
+                    const savedColor = localStorage.getItem('bgColor');
+                    if (savedColor) {
+                        if (bgColorPicker) bgColorPicker.value = savedColor;
+                        handleBgColorChangeStyleOnly(savedColor);
+                    }
+
+                    const savedOpacity = localStorage.getItem('bgOverlayOpacity');
+                    if (savedOpacity) {
+                        if (overlaySlider) overlaySlider.value = savedOpacity;
+                        updateOverlayOpacityStyleOnly(savedOpacity);
+                    } else {
+                        updateOverlayOpacityStyleOnly(50);
+                    }
+
+                    // Save migrated settings to storage
+                    saveAllSettings();
+                }
+
+                // Background image: first check chrome.storage.local
+                let bgImage = localResult && localResult['nina_bg_image'];
+                if (!bgImage) {
+                    // Fallback to localStorage
+                    bgImage = localStorage.getItem('bgImage');
+                    if (bgImage) {
+                        chrome.storage.local.set({ nina_bg_image: bgImage });
+                    }
+                }
+
+                if (bgImage) {
+                    setBgImageStyle(bgImage);
+                } else {
+                    clearBgImageStyleOnly();
+                }
+
+                // Apply UI updates based on states loaded
+                if (secondsToggle) secondsToggle.checked = showSeconds;
+                const secSep = document.getElementById('sec-sep');
+                const secGroup = document.getElementById('sec-group');
+                if (secSep && secGroup) {
+                    if (showSeconds) {
+                        secSep.style.display = 'inline-block';
+                        secGroup.style.display = 'flex';
+                    } else {
+                        secSep.style.display = 'none';
+                        secGroup.style.display = 'none';
+                    }
+                }
+                update();
+
+                if (chromeBookmarksToggle) chromeBookmarksToggle.checked = useChromeFavorites;
+                if (chromeFilterMode) chromeFilterMode.value = chromeBookmarkFilterMode;
+
+                if (useChromeFavorites && chromeBookmarksFilterContainer) {
+                    chromeBookmarksFilterContainer.classList.remove('hidden');
+                } else if (chromeBookmarksFilterContainer) {
+                    chromeBookmarksFilterContainer.classList.add('hidden');
+                }
+
+                renderChromeFilterList();
+                loadChromeBookmarks();
             });
-            localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
-            localStorage.setItem('ai_migrated_v1', 'true');
-        }
-    }
-
-    // Migration V2: Ensure user's trigger-rich bookmarks are set
-    if (!localStorage.getItem('bookmarks_migrated_v2')) {
-        const defaultTriggers = [
-            { name: "Google Mail, ma, mai, mail, mails, gmail", url: "https://mail.google.com" },
-            { name: "YouTube, yt, youtube, vids, video", url: "https://youtube.com" },
-            { name: "GitHub, gh, github, git, code", url: "https://github.com" },
-            { name: "Wikipedia Deutschland, deutschland, de, germany, deu", url: "https://de.wikipedia.org/wiki/Deutschland" }
-        ];
-
-        defaultTriggers.forEach(defaultBm => {
-            const idx = bookmarks.findIndex(bm => bm.url.includes(new URL(defaultBm.url).hostname));
-            if (idx !== -1) {
-                bookmarks[idx].name = defaultBm.name;
-                bookmarks[idx].url = defaultBm.url;
-            } else {
-                bookmarks.push(defaultBm);
-            }
         });
-        localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
-        localStorage.setItem('bookmarks_migrated_v2', 'true');
+    } else {
+        update();
     }
-
-    // Sync to chrome.storage.local on load
-    syncSettingsToStorage();
-
-    const savedSeconds = localStorage.getItem('showSeconds');
-    if (savedSeconds !== null) {
-        const isEnabled = (savedSeconds === 'true');
-        secondsToggle.checked = isEnabled;
-        toggleSecondsOption();
-    }
-
-    const savedFilterMode = localStorage.getItem('chromeBookmarkFilterMode');
-    if (savedFilterMode) {
-        chromeBookmarkFilterMode = savedFilterMode;
-        if (chromeFilterMode) chromeFilterMode.value = chromeBookmarkFilterMode;
-    }
-
-    const savedFilterList = localStorage.getItem('chromeBookmarkFilterList');
-    if (savedFilterList) {
-        chromeBookmarkFilterList = JSON.parse(savedFilterList);
-    }
-
-    const savedChromeFavorites = localStorage.getItem('useChromeFavorites');
-    if (savedChromeFavorites !== null) {
-        const isEnabled = (savedChromeFavorites === 'true');
-        useChromeFavorites = isEnabled;
-        if (chromeBookmarksToggle) {
-            chromeBookmarksToggle.checked = isEnabled;
-        }
-    }
-
-    if (useChromeFavorites && chromeBookmarksFilterContainer) {
-        chromeBookmarksFilterContainer.classList.remove('hidden');
-    }
-
-    const savedColor = localStorage.getItem('bgColor');
-    if (savedColor) {
-        bgColorPicker.value = savedColor;
-        handleBgColorChange(savedColor);
-    }
-
-    const savedImage = localStorage.getItem('bgImage');
-    const savedOpacity = localStorage.getItem('bgOverlayOpacity');
-    if (savedImage) {
-        setBgImageStyle(savedImage);
-        if (savedOpacity) {
-            overlaySlider.value = savedOpacity;
-            updateOverlayOpacity(savedOpacity);
-        } else {
-            updateOverlayOpacity(50);
-        }
-    }
-
-    loadChromeBookmarks();
 }
 
 // ============ EVENT LISTENERS ============
@@ -1813,9 +1902,8 @@ if (chromeBookmarksToggle) chromeBookmarksToggle.addEventListener('change', togg
 if (chromeFilterMode) {
     chromeFilterMode.addEventListener('change', (e) => {
         chromeBookmarkFilterMode = e.target.value;
-        localStorage.setItem('chromeBookmarkFilterMode', chromeBookmarkFilterMode);
         renderChromeFilterList();
-        syncSettingsToStorage();
+        saveAllSettings();
     });
 }
 
@@ -1863,11 +1951,10 @@ if (chromeFilterSearch) {
             if (!isAlreadyAdded) {
                 row.addEventListener('click', () => {
                     chromeBookmarkFilterList.push(bm.url);
-                    localStorage.setItem('chromeBookmarkFilterList', JSON.stringify(chromeBookmarkFilterList));
                     chromeFilterSearch.value = '';
                     chromeFilterSearchResults.classList.add('hidden');
                     renderChromeFilterList();
-                    syncSettingsToStorage();
+                    saveAllSettings();
                 });
             }
             chromeFilterSearchResults.appendChild(row);
@@ -1892,11 +1979,10 @@ if (addDomainFilterBtn) {
             const filterValue = 'domain:' + domain;
             if (!chromeBookmarkFilterList.includes(filterValue)) {
                 chromeBookmarkFilterList.push(filterValue);
-                localStorage.setItem('chromeBookmarkFilterList', JSON.stringify(chromeBookmarkFilterList));
                 chromeFilterSearch.value = '';
                 chromeFilterSearchResults.classList.add('hidden');
                 renderChromeFilterList();
-                syncSettingsToStorage();
+                saveAllSettings();
             }
         }
     });
@@ -1910,52 +1996,66 @@ if (overlaySlider) overlaySlider.addEventListener('input', (e) => updateOverlayO
 
 window.addEventListener('resize', handleResize);
 
-// Live storage synchronization (from Options page)
-window.addEventListener('storage', (e) => {
-    if (e.key === 'bookmarks') {
-        if (e.newValue) {
-            bookmarks = JSON.parse(e.newValue);
-            if (settingsModal.classList.contains('active') && !subpageShortcuts.classList.contains('hidden')) {
-                renderSettingsList();
+// Live storage synchronization (from Options page or other devices)
+if (chrome.storage && chrome.storage.onChanged) {
+    chrome.storage.onChanged.addListener((changes, area) => {
+        if (area === 'sync' && changes['nina-settings']) {
+            const settings = changes['nina-settings'].newValue;
+            if (settings) {
+                bookmarks = settings.shortcuts || bookmarks;
+                showSeconds = settings.secondsDisplay !== undefined ? settings.secondsDisplay : showSeconds;
+                useChromeFavorites = settings.chromeBookmarks !== undefined ? settings.chromeBookmarks : useChromeFavorites;
+                chromeBookmarkFilterMode = settings.chromeFilterMode || chromeBookmarkFilterMode;
+                chromeBookmarkFilterList = settings.chromeFilterList || chromeBookmarkFilterList;
+
+                // Update UI elements
+                if (bgColorPicker) bgColorPicker.value = settings.bgColor || '#0f1113';
+                handleBgColorChangeStyleOnly(settings.bgColor || '#0f1113');
+
+                const bgImageOverlay = settings.bgImageOverlay !== undefined ? settings.bgImageOverlay : 50;
+                if (overlaySlider) overlaySlider.value = bgImageOverlay;
+                updateOverlayOpacityStyleOnly(bgImageOverlay);
+
+                if (secondsToggle) secondsToggle.checked = showSeconds;
+                const secSep = document.getElementById('sec-sep');
+                const secGroup = document.getElementById('sec-group');
+                if (secSep && secGroup) {
+                    if (showSeconds) {
+                        secSep.style.display = 'inline-block';
+                        secGroup.style.display = 'flex';
+                    } else {
+                        secSep.style.display = 'none';
+                        secGroup.style.display = 'none';
+                    }
+                }
+                update();
+
+                if (chromeBookmarksToggle) chromeBookmarksToggle.checked = useChromeFavorites;
+                if (chromeFilterMode) chromeFilterMode.value = chromeBookmarkFilterMode;
+
+                if (useChromeFavorites && chromeBookmarksFilterContainer) {
+                    chromeBookmarksFilterContainer.classList.remove('hidden');
+                } else if (chromeBookmarksFilterContainer) {
+                    chromeBookmarksFilterContainer.classList.add('hidden');
+                }
+
+                if (settingsModal && settingsModal.classList.contains('active') && subpageShortcuts && !subpageShortcuts.classList.contains('hidden')) {
+                    renderSettingsList();
+                }
+
+                renderChromeFilterList();
+                loadChromeBookmarks();
+            }
+        } else if (area === 'local' && changes['nina_bg_image']) {
+            const bgImage = changes['nina_bg_image'].newValue;
+            if (bgImage) {
+                setBgImageStyle(bgImage);
+            } else {
+                clearBgImageStyleOnly();
             }
         }
-    } else if (e.key === 'showSeconds') {
-        const active = (e.newValue === 'true');
-        secondsToggle.checked = active;
-        toggleSecondsOption();
-    } else if (e.key === 'bgColor') {
-        if (e.newValue) {
-            bgColorPicker.value = e.newValue;
-            handleBgColorChange(e.newValue);
-        }
-    } else if (e.key === 'bgImage') {
-        if (e.newValue) {
-            setBgImageStyle(e.newValue);
-        } else {
-            clearBgImage();
-        }
-    } else if (e.key === 'bgOverlayOpacity') {
-        if (e.newValue) {
-            overlaySlider.value = e.newValue;
-            updateOverlayOpacity(e.newValue);
-        }
-    } else if (e.key === 'useChromeFavorites') {
-        const active = (e.newValue === 'true');
-        chromeBookmarksToggle.checked = active;
-        toggleChromeFavorites();
-    } else if (e.key === 'chromeBookmarkFilterMode') {
-        if (e.newValue) {
-            chromeBookmarkFilterMode = e.newValue;
-            if (chromeFilterMode) chromeFilterMode.value = e.newValue;
-            renderChromeFilterList();
-        }
-    } else if (e.key === 'chromeBookmarkFilterList') {
-        if (e.newValue) {
-            chromeBookmarkFilterList = JSON.parse(e.newValue);
-            renderChromeFilterList();
-        }
-    }
-});
+    });
+}
 
 // Init
 handleResize();

@@ -166,6 +166,13 @@ function mirrorSyncedSettingsToLocal(settings) {
   if (settings.hideXRay !== undefined)        local.joyn_hide_xray = !!settings.hideXRay;
   if (settings.ffSpeed !== undefined)         local.joyn_ff_speed = settings.ffSpeed;
   if (settings.language !== undefined)        local.joyn_language = settings.language;
+  
+  // Mirror keys for overlay-search.js
+  if (settings.shortcuts !== undefined)              local.bookmarks = settings.shortcuts;
+  if (settings.chromeBookmarks !== undefined)        local.useChromeFavorites = settings.chromeBookmarks;
+  if (settings.chromeFilterMode !== undefined)       local.chromeBookmarkFilterMode = settings.chromeFilterMode;
+  if (settings.chromeFilterList !== undefined)       local.chromeBookmarkFilterList = settings.chromeFilterList;
+
   if (Object.keys(local).length) chrome.storage.local.set(local);
 }
 
