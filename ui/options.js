@@ -636,37 +636,19 @@ function setupSearch() {
   const searchInput = $('searchInput');
   const settingSections = document.querySelectorAll('.setting-section');
   const noResultsMsg = $('noResultsMsg');
-  const chips = document.querySelectorAll('[data-search-example]');
 
-  function applySearch(query) {
-    const q = query.toLowerCase();
+  searchInput.addEventListener('input', (e) => {
+    const query = e.target.value.toLowerCase();
     let visibleCount = 0;
 
     settingSections.forEach((section) => {
       const text = section.textContent.toLowerCase();
-      const isVisible = text.includes(q);
+      const isVisible = text.includes(query);
       section.style.display = isVisible ? '' : 'none';
       if (isVisible) visibleCount++;
     });
 
     noResultsMsg.classList.toggle('hidden', visibleCount > 0);
-
-    chips.forEach((chip) => {
-      const example = (chip.getAttribute('data-search-example') || '').toLowerCase();
-      chip.classList.toggle('is-active', q.length > 0 && example === q);
-    });
-  }
-
-  searchInput.addEventListener('input', (e) => applySearch(e.target.value));
-
-  chips.forEach((chip) => {
-    chip.addEventListener('click', () => {
-      const example = chip.getAttribute('data-search-example') || '';
-      const next = searchInput.value.toLowerCase() === example.toLowerCase() ? '' : example;
-      searchInput.value = next;
-      applySearch(next);
-      searchInput.focus();
-    });
   });
 }
 

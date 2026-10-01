@@ -157,10 +157,10 @@ input[type="range"]:focus { outline: none; }
   z-index: 30;
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   gap: 1rem;
-  min-height: 4.5rem;
-  padding: 0.85rem 2rem 0.95rem;
+  height: 4.5rem;
+  padding: 0 2rem;
   background: color-mix(in srgb, var(--m3-background-light) 82%, transparent);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -169,17 +169,11 @@ input[type="range"]:focus { outline: none; }
   background: color-mix(in srgb, var(--m3-background-dark) 82%, transparent);
 }
 
-.options-search-cluster {
-  flex: 1;
-  min-width: 0;
-  max-width: 40rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.55rem;
-}
-
 .options-search-wrap {
   position: relative;
+  flex: 1;
+  min-width: 0;
+  max-width: 32rem;
 }
 
 .options-search-wrap .ms-icon {
@@ -210,53 +204,6 @@ input[type="range"]:focus { outline: none; }
 }
 .dark .options-search:focus { border-color: var(--m3-primary-dark); }
 
-.options-search-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  padding-left: 0.15rem;
-}
-
-.search-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  border: 0;
-  cursor: pointer;
-  border-radius: 9999px;
-  padding: 0.35rem 0.75rem 0.35rem 0.55rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  color: var(--m3-onPrimaryContainer-light);
-  background: color-mix(in srgb, var(--m3-primaryContainer-light) 72%, var(--m3-surface-light));
-  transition: background-color 0.15s var(--opt-ease), transform 0.1s ease, box-shadow 0.15s var(--opt-ease);
-}
-.dark .search-chip {
-  color: var(--m3-onPrimaryContainer-dark);
-  background: color-mix(in srgb, var(--m3-primaryContainer-dark) 70%, var(--m3-surface-dark));
-}
-.search-chip .ms-icon {
-  width: 1.05rem;
-  height: 1.05rem;
-  color: var(--m3-primary-light);
-}
-.dark .search-chip .ms-icon { color: var(--m3-primary-dark); }
-.search-chip:hover {
-  filter: brightness(1.06);
-}
-.search-chip:active { transform: scale(0.97); }
-.search-chip.is-active {
-  background: var(--m3-primary-light);
-  color: #fff;
-  box-shadow: 0 1px 3px rgba(0, 106, 114, 0.28);
-}
-.dark .search-chip.is-active {
-  background: var(--m3-primary-dark);
-  color: var(--m3-background-dark);
-}
-.search-chip.is-active .ms-icon { color: inherit; }
-
 .options-icon-btn {
   padding: 0.7rem;
   border-radius: 9999px;
@@ -265,7 +212,6 @@ input[type="range"]:focus { outline: none; }
   color: var(--m3-outline-light);
   cursor: pointer;
   transition: background-color 0.15s var(--opt-ease), transform 0.1s ease, color 0.15s var(--opt-ease);
-  margin-top: 0.1rem;
 }
 .dark .options-icon-btn { color: var(--m3-outline-dark); }
 .options-icon-btn:hover {

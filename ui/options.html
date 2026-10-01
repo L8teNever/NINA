@@ -23,8 +23,6 @@
     <symbol id="ms-edit" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.996.996 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></symbol>
     <symbol id="ms-verified" viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></symbol>
     <symbol id="ms-mail" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></symbol>
-    <symbol id="ms-skip" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></symbol>
-    <symbol id="ms-spark" viewBox="0 0 24 24"><path d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12z"/></symbol>
   </svg>
 
   <div id="sidebar" class="flex flex-col h-screen shrink-0 relative z-20">
@@ -85,37 +83,9 @@
   <div class="flex-1 flex flex-col h-screen relative bg-m3-background-light dark:bg-m3-background-dark">
 
     <div class="options-topbar">
-      <div class="options-search-cluster">
-        <div class="options-search-wrap">
-          <svg class="ms-icon" aria-hidden="true"><use href="#ms-search"></use></svg>
-          <input type="text" id="searchInput" placeholder="Einstellungen durchsuchen..." class="options-search">
-        </div>
-        <div class="options-search-chips" role="group" aria-label="Suchbeispiele">
-          <button type="button" class="search-chip" data-search-example="YouTube">
-            <svg class="ms-icon" aria-hidden="true"><use href="#ms-play"></use></svg>
-            YouTube
-          </button>
-          <button type="button" class="search-chip" data-search-example="Skip">
-            <svg class="ms-icon" aria-hidden="true"><use href="#ms-skip"></use></svg>
-            Skipper
-          </button>
-          <button type="button" class="search-chip" data-search-example="Drive">
-            <svg class="ms-icon" aria-hidden="true"><use href="#ms-cloud"></use></svg>
-            Drive
-          </button>
-          <button type="button" class="search-chip" data-search-example="KI">
-            <svg class="ms-icon" aria-hidden="true"><use href="#ms-spark"></use></svg>
-            KI
-          </button>
-          <button type="button" class="search-chip" data-search-example="Prime">
-            <svg class="ms-icon" aria-hidden="true"><use href="#ms-tv"></use></svg>
-            Prime
-          </button>
-          <button type="button" class="search-chip" data-search-example="Sprache">
-            <svg class="ms-icon" aria-hidden="true"><use href="#ms-language"></use></svg>
-            Sprache
-          </button>
-        </div>
+      <div class="options-search-wrap">
+        <svg class="ms-icon" aria-hidden="true"><use href="#ms-search"></use></svg>
+        <input type="text" id="searchInput" placeholder="Einstellungen durchsuchen..." class="options-search">
       </div>
       <button id="btnResetAll" class="options-icon-btn" title="Einstellungen zurücksetzen">
         <svg class="ms-icon ms-icon-lg" aria-hidden="true"><use href="#ms-restart"></use></svg>
