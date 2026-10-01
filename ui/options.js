@@ -80,7 +80,12 @@ async function loadLocale(lang) {
 
 function getMessage(key) {
   if (currentLocaleMessages && currentLocaleMessages[key]) return currentLocaleMessages[key].message;
-  return chrome.i18n.getMessage(key) || "";
+  try {
+    if (typeof chrome !== 'undefined' && chrome.i18n && chrome.i18n.getMessage) {
+      return chrome.i18n.getMessage(key) || '';
+    }
+  } catch (e) {}
+  return '';
 }
 
 function localizeHTML() {
@@ -970,14 +975,16 @@ function initDriveUI() {
 // INITIALIZATION
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
-  loadLocale(currentSettings.language).then(() => {
-    localizeHTML();
-  });
   setupSidebarNavigation();
   setupSearch();
-  loadSettings();
-  initDriveUI();
-  setupPermissionsUI();
+  try {
+    loadLocale(currentSettings.language).then(() => {
+      localizeHTML();
+    });
+  } catch (e) { /* options page can render without chrome.i18n */ }
+  try { loadSettings(); } catch (e) { /* file:// preview without chrome.storage */ }
+  try { initDriveUI(); } catch (e) {}
+  try { setupPermissionsUI(); } catch (e) {}
 });
 
 // ==========================================
