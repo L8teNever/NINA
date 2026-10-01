@@ -80,7 +80,12 @@ async function loadLocale(lang) {
 
 function getMessage(key) {
   if (currentLocaleMessages && currentLocaleMessages[key]) return currentLocaleMessages[key].message;
-  return chrome.i18n.getMessage(key) || "";
+  try {
+    if (typeof chrome !== 'undefined' && chrome.i18n && chrome.i18n.getMessage) {
+      return chrome.i18n.getMessage(key) || '';
+    }
+  } catch (e) {}
+  return '';
 }
 
 function localizeHTML() {
@@ -499,8 +504,6 @@ function setupEventListeners() {
   setupShortcutRecorder();
 
   setupDropdown();
-  setupSidebarNavigation();
-  setupSearch();
 }
 
 // Language Dropdown
@@ -613,43 +616,63 @@ function updateClearBgButtonVisibility() {
   }
 }
 
+let activeSectionId = 'cat-general';
+
+function showSection(sectionId) {
+  if (!sectionId || !document.getElementById(sectionId)) return;
+  activeSectionId = sectionId;
+
+  document.querySelectorAll('.sidebar-link').forEach((link) => {
+    link.classList.toggle('active', link.getAttribute('data-target') === sectionId);
+  });
+
+  applySectionVisibility();
+
+  const container = $('settingsContainer');
+  if (container) container.scrollTop = 0;
+
+  if (history.replaceState) {
+    history.replaceState(null, '', '#' + sectionId);
+  }
+}
+
+function applySectionVisibility() {
+  const searchInput = $('searchInput');
+  const query = (searchInput && searchInput.value ? searchInput.value : '').trim().toLowerCase();
+  const settingSections = document.querySelectorAll('.setting-section');
+  const noResultsMsg = $('noResultsMsg');
+  let visibleCount = 0;
+
+  settingSections.forEach((section) => {
+    const matchesSearch = !query || section.textContent.toLowerCase().includes(query);
+    const visible = query ? matchesSearch : section.id === activeSectionId;
+    section.classList.toggle('is-active', visible);
+    if (visible) visibleCount++;
+  });
+
+  if (noResultsMsg) noResultsMsg.classList.toggle('hidden', visibleCount > 0);
+}
+
 function setupSidebarNavigation() {
   document.querySelectorAll('.sidebar-link').forEach((link) => {
     link.addEventListener('click', (e) => {
       e.preventDefault();
-      document.querySelectorAll('.sidebar-link').forEach((l) => l.classList.remove('active'));
-      link.classList.add('active');
-      const targetId = link.getAttribute('data-target');
-      scrollToSection(targetId);
+      const searchInput = $('searchInput');
+      if (searchInput && searchInput.value) {
+        searchInput.value = '';
+      }
+      showSection(link.getAttribute('data-target'));
     });
   });
-}
 
-function scrollToSection(sectionId) {
-  const section = document.getElementById(sectionId);
-  if (section) {
-    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
+  const hashId = (location.hash || '').replace('#', '');
+  showSection(hashId || 'cat-general');
 }
 
 function setupSearch() {
   const searchInput = $('searchInput');
-  const settingSections = document.querySelectorAll('.setting-section');
-  const noResultsMsg = $('noResultsMsg');
-
-  searchInput.addEventListener('input', (e) => {
-    const query = e.target.value.toLowerCase();
-    let visibleCount = 0;
-
-    settingSections.forEach((section) => {
-      const text = section.textContent.toLowerCase();
-      const isVisible = text.includes(query);
-      section.style.display = isVisible ? 'block' : 'none';
-      if (isVisible) visibleCount++;
-    });
-
-    noResultsMsg.classList.toggle('hidden', visibleCount > 0);
-  });
+  if (!searchInput) return;
+  searchInput.addEventListener('input', () => applySectionVisibility());
 }
 
 
@@ -952,12 +975,16 @@ function initDriveUI() {
 // INITIALIZATION
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
-  loadLocale(currentSettings.language).then(() => {
-    localizeHTML();
-  });
-  loadSettings();
-  initDriveUI();
-  setupPermissionsUI();
+  setupSidebarNavigation();
+  setupSearch();
+  try {
+    loadLocale(currentSettings.language).then(() => {
+      localizeHTML();
+    });
+  } catch (e) { /* options page can render without chrome.i18n */ }
+  try { loadSettings(); } catch (e) { /* file:// preview without chrome.storage */ }
+  try { initDriveUI(); } catch (e) {}
+  try { setupPermissionsUI(); } catch (e) {}
 });
 
 // ==========================================
@@ -990,12 +1017,12 @@ function permContains(query) {
 
 function renderPermRow(name, desc, state) {
   const badges = {
-    ok:   '<span class="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">✓ Erteilt</span>',
-    fail: '<span class="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full bg-red-500/15 text-red-500">✗ Fehlt</span>',
-    info: '<span class="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400">Optional</span>'
+    ok:   '<span class="perm-badge ok">✓ Erteilt</span>',
+    fail: '<span class="perm-badge fail">✗ Fehlt</span>',
+    info: '<span class="perm-badge info">Optional</span>'
   };
   return `
-    <div class="flex items-start justify-between gap-3 p-3 rounded-xl bg-m3-surfaceVariant-light dark:bg-m3-surfaceVariant-dark/40">
+    <div class="perm-row">
       <div class="min-w-0">
         <p class="text-sm font-medium text-slate-800 dark:text-slate-100">${name}</p>
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">${desc}</p>
@@ -1062,11 +1089,11 @@ async function checkPermissions() {
 
   if (summaryEl) {
     if (problems === 0) {
-      summaryEl.innerHTML = `<div class="flex items-center gap-2 p-3 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-sm font-semibold">
+      summaryEl.innerHTML = `<div class="perm-summary ok">
         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
         Alles in Ordnung – alle benötigten Berechtigungen sind erteilt.</div>`;
     } else {
-      summaryEl.innerHTML = `<div class="flex items-center gap-2 p-3 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 text-sm font-semibold">
+      summaryEl.innerHTML = `<div class="perm-summary warn">
         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
         ${problems} Punkt(e) brauchen deine Aufmerksamkeit.</div>`;
     }
