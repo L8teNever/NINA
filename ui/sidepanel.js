@@ -252,6 +252,25 @@ function updateAutoLikeSlider(val) {
   updateSliderProgress(autoLikeSlider, val);
 }
 
+// Toggles here used to write only to chrome.storage.local (joyn_* keys),
+// which the content scripts read — but that's per-device only. The options
+// page instead keeps a master 'nina-settings' object in chrome.storage.sync,
+// which Chrome syncs across devices signed into the same account; background.js
+// mirrors it back down into the local joyn_* keys on every device. Writing
+// through here too makes sidepanel changes sync the same way options-page
+// changes already do, while the local.set() calls stay so this device's UI
+// still updates instantly without waiting on the sync round-trip.
+function syncSetting(field, value) {
+  try {
+    chrome.storage.sync.get(['nina-settings'], (res) => {
+      if (chrome.runtime.lastError) return;
+      const current = res['nina-settings'] || {};
+      current[field] = value;
+      chrome.storage.sync.set({ 'nina-settings': current });
+    });
+  } catch (_) {}
+}
+
 function updateAutoSkipDelaySlider(val) {
   state.autoSkipDelay = parseInt(val);
   autoSkipDelaySlider.value = val;
@@ -270,6 +289,7 @@ function setFFSpeed(ffSpeed) {
   ffSpeedVal.innerText = `${ffSpeed.toFixed(2)}x`;
   updateSliderProgress(ffSpeedSlider, ffSpeed);
   chrome.storage.local.set({ joyn_ff_speed: ffSpeed });
+  syncSetting('ffSpeed', ffSpeed);
 }
 
 // Initialise settings from storage
@@ -415,6 +435,7 @@ autoLikeSlider.addEventListener('input', (e) => {
   const val = parseInt(e.target.value);
   updateAutoLikeSlider(val);
   chrome.storage.local.set({ joyn_autolike_threshold: val });
+  syncSetting('autoLikePercent', val);
 });
 ffSpeedSlider.addEventListener('input', (e) => setFFSpeed(parseFloat(e.target.value)));
 
@@ -439,6 +460,7 @@ autoLikeSlider.addEventListener('wheel', (e) => {
   const val = Math.max(1, Math.min(100, parseInt(autoLikeSlider.value) + (e.deltaY < 0 ? step : -step)));
   updateAutoLikeSlider(val);
   chrome.storage.local.set({ joyn_autolike_threshold: val });
+  syncSetting('autoLikePercent', val);
 }, { passive: false });
 
 ffSpeedSlider.addEventListener('wheel', (e) => {
@@ -501,6 +523,7 @@ btnBackToDashboard.addEventListener('click', () => {
 toggleAutoSkip.addEventListener('change', (e) => {
   const enabled = !!e.target.checked;
   chrome.storage.local.set({ joyn_autoskip: enabled });
+  syncSetting('autoSkip', enabled);
   if (enabled) {
     autoSkipDelaySliderBlock.style.opacity = "1";
     autoSkipDelaySliderBlock.style.pointerEvents = "auto";
@@ -515,6 +538,7 @@ autoSkipDelaySlider.addEventListener('input', (e) => {
   const val = parseInt(e.target.value);
   updateAutoSkipDelaySlider(val);
   chrome.storage.local.set({ joyn_autoskip_delay: val });
+  syncSetting('autoSkipDelay', val);
 });
 
 autoSkipDelaySlider.addEventListener('wheel', (e) => {
@@ -523,29 +547,34 @@ autoSkipDelaySlider.addEventListener('wheel', (e) => {
   const val = Math.max(0, Math.min(10, parseInt(autoSkipDelaySlider.value) + (e.deltaY < 0 ? step : -step)));
   updateAutoSkipDelaySlider(val);
   chrome.storage.local.set({ joyn_autoskip_delay: val });
+  syncSetting('autoSkipDelay', val);
 }, { passive: false });
 
 toggleDislikes.addEventListener('change', (e) => {
   const enabled = !!e.target.checked;
   chrome.storage.local.set({ joyn_show_dislikes: enabled });
+  syncSetting('dislikes', enabled);
   showToast(enabled ? getMessage('toast_dislikes_active') : getMessage('toast_dislikes_inactive'));
 });
 
 toggleSpeedTimer.addEventListener('change', (e) => {
   const enabled = !!e.target.checked;
   chrome.storage.local.set({ joyn_show_timer: enabled });
+  syncSetting('speedTimer', enabled);
   showToast(enabled ? getMessage('toast_timer_active') : getMessage('toast_timer_inactive'));
 });
 
 toggleSponsorBlock.addEventListener('change', (e) => {
   const enabled = !!e.target.checked;
   chrome.storage.local.set({ joyn_sponsorblock_enabled: enabled });
+  syncSetting('sponsorBlock', enabled);
   showToast(enabled ? getMessage('toast_sb_active') : getMessage('toast_sb_inactive'));
 });
 
 toggleThanksDownload.addEventListener('change', (e) => {
   const enabled = !!e.target.checked;
   chrome.storage.local.set({ joyn_show_thanks_download: enabled });
+  syncSetting('thanksDownload', enabled);
   // Send message to active tab to live-inject/toggle YouTube buttons
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     if (tabs[0]) {
@@ -561,42 +590,49 @@ toggleThanksDownload.addEventListener('change', (e) => {
 togglePauseOnOpen.addEventListener('change', (e) => {
   const enabled = !!e.target.checked;
   chrome.storage.local.set({ joyn_pause_on_open: enabled });
+  syncSetting('pauseOnOpen', enabled);
   showToast(enabled ? getMessage('toast_pause_active') : getMessage('toast_pause_inactive'));
 });
 
 toggleHideXRay.addEventListener('change', (e) => {
   const enabled = !!e.target.checked;
   chrome.storage.local.set({ joyn_hide_xray: enabled });
+  syncSetting('hideXRay', enabled);
   showToast(enabled ? getMessage('toast_xray_hidden') : getMessage('toast_xray_shown'));
 });
 
 toggleHidePrimeControls.addEventListener('change', (e) => {
   const enabled = !!e.target.checked;
   chrome.storage.local.set({ joyn_hide_prime_controls: enabled });
+  syncSetting('hidePrimeControls', enabled);
   showToast(enabled ? getMessage('toast_prime_controls_hidden') : getMessage('toast_prime_controls_shown'));
 });
 
 toggleHidePrimeTopbar.addEventListener('change', (e) => {
   const enabled = !!e.target.checked;
   chrome.storage.local.set({ joyn_hide_prime_topbar: enabled });
+  syncSetting('hidePrimeTopbar', enabled);
   showToast(enabled ? getMessage('toast_prime_topbar_hidden') : getMessage('toast_prime_topbar_shown'));
 });
 
 toggleHidePrimeNextup.addEventListener('change', (e) => {
   const enabled = !!e.target.checked;
   chrome.storage.local.set({ joyn_hide_prime_nextup: enabled });
+  syncSetting('hidePrimeNextup', enabled);
   showToast(enabled ? getMessage('toast_prime_nextup_hidden') : getMessage('toast_prime_nextup_shown'));
 });
 
 toggleHidePrimeSettings.addEventListener('change', (e) => {
   const enabled = !!e.target.checked;
   chrome.storage.local.set({ joyn_hide_prime_settings: enabled });
+  syncSetting('hidePrimeSettings', enabled);
   showToast(enabled ? getMessage('toast_prime_settings_hidden') : getMessage('toast_prime_settings_shown'));
 });
 
 toggleAutoLike.addEventListener('change', (e) => {
   const enabled = !!e.target.checked;
   chrome.storage.local.set({ joyn_autolike_enabled: enabled });
+  syncSetting('autoLike', enabled);
   if (enabled) {
     autoLikeSliderBlock.style.opacity = "1";
     autoLikeSliderBlock.style.pointerEvents = "auto";
@@ -647,6 +683,7 @@ document.querySelectorAll('.dropdown-item').forEach(item => {
     e.stopPropagation();
     const lang = item.getAttribute('data-value');
     await chrome.storage.local.set({ joyn_language: lang });
+    syncSetting('language', lang);
     await loadLocale(lang);
     localizeHTML();
     showToast(getMessage('toast_saved') || 'Gespeichert');

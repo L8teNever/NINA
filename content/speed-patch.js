@@ -12,7 +12,7 @@
   const KEY = 'joyn_speed_value';
   const KEY_FF = 'joyn_ff_speed_value';
   const EPSILON = 0.01;
-  const RATE_EVENTS = ['ratechange', 'play', 'playing', 'seeked', 'loadeddata'];
+  const RATE_EVENTS = ['ratechange', 'play', 'playing', 'seeked', 'loadeddata', 'timeupdate', 'progress', 'canplay'];
 
   // Read stored speed rate
   function readLocalRate() {

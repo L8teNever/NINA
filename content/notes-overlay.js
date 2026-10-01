@@ -1555,7 +1555,16 @@
                     saveNotes();
                     renderNotesList();
                 }
-            }).catch(err => console.warn('NINA Drive:', err));
+            }).catch(err => {
+                console.warn('NINA Drive:', err);
+                // A silently swallowed error here just looks like the button
+                // does nothing at all — show it on the button itself instead.
+                const label = notesShadow.getElementById('drive-btn-label');
+                if (label) {
+                    label.textContent = 'Verbindung fehlgeschlagen: ' + (err && err.message ? err.message : err);
+                    setTimeout(updateDriveButton, 4000);
+                }
+            });
         }
     }
 

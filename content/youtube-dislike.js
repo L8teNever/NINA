@@ -151,7 +151,13 @@
 
   const skipBtn = document.createElement('button');
   skipBtn.id = 'usc-sb-skip-btn';
-  skipBtn.className = 'skip-button';
+  // No .skip-button class: the completely separate generic auto-skip
+  // system in universal.js matches .skip-button / [class*="skip-button"]
+  // (meant for OTHER sites' own native skip buttons) and was clicking our
+  // own SponsorBlock button through that unrelated path — bypassing the
+  // sponsorBlockEnabled/sponsorBlockAutoSkip settings entirely and firing
+  // its generic "Intro übersprungen" toast regardless of what was actually
+  // skipped. #usc-sb-skip-btn alone already carries all the same styling.
   skipBtn.innerHTML =
     '<span class="skip-label">Überspringen</span>' +
     '<span class="skip-icon-wrapper">' +
@@ -296,14 +302,24 @@
     }
 
     const key = seg.category + seg.segment[0];
-    if (key === activeSegKey && skipBtn.style.display === 'flex') return; // already shown
+    const isNewSegment = key !== activeSegKey;
+    if (!isNewSegment && skipBtn.style.display === 'flex') return; // already shown
     activeSegKey = key;
+
+    if (sponsorBlockAutoSkip) {
+      // Just jump past it — no button needed, and only once per segment
+      // (isNewSegment guards against re-seeking every 500ms tick while
+      // already inside the segment, e.g. if playback is paused there).
+      if (isNewSegment) {
+        video.currentTime = seg.segment[1];
+      }
+      skipBtn.style.display = 'none';
+      return;
+    }
 
     // Attach to player
     const player = document.querySelector('#movie_player, .html5-video-player');
     if (player && !player.contains(skipBtn)) player.appendChild(skipBtn);
-    if (player && !player.contains(speedUpBtn)) player.appendChild(speedUpBtn);
-    if (player && !player.contains(speedDownBtn)) player.appendChild(speedDownBtn);
 
     const label = skipBtn.querySelector('.skip-label');
     if (label) label.textContent = SEGMENT_SKIP_LABELS[seg.category] || 'Überspringen';
@@ -631,6 +647,7 @@
   let showDislikes = true;
   let showTimer = true;
   let sponsorBlockEnabled = true;
+  let sponsorBlockAutoSkip = false;
 
   function cleanupDislikes() {
     const btn = findDislikeButton();
@@ -721,7 +738,8 @@
     'joyn_autolike_threshold',
     'joyn_show_dislikes',
     'joyn_show_timer',
-    'joyn_sponsorblock_enabled'
+    'joyn_sponsorblock_enabled',
+    'joyn_sponsorblock_autoskip'
   ], (res) => {
     if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.id) return;
     const resSafe = res || {};
@@ -732,6 +750,7 @@
     if (resSafe.joyn_show_dislikes !== undefined) showDislikes = !!resSafe.joyn_show_dislikes;
     if (resSafe.joyn_show_timer !== undefined) showTimer = !!resSafe.joyn_show_timer;
     if (resSafe.joyn_sponsorblock_enabled !== undefined) sponsorBlockEnabled = !!resSafe.joyn_sponsorblock_enabled;
+    if (resSafe.joyn_sponsorblock_autoskip !== undefined) sponsorBlockAutoSkip = !!resSafe.joyn_sponsorblock_autoskip;
 
     applySettings();
   });
@@ -759,6 +778,9 @@
     if (changes.joyn_sponsorblock_enabled && changes.joyn_sponsorblock_enabled.newValue !== undefined) {
       sponsorBlockEnabled = !!changes.joyn_sponsorblock_enabled.newValue;
       needsUpdate = true;
+    }
+    if (changes.joyn_sponsorblock_autoskip && changes.joyn_sponsorblock_autoskip.newValue !== undefined) {
+      sponsorBlockAutoSkip = !!changes.joyn_sponsorblock_autoskip.newValue;
     }
 
     if (needsUpdate) {

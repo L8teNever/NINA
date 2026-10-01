@@ -160,10 +160,18 @@ function mirrorSyncedSettingsToLocal(settings) {
   if (settings.dislikes !== undefined)        local.joyn_show_dislikes = !!settings.dislikes;
   if (settings.speedTimer !== undefined)      local.joyn_show_timer = !!settings.speedTimer;
   if (settings.sponsorBlock !== undefined)    local.joyn_sponsorblock_enabled = !!settings.sponsorBlock;
+  if (settings.sponsorBlockAutoSkip !== undefined) local.joyn_sponsorblock_autoskip = !!settings.sponsorBlockAutoSkip;
   if (settings.thanksDownload !== undefined)  local.joyn_show_thanks_download = !!settings.thanksDownload;
   if (settings.autoLike !== undefined)        local.joyn_autolike_enabled = !!settings.autoLike;
   if (settings.autoLikePercent !== undefined) local.joyn_autolike_threshold = settings.autoLikePercent;
+  if (settings.ytWatchStatusEnabled !== undefined) local.joyn_yt_watch_status_enabled = !!settings.ytWatchStatusEnabled;
+  if (settings.crWatchStatusEnabled !== undefined) local.joyn_cr_watch_status_enabled = !!settings.crWatchStatusEnabled;
+  if (settings.ytWatchedThreshold !== undefined) local.joyn_yt_watched_threshold = settings.ytWatchedThreshold;
   if (settings.hideXRay !== undefined)        local.joyn_hide_xray = !!settings.hideXRay;
+  if (settings.hidePrimeControls !== undefined) local.joyn_hide_prime_controls = !!settings.hidePrimeControls;
+  if (settings.hidePrimeTopbar !== undefined)   local.joyn_hide_prime_topbar = !!settings.hidePrimeTopbar;
+  if (settings.hidePrimeNextup !== undefined)   local.joyn_hide_prime_nextup = !!settings.hidePrimeNextup;
+  if (settings.hidePrimeSettings !== undefined) local.joyn_hide_prime_settings = !!settings.hidePrimeSettings;
   if (settings.ffSpeed !== undefined)         local.joyn_ff_speed = settings.ffSpeed;
   if (settings.language !== undefined)        local.joyn_language = settings.language;
   

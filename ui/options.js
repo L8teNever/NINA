@@ -15,15 +15,23 @@ const DEFAULT_SETTINGS = {
   dislikes: true,
   speedTimer: true,
   sponsorBlock: true,
+  sponsorBlockAutoSkip: false,
   thanksDownload: false,
   autoLike: true,
   autoLikePercent: 10,
+  ytWatchStatusEnabled: true,
+  crWatchStatusEnabled: true,
+  ytWatchedThreshold: 90,
   hideXRay: false,
+  hidePrimeControls: false,
+  hidePrimeTopbar: false,
+  hidePrimeNextup: false,
+  hidePrimeSettings: false,
   secondsDisplay: true,
   bgColor: '#0f1113',
   bgImage: null,
   bgImageOverlay: 50,
-  chromeBookmarks: false,
+  chromeBookmarks: true,
   chromeFilterMode: 'exclude',
   chromeFilterList: [],
   language: 'system',
@@ -178,11 +186,18 @@ function initializeUI() {
   $('toggleDislikes').checked = currentSettings.dislikes;
   $('toggleSpeedTimer').checked = currentSettings.speedTimer;
   $('toggleSponsorBlock').checked = currentSettings.sponsorBlock;
+  $('toggleSponsorBlockAutoSkip').checked = currentSettings.sponsorBlockAutoSkip;
+  updateSponsorBlockAutoSkipVisibility();
   $('toggleThanksDownload').checked = currentSettings.thanksDownload;
   $('toggleAutoLike').checked = currentSettings.autoLike;
   $('autoLikeSlider').value = currentSettings.autoLikePercent;
   $('autoLikeVal').textContent = currentSettings.autoLikePercent + '%';
   updateSliderProgress($('autoLikeSlider'), currentSettings.autoLikePercent);
+  $('toggleWatchStatus').checked = currentSettings.ytWatchStatusEnabled;
+  $('toggleWatchStatusCrunchyroll').checked = currentSettings.crWatchStatusEnabled;
+  $('watchStatusThresholdSlider').value = currentSettings.ytWatchedThreshold;
+  $('watchStatusThresholdVal').textContent = currentSettings.ytWatchedThreshold + '%';
+  updateSliderProgress($('watchStatusThresholdSlider'), currentSettings.ytWatchedThreshold);
   $('toggleHideXRay').checked = currentSettings.hideXRay;
   $('seconds-toggle').checked = currentSettings.secondsDisplay;
   $('bg-color-picker').value = currentSettings.bgColor;
@@ -193,6 +208,7 @@ function initializeUI() {
   $('chrome-filter-mode').value = currentSettings.chromeFilterMode;
 
   updateAutoLikeSliderVisibility();
+  updateWatchStatusSliderVisibility();
   updateChromeFilterVisibility();
   updateClearBgButtonVisibility();
   updateBookmarksList();
@@ -271,6 +287,12 @@ function setupEventListeners() {
 
   $('toggleSponsorBlock').addEventListener('change', (e) => {
     currentSettings.sponsorBlock = e.target.checked;
+    updateSponsorBlockAutoSkipVisibility();
+    saveSettings();
+  });
+
+  $('toggleSponsorBlockAutoSkip').addEventListener('change', (e) => {
+    currentSettings.sponsorBlockAutoSkip = e.target.checked;
     saveSettings();
   });
 
@@ -301,6 +323,37 @@ function setupEventListeners() {
     $('autoLikeSlider').value = val;
     $('autoLikeVal').textContent = val + '%';
     updateSliderProgress($('autoLikeSlider'), val);
+    saveSettings();
+  }, { passive: false });
+
+  $('toggleWatchStatus').addEventListener('change', (e) => {
+    currentSettings.ytWatchStatusEnabled = e.target.checked;
+    updateWatchStatusSliderVisibility();
+    saveSettings();
+  });
+
+  $('toggleWatchStatusCrunchyroll').addEventListener('change', (e) => {
+    currentSettings.crWatchStatusEnabled = e.target.checked;
+    updateWatchStatusSliderVisibility();
+    saveSettings();
+  });
+
+  $('watchStatusThresholdSlider').addEventListener('input', (e) => {
+    const value = parseInt(e.target.value);
+    currentSettings.ytWatchedThreshold = value;
+    $('watchStatusThresholdVal').textContent = value + '%';
+    updateSliderProgress(e.target, value);
+    saveSettings();
+  });
+
+  $('watchStatusThresholdSlider').addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const step = 5;
+    const val = Math.max(10, Math.min(100, parseInt($('watchStatusThresholdSlider').value) + (e.deltaY < 0 ? step : -step)));
+    currentSettings.ytWatchedThreshold = val;
+    $('watchStatusThresholdSlider').value = val;
+    $('watchStatusThresholdVal').textContent = val + '%';
+    updateSliderProgress($('watchStatusThresholdSlider'), val);
     saveSettings();
   }, { passive: false });
 
@@ -496,6 +549,24 @@ function setupDropdown() {
 function updateAutoLikeSliderVisibility() {
   const block = $('autoLikeSliderBlock');
   if (currentSettings.autoLike) {
+    block.classList.remove('hidden');
+  } else {
+    block.classList.add('hidden');
+  }
+}
+
+function updateSponsorBlockAutoSkipVisibility() {
+  const row = $('sponsorBlockAutoSkipRow');
+  if (currentSettings.sponsorBlock) {
+    row.classList.remove('hidden');
+  } else {
+    row.classList.add('hidden');
+  }
+}
+
+function updateWatchStatusSliderVisibility() {
+  const block = $('watchStatusThresholdBlock');
+  if (currentSettings.ytWatchStatusEnabled || currentSettings.crWatchStatusEnabled) {
     block.classList.remove('hidden');
   } else {
     block.classList.add('hidden');
@@ -859,7 +930,11 @@ function initDriveUI() {
       } else {
         // Verbinden
         chrome.identity.getAuthToken({ interactive: true }, (token) => {
-          if (chrome.runtime.lastError || !token) return;
+          if (chrome.runtime.lastError || !token) {
+            console.error('NINA Drive connect failed:', chrome.runtime.lastError);
+            showToast('Google-Verbindung fehlgeschlagen: ' + (chrome.runtime.lastError ? chrome.runtime.lastError.message : 'kein Token erhalten'));
+            return;
+          }
           chrome.storage.local.set({ [DRIVE_AUTH_KEY]: true }, () => {
             fetch('https://www.googleapis.com/oauth2/v1/userinfo?alt=json', {
               headers: { Authorization: `Bearer ${token}` }

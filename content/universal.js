@@ -175,9 +175,9 @@
     return !!el.isContentEditable;
   }
 
-  function bumpSpeed(delta) {
+  function setSpeedTo(target, withToast) {
     if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.id) return;
-    const s = clamp(currentSpeed + delta, SPEED_MIN, SPEED_MAX);
+    const s = clamp(target, SPEED_MIN, SPEED_MAX);
     if (s === currentSpeed) return;
     currentSpeed = s;
     if (myTabId) {
@@ -191,7 +191,11 @@
         chrome.storage.local.set({ tab_speeds: tabSpeeds });
       });
     }
-    showToast('⚡ ' + s.toFixed(2) + '×');
+    if (withToast) showToast('⚡ ' + s.toFixed(2) + '×');
+  }
+
+  function bumpSpeed(delta) {
+    setSpeedTo(currentSpeed + delta, true);
   }
 
   function bumpVolume(delta) {
@@ -219,19 +223,184 @@
     if (isTyping(document.activeElement)) return;
     if (!e.key) return;
     const key = e.key.toLowerCase();
+    // On YouTube Shorts, Up/Down is YouTube's own navigation to the
+    // next/previous Short — hijacking it for volume broke that. W/S stay
+    // volume shortcuts there since they don't conflict with anything native.
+    const isYouTubeShorts = location.hostname.includes('youtube.com') && location.pathname.startsWith('/shorts');
     if (key === 'd') bumpSpeed(SPEED_STEP);
     else if (key === 'a') bumpSpeed(-SPEED_STEP);
-    else if (e.key === 'ArrowUp') {
+    else if (e.key === 'ArrowUp' && !isYouTubeShorts) {
       e.preventDefault();
       e.stopPropagation();
       bumpVolume(VOL_STEP);
     }
-    else if (e.key === 'ArrowDown') {
+    else if (e.key === 'ArrowDown' && !isYouTubeShorts) {
+      e.preventDefault();
+      e.stopPropagation();
+      bumpVolume(-VOL_STEP);
+    }
+    else if (key === 'w') {
+      e.preventDefault();
+      e.stopPropagation();
+      bumpVolume(VOL_STEP);
+    }
+    else if (key === 's') {
       e.preventDefault();
       e.stopPropagation();
       bumpVolume(-VOL_STEP);
     }
   });
+
+  // ── Crunchyroll: extra speeds in its own "Abspielgeschwindigkeit" menu ──
+  // The player's menu only offers 0.5x / 0.75x / 1x. Clone its own rows for
+  // higher speeds so they look native, and route every selection — ours and
+  // Crunchyroll's — through setSpeedTo() so speed-patch.js enforces it.
+  // Otherwise picking a native entry after one of ours would get overridden
+  // by our still-active higher target rate.
+  if (location.hostname.includes('crunchyroll.com')) {
+    const CR_EXTRA_SPEEDS = [1.25, 1.5, 1.75, 2, 2.5, 3];
+    const SPEED_LABEL_RE = /^(\d+(?:[.,]\d+)?)\s*x$/i;
+    const MENU_TITLE_RE = /abspielgeschwindigkeit|wiedergabegeschwindigkeit|playback speed/i;
+    let crCheckTemplate = null;
+    let crCheckLabelDepth = 0;
+
+    const isLeaf = (el) => el.children.length === 0;
+    const parseSpeedLabel = (text) => {
+      const m = SPEED_LABEL_RE.exec((text || '').trim());
+      return m ? parseFloat(m[1].replace(',', '.')) : null;
+    };
+    const speedLabelIn = (row) =>
+      [row, ...row.querySelectorAll('*')].find((c) => isLeaf(c) && parseSpeedLabel(c.textContent) !== null);
+
+    // Locate the menu via its title, then collect Crunchyroll's own speed
+    // labels inside it. Anchoring on the title keeps the "1x" toggle button
+    // in the control bar (same text, outside the menu) from matching.
+    function findNativeSpeedLabels() {
+      for (const title of document.querySelectorAll('span, div, p, h1, h2, h3, h4, label')) {
+        if (!isLeaf(title) || !MENU_TITLE_RE.test(title.textContent || '')) continue;
+        if (title.closest('#usc-overlay')) continue;
+        for (let node = title.parentElement, i = 0; node && i < 8; node = node.parentElement, i++) {
+          const labels = [];
+          for (const c of node.querySelectorAll('*')) {
+            if (isLeaf(c) && !c.closest('[data-nina-speed]') && parseSpeedLabel(c.textContent) !== null) {
+              labels.push(c);
+            }
+          }
+          if (labels.length >= 2) return labels;
+        }
+      }
+      return null;
+    }
+
+    function updateSpeedChecks(rowsParent, nativeRows) {
+      const customActive = !nativeRows.some((r) => Math.abs(r.speed - currentSpeed) < 0.01);
+      // Crunchyroll still thinks it's at its own rate (speed-patch spoofs the
+      // getter), so hide its check while one of ours is the real speed.
+      for (const { row } of nativeRows) {
+        row.querySelectorAll('svg:not([data-nina-check])').forEach((svg) => {
+          svg.style.visibility = customActive ? 'hidden' : '';
+        });
+      }
+      for (const row of rowsParent.querySelectorAll(':scope > [data-nina-speed]')) {
+        const active = Math.abs(parseFloat(row.dataset.ninaSpeed) - currentSpeed) < 0.01;
+        const existing = row.querySelector('[data-nina-check]');
+        if (active && !existing && crCheckTemplate) {
+          const check = crCheckTemplate.cloneNode(true);
+          check.setAttribute('data-nina-check', '1');
+          check.style.visibility = '';
+          // Put the check into the same container as in Crunchyroll's own row
+          // (same number of levels above the label), so its flex layout pushes
+          // it to the right instead of wrapping below the text.
+          let container = crCheckLabelDepth > 0 ? speedLabelIn(row) : null;
+          for (let i = 0; container && i < crCheckLabelDepth; i++) container = container.parentElement;
+          if (!container || !row.contains(container)) container = row;
+          container.appendChild(check);
+        } else if (!active && existing) {
+          existing.remove();
+        }
+      }
+    }
+
+    function enhanceCrunchyrollSpeedMenu() {
+      if (!document.querySelector('video')) return;
+      const labels = findNativeSpeedLabels();
+      if (!labels) return;
+
+      let rowsParent = labels[0].parentElement;
+      while (rowsParent && !labels.every((l) => rowsParent.contains(l))) rowsParent = rowsParent.parentElement;
+      if (!rowsParent) return;
+
+      const nativeRows = labels.map((label) => {
+        let row = label;
+        while (row && row.parentElement !== rowsParent) row = row.parentElement;
+        return { row, speed: parseSpeedLabel(label.textContent) };
+      }).filter((r) => r.row);
+      if (nativeRows.length < 2) return;
+
+      for (const { row, speed } of nativeRows) {
+        const svg = row.querySelector('svg:not([data-nina-check])');
+        if (svg && !crCheckTemplate) {
+          // The check usually sits in a wrapper next to the label. Clone that
+          // whole wrapper (not just the svg) and remember how far above the
+          // label their shared container is.
+          const label = speedLabelIn(row);
+          let slot = svg;
+          while (slot.parentElement && slot.parentElement !== row && !(label && slot.parentElement.contains(label))) {
+            slot = slot.parentElement;
+          }
+          let depth = 0;
+          for (let n = label; n && n !== slot.parentElement; n = n.parentElement) depth++;
+          crCheckTemplate = slot.cloneNode(true);
+          crCheckLabelDepth = label && slot.parentElement !== row ? depth : -1;
+          crCheckTemplate.querySelectorAll('svg').forEach((s) => { s.style.visibility = ''; });
+        }
+        if (!row.dataset.ninaBound) {
+          row.dataset.ninaBound = '1';
+          row.addEventListener('click', () => setSpeedTo(speed, false));
+        }
+      }
+
+      if (!rowsParent.querySelector(':scope > [data-nina-speed]')) {
+        // Clone an unselected row so the copies don't inherit Crunchyroll's
+        // "selected" highlight or its check icon.
+        const template = (nativeRows.find((r) => !r.row.querySelector('svg')) || nativeRows[nativeRows.length - 1]).row;
+        let insertAfter = nativeRows[nativeRows.length - 1].row;
+        for (const s of CR_EXTRA_SPEEDS) {
+          const row = template.cloneNode(true);
+          row.dataset.ninaSpeed = String(s);
+          delete row.dataset.ninaBound;
+          row.removeAttribute('id');
+          row.removeAttribute('aria-checked');
+          row.removeAttribute('aria-selected');
+          row.querySelectorAll('[id]').forEach((n) => n.removeAttribute('id'));
+          row.querySelectorAll('svg').forEach((n) => n.remove());
+          const label = speedLabelIn(row);
+          if (label) label.textContent = s + 'x';
+          row.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setSpeedTo(s, false);
+            updateSpeedChecks(rowsParent, nativeRows);
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+          });
+          insertAfter.after(row);
+          insertAfter = row;
+        }
+      }
+
+      updateSpeedChecks(rowsParent, nativeRows);
+    }
+
+    let crSpeedMenuPending = false;
+    new MutationObserver(() => {
+      if (crSpeedMenuPending) return;
+      crSpeedMenuPending = true;
+      requestAnimationFrame(() => {
+        crSpeedMenuPending = false;
+        try { enhanceCrunchyrollSpeedMenu(); } catch (_) {}
+      });
+    }).observe(document.documentElement, { childList: true, subtree: true });
+  }
 
   // Capture volumechange events to sync native adjustments back to storage
   document.addEventListener('volumechange', (e) => {
@@ -331,9 +500,11 @@
     '.up-next-play-button',
     '[data-testid="up-next-play-button"]',
 
-    // YouTube Next
-    '.ytp-next-button',
-    '.ytp-autonav-endscreen-upnext-play-button',
+    // YouTube's "next video" is an algorithmic suggestion, not a real next
+    // episode — auto-advancing through it isn't wanted the way it is for
+    // Netflix. .ytp-next-button was here before and caused exactly that
+    // (plus randomly skipping Shorts, since Shorts reuses the same class).
+    // Deliberately not included.
 
     // Joyn next
     '.next-episode-btn',
@@ -360,9 +531,13 @@
 
   function robustClick(element) {
     if (!element) return;
-    if (typeof element.click === 'function') {
-      try { element.click(); } catch (_) {}
-    }
+    // Dispatch one realistic, correctly-ordered sequence ending in 'click'.
+    // We used to also call element.click() before this loop, which fired an
+    // extra out-of-order 'click' with no preceding mousedown — some handlers
+    // (e.g. Netflix's "next episode" action) reacted to both, advancing
+    // twice per call. Others may only react to a 'click' preceded by a real
+    // mousedown/mouseup and ignored the early one. A single, properly
+    // ordered sequence covers both without double-firing.
     const events = ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click'];
     for (const name of events) {
       try {
@@ -484,15 +659,28 @@
         }
       }
     }
-    try {
-      const btns = collectButtons(document);
-      for (const el of btns) {
-        if (isVisible(el) && textMatches(el, texts)) {
-          if (isYouTubeForbiddenElement(el)) continue;
-          return el;
+    // The text-matching fallback below exists for other sites whose "skip
+    // intro" buttons don't have stable CSS classes across versions. On
+    // YouTube it's pure risk with no upside: creators routinely name video
+    // chapters "Intro", "Sponsor", "Filler" etc., and those chapter
+    // markers are real clickable elements — the isYouTubeForbiddenElement
+    // guard below doesn't cover every chapter UI variant, so this ended up
+    // auto-clicking chapters by name and seeking through the video with
+    // SponsorBlock fully disabled. YouTube's real skip targets (ads) are
+    // already caught by the selector pass above, so just skip this for
+    // YouTube entirely rather than chase every chapter component YouTube
+    // ships.
+    if (!isYouTube) {
+      try {
+        const btns = collectButtons(document);
+        for (const el of btns) {
+          if (isVisible(el) && textMatches(el, texts)) {
+            if (isYouTubeForbiddenElement(el)) continue;
+            return el;
+          }
         }
-      }
-    } catch (_) { }
+      } catch (_) { }
+    }
     return null;
   }
 
@@ -538,10 +726,14 @@
       '[class*="player-overlay" i]',
       '[class*="player__controls" i]'
     ];
+    // Our CSS (styles/overlay.css) is injected into the main document and
+    // cannot reach into a shadow root, so a container found inside one would
+    // leave the panel completely unstyled (and stuck looking "open"). Only
+    // accept light-DOM containers here.
     for (const sel of selectors) {
       const hits = queryAllShadow(document, sel);
       for (const el of hits) {
-        if (el.offsetHeight > 100 && el.offsetWidth > 300) {
+        if (el.getRootNode() === document && el.offsetHeight > 100 && el.offsetWidth > 300) {
           return el;
         }
       }
@@ -556,6 +748,7 @@
     for (const sel of playSelectors) {
       const hits = queryAllShadow(document, sel);
       for (const btn of hits) {
+        if (btn.getRootNode() !== document) continue;
         let curr = btn.parentElement;
         while (curr && curr !== document.body) {
           if (curr.offsetHeight > 100 && curr.offsetWidth > 300) {
@@ -646,6 +839,8 @@
   const SKIP_COOLDOWN = 5000;
   let lastSkipTime = 0;
   let lastNextHref = null;
+  let cachedOverlay = null;
+  let cachedBackdrop = null;
 
   let lastAdTimeText = 0;
   let lastIntroTime = -1;
@@ -675,6 +870,18 @@
     return isNaN(adTime) ? 0 : adTime;
   }
 
+  // Picking our own overlay/backdrop as the "first child" reference (because we
+  // just inserted them there) makes ensureOverlay() re-target itself relative
+  // to itself on the very next tick, endlessly swapping their order and
+  // re-triggering the MutationObserver forever. Always skip past our own nodes.
+  function firstRealChild(el) {
+    let child = el ? el.firstElementChild : null;
+    while (child && (child.id === 'usc-overlay' || child.id === 'usc-backdrop')) {
+      child = child.nextElementSibling;
+    }
+    return child;
+  }
+
   function getNetflixControlsTarget() {
     const otherSpeedBtn = document.querySelector('#videoSpeed');
     if (otherSpeedBtn && otherSpeedBtn.parentElement) {
@@ -684,13 +891,13 @@
     const nextBtn = document.querySelector('[data-uia="control-next"], [data-uia*="next"], [data-uia*="episode"]');
     if (nextBtn && nextBtn.parentElement) {
       const container = nextBtn.parentElement;
-      return { parent: container, reference: container.firstElementChild || nextBtn };
+      return { parent: container, reference: firstRealChild(container) || nextBtn };
     }
-    
+
     const fullscreenBtn = document.querySelector('[data-uia="control-fullscreen"]');
     if (fullscreenBtn && fullscreenBtn.parentElement) {
       const container = fullscreenBtn.parentElement;
-      return { parent: container, reference: container.firstElementChild || fullscreenBtn };
+      return { parent: container, reference: firstRealChild(container) || fullscreenBtn };
     }
 
     const controls = document.querySelector('[data-uia="controls-standard"]');
@@ -703,7 +910,7 @@
     if (!targetSection) return null;
     const container = targetSection.firstChild;
     if (!container) return null;
-    return { parent: container, reference: container.firstElementChild || container.firstChild };
+    return { parent: container, reference: firstRealChild(container) || container.firstChild };
   }
 
   function getCrunchyrollControlsTarget() {
@@ -738,7 +945,7 @@
         '[class*="right"], [class*="Right"], [class*="secondary"], [class*="actions"]'
       );
       if (rightGroup) {
-        return { parent: rightGroup, reference: rightGroup.firstElementChild };
+        return { parent: rightGroup, reference: firstRealChild(rightGroup) };
       }
       // Append directly to bottom controls
       return { parent: bottomControls, reference: null };
@@ -762,10 +969,19 @@
     if (!autoSkipEnabled) return;
 
     // 1. Skip Intro
+    // Same reused-node/repeat-click hazard as the next-episode button below:
+    // without a one-shot guard this fires again on every tick the button is
+    // still visible (e.g. while it's fading out), clicking through extra
+    // content each time. Gate it the same way, keyed to the URL.
     const skipIntroBtn = document.querySelector('[data-uia="player-skip-intro"]');
     if (skipIntroBtn && isVisible(skipIntroBtn)) {
-      if (!skipIntroBtn._detectedAt) skipIntroBtn._detectedAt = Date.now();
-      if (Date.now() - skipIntroBtn._detectedAt >= autoSkipDelay * 1000) {
+      if (skipIntroBtn._detectedHref !== location.href) {
+        skipIntroBtn._detectedHref = location.href;
+        skipIntroBtn._detectedAt = Date.now();
+        skipIntroBtn._clicked = false;
+      }
+      if (!skipIntroBtn._clicked && Date.now() - skipIntroBtn._detectedAt >= autoSkipDelay * 1000) {
+        skipIntroBtn._clicked = true;
         robustClick(skipIntroBtn);
         showToast('⏭ Intro übersprungen');
       }
@@ -774,8 +990,13 @@
     // 2. Skip Recap
     const skipRecapBtn = document.querySelector('[data-uia="player-skip-recap"], [data-uia="player-skip-preplay"]');
     if (skipRecapBtn && isVisible(skipRecapBtn)) {
-      if (!skipRecapBtn._detectedAt) skipRecapBtn._detectedAt = Date.now();
-      if (Date.now() - skipRecapBtn._detectedAt >= autoSkipDelay * 1000) {
+      if (skipRecapBtn._detectedHref !== location.href) {
+        skipRecapBtn._detectedHref = location.href;
+        skipRecapBtn._detectedAt = Date.now();
+        skipRecapBtn._clicked = false;
+      }
+      if (!skipRecapBtn._clicked && Date.now() - skipRecapBtn._detectedAt >= autoSkipDelay * 1000) {
+        skipRecapBtn._clicked = true;
         robustClick(skipRecapBtn);
         showToast('⏭ Recap übersprungen');
       }
@@ -784,8 +1005,23 @@
     // 3. Skip Credits / Next Episode
     const nextEpBtn = document.querySelector('[data-uia="next-episode-seamless-button-draining"]');
     if (nextEpBtn && isVisible(nextEpBtn)) {
-      if (!nextEpBtn._detectedAt) nextEpBtn._detectedAt = Date.now();
-      if (Date.now() - nextEpBtn._detectedAt >= autoSkipDelay * 1000) {
+      // Netflix's seamless transition can reuse this exact DOM node for the
+      // *next* episode's button too, just updating its target underneath it.
+      // A leftover _detectedAt from the previous episode would then satisfy
+      // the delay check instantly, skipping an extra episode with no wait.
+      // Re-arm detection whenever the URL changes so the delay always
+      // restarts for the episode currently showing this button.
+      if (nextEpBtn._detectedHref !== location.href) {
+        nextEpBtn._detectedHref = location.href;
+        nextEpBtn._detectedAt = Date.now();
+        nextEpBtn._clicked = false;
+      }
+      // A small stabilization floor on top of the user's configured delay so
+      // a one-frame fade-out ghost from the previous episode's transition
+      // can't be mistaken for a fresh, real next-episode prompt.
+      const requiredWait = Math.max(autoSkipDelay * 1000, 600);
+      if (!nextEpBtn._clicked && Date.now() - nextEpBtn._detectedAt >= requiredWait) {
+        nextEpBtn._clicked = true;
         robustClick(nextEpBtn);
         showToast('▶ Nächste Folge');
       }
@@ -1185,21 +1421,39 @@
     return false;
   }
 
+  // Elements can end up inside a shadow root (e.g. Disney+'s player controls).
+  // document.getElementById() can't see into shadow roots, so relying on it to
+  // detect "does our overlay already exist" causes it to be recreated on every
+  // re-render instead of moved, piling up duplicate overlays. Cache direct
+  // references instead, and only fall back to a DOM lookup once.
+  function getExistingOverlayEls() {
+    if (!cachedOverlay || !cachedOverlay.isConnected) {
+      cachedOverlay = document.getElementById('usc-overlay');
+    }
+    if (!cachedBackdrop || !cachedBackdrop.isConnected) {
+      cachedBackdrop = document.getElementById('usc-backdrop');
+    }
+    return { overlay: cachedOverlay, backdrop: cachedBackdrop };
+  }
+
   function ensureOverlay() {
-    if (!isWatchPage()) {
-      const existing = document.getElementById('usc-overlay');
+    const host = window.location.hostname;
+    const isYouTubeHost = host.includes('youtube.com') || host.includes('youtu.be');
+    // YouTube gets its own native-styled speed/volume controls (see
+    // ensureYouTubeSpeedControls/ensureYouTubeVolumeBoost) — don't also show
+    // the generic floating badge/panel there.
+    if (!isWatchPage() || isYouTubeHost) {
+      const { overlay: existing, backdrop: existingBackdrop } = getExistingOverlayEls();
       if (existing) {
         existing.style.setProperty('display', 'none', 'important');
       }
-      const existingBackdrop = document.getElementById('usc-backdrop');
       if (existingBackdrop) {
         existingBackdrop.style.setProperty('display', 'none', 'important');
       }
       return;
     }
 
-    let overlay = document.getElementById('usc-overlay');
-    let backdrop = document.getElementById('usc-backdrop');
+    let { overlay, backdrop } = getExistingOverlayEls();
     let targetParent = document.body;
     let referenceNode = null;
     const fullscreenEl = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
@@ -1210,7 +1464,7 @@
         targetParent = controls;
       } else {
         const video = findMainVideo();
-        if (video && video.parentElement) {
+        if (video && video.parentElement && video.getRootNode() === document) {
           targetParent = video.parentElement;
         } else {
           targetParent = fullscreenEl;
@@ -1221,7 +1475,6 @@
       }
     }
 
-    const host = window.location.hostname;
     const isNetflix = host.includes('netflix.com');
     const isCrunchyroll = host.includes('crunchyroll.com');
     if (isNetflix) {
@@ -1276,6 +1529,9 @@
     overlay = document.createElement('div');
     overlay.id = 'usc-overlay';
     if (!isNetflix && !isCrunchyroll) overlay.style.setProperty('display', 'block', 'important');
+
+    cachedOverlay = overlay;
+    cachedBackdrop = backdrop;
 
     if (host.includes('youtube.com') || host.includes('youtu.be')) {
       overlay.classList.add('usc-youtube');
@@ -1588,6 +1844,12 @@
     ensureYouTubeVolumeBoost();
     ensureOverlay();
     if (!autoSkipEnabled) return;
+    // YouTube reuses .ytp-next-button's class (from NEXT_SELECTORS, meant
+    // for other sites' "next episode" buttons) for the Shorts player's own
+    // "next short" arrow. That made this generic auto-advance logic
+    // randomly skip Shorts on its own. Shorts aren't episodic content this
+    // feature makes sense for anyway, so skip it there entirely.
+    if (location.pathname.startsWith('/shorts')) return;
     const now = Date.now();
     const main = findMainVideo();
     if (!main || main.offsetWidth < 50) return;
@@ -1623,6 +1885,11 @@
   if (isNetflix || isPrimeVideo) {
     const platformTick = () => {
       try {
+        // Re-attach the overlay reactively on every relevant DOM mutation, not
+        // just on the 800ms poll below — Netflix re-renders its controls bar
+        // often enough that the badge could sit detached/misplaced for most of
+        // that window, making its click silently miss.
+        ensureOverlay();
         const video = findMainVideo();
         if (isNetflix) {
           runNetflixSkipper();

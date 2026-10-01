@@ -305,6 +305,17 @@
             </label>
           </div>
 
+          <div id="sponsorBlockAutoSkipRow" class="setting-item flex items-center justify-between pl-4">
+            <div class="flex flex-col max-w-[70%]">
+              <span class="text-sm font-medium" data-i18n="sponsorblock_autoskip_title">Segmente automatisch überspringen</span>
+              <span class="text-xs text-m3-outline-light dark:text-m3-outline-dark mt-0.5" data-i18n="sponsorblock_autoskip_desc">Aus: nur der Überspringen-Button wird angezeigt, du musst selbst klicken. An: springt sofort selbst.</span>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+              <input type="checkbox" id="toggleSponsorBlockAutoSkip" class="sr-only peer">
+              <div class="relative w-12 h-6 bg-m3-surfaceVariant-light dark:bg-m3-surfaceVariant-dark peer-focus:outline-none rounded-full peer peer-checked:bg-m3-primary-light dark:peer-checked:bg-m3-primary-dark border border-transparent transition-colors duration-200 after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-slate-500 dark:after:bg-slate-400 peer-checked:after:bg-white dark:peer-checked:after:bg-m3-background-dark after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-6"></div>
+            </label>
+          </div>
+
           <div class="border-t border-slate-100 dark:border-slate-800/80 my-2"></div>
 
           <div class="setting-item flex items-center justify-between">
@@ -336,6 +347,39 @@
                 <span class="font-medium text-m3-outline-light dark:text-m3-outline-dark"><span data-i18n="autolike_prefix">Liken nach</span> <span id="autoLikeVal" class="font-bold text-m3-primary-light dark:text-m3-primary-dark text-sm">10%</span> <span data-i18n="autolike_suffix_simple">des Videos</span></span>
               </div>
               <input type="range" id="autoLikeSlider" min="1" max="100" step="1" value="10" class="w-full slider-aqua">
+            </div>
+          </div>
+
+          <div class="border-t border-slate-100 dark:border-slate-800/80 my-2"></div>
+
+          <div class="setting-item space-y-4">
+            <div class="flex items-center justify-between">
+              <div class="flex flex-col max-w-[70%]">
+                <span class="text-sm font-medium" data-i18n="watch_status_title">Video-Status (Angefangen/Gesehen)</span>
+                <span class="text-xs text-m3-outline-light dark:text-m3-outline-dark mt-0.5" data-i18n="watch_status_desc">YouTube: Markiert Miniaturansichten und zeigt einen Status neben Like/Dislike. Wird über Google Drive geräteübergreifend synchronisiert.</span>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                <input type="checkbox" id="toggleWatchStatus" class="sr-only peer" checked>
+                <div class="relative w-12 h-6 bg-m3-surfaceVariant-light dark:bg-m3-surfaceVariant-dark peer-focus:outline-none rounded-full peer peer-checked:bg-m3-primary-light dark:peer-checked:bg-m3-primary-dark border border-transparent transition-colors duration-200 after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-slate-500 dark:after:bg-slate-400 peer-checked:after:bg-white dark:peer-checked:after:bg-m3-background-dark after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-6"></div>
+              </label>
+            </div>
+
+            <div class="flex items-center justify-between pt-2 border-t border-dashed border-m3-surfaceVariant-light dark:border-m3-surfaceVariant-dark">
+              <div class="flex flex-col max-w-[70%]">
+                <span class="text-sm font-medium" data-i18n="watch_status_cr_title">Auch auf Crunchyroll</span>
+                <span class="text-xs text-m3-outline-light dark:text-m3-outline-dark mt-0.5" data-i18n="watch_status_cr_desc">Dasselbe für Folgen: Rahmen/Status-Anzeige + Sync über Google Drive.</span>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                <input type="checkbox" id="toggleWatchStatusCrunchyroll" class="sr-only peer" checked>
+                <div class="relative w-12 h-6 bg-m3-surfaceVariant-light dark:bg-m3-surfaceVariant-dark peer-focus:outline-none rounded-full peer peer-checked:bg-m3-primary-light dark:peer-checked:bg-m3-primary-dark border border-transparent transition-colors duration-200 after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-slate-500 dark:after:bg-slate-400 peer-checked:after:bg-white dark:peer-checked:after:bg-m3-background-dark after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-6"></div>
+              </label>
+            </div>
+
+            <div id="watchStatusThresholdBlock" class="flex flex-col space-y-2 pt-2 border-t border-dashed border-m3-surfaceVariant-light dark:border-m3-surfaceVariant-dark transition-all duration-200">
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-medium text-m3-outline-light dark:text-m3-outline-dark"><span data-i18n="watch_status_prefix">Gilt als "Gesehen" ab</span> <span id="watchStatusThresholdVal" class="font-bold text-m3-primary-light dark:text-m3-primary-dark text-sm">90%</span></span>
+              </div>
+              <input type="range" id="watchStatusThresholdSlider" min="10" max="100" step="5" value="90" class="w-full slider-aqua">
             </div>
           </div>
         </section>

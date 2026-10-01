@@ -457,6 +457,11 @@ function findBookmarkByName(query) {
     return null;
 }
 
+// Bumped on every fetchSuggestions() call so a slow chrome.history/topSites
+// response for an old keystroke can't clobber the suggestions for whatever
+// the user has since typed.
+let suggestionsRequestId = 0;
+
 function fetchSuggestions(query) {
     if (!query) {
         hideSuggestions();
@@ -485,7 +490,61 @@ function fetchSuggestions(query) {
         suggestions = suggestions.concat(chromeSuggestions);
     }
 
+    // Show what we already have synchronously first so the box doesn't feel
+    // laggy, then append Verlauf/Top-Sites matches once those (async
+    // chrome.* calls) resolve.
+    const requestId = ++suggestionsRequestId;
     showSuggestions(lowerQuery, suggestions, []);
+
+    fetchHistoryAndTopSiteSuggestions(lowerQuery, suggestions).then((extra) => {
+        if (requestId !== suggestionsRequestId) return; // stale — query changed since
+        if (extra.length === 0) return;
+        showSuggestions(lowerQuery, suggestions.concat(extra), []);
+    });
+}
+
+// Chrome-Verlauf + meistbesuchte Seiten als zusätzliche Vorschläge, analog zu
+// dem, was die Adressleiste selbst vorschlägt (die kann eine Extension nicht
+// direkt auslesen, also bauen wir das mit chrome.history/chrome.topSites nach).
+function fetchHistoryAndTopSiteSuggestions(lowerQuery, existing) {
+    const existingUrls = new Set(existing.map((s) => s.url));
+
+    const historyPromise = new Promise((resolve) => {
+        if (!chrome.history) { resolve([]); return; }
+        chrome.history.search({ text: lowerQuery, maxResults: 8, startTime: 0 }, (items) => {
+            resolve(items || []);
+        });
+    });
+
+    const topSitesPromise = new Promise((resolve) => {
+        if (!chrome.topSites) { resolve([]); return; }
+        chrome.topSites.get((sites) => resolve(sites || []));
+    });
+
+    return Promise.all([historyPromise, topSitesPromise]).then(([historyItems, topSites]) => {
+        const seen = new Set(existingUrls);
+        const results = [];
+
+        for (const h of historyItems) {
+            if (!h.url || !h.title || seen.has(h.url)) continue;
+            seen.add(h.url);
+            results.push({ name: h.title, url: h.url, type: 'history' });
+        }
+
+        // chrome.topSites.get() doesn't take a query — filter client-side.
+        const matchingTopSites = topSites.filter((t) => {
+            const title = (t.title || '').toLowerCase();
+            const url = (t.url || '').toLowerCase();
+            return title.includes(lowerQuery) || url.includes(lowerQuery);
+        });
+        for (const t of matchingTopSites) {
+            if (!t.url || seen.has(t.url)) continue;
+            seen.add(t.url);
+            results.push({ name: t.title || t.url, url: t.url, type: 'history' });
+        }
+
+        return results.slice(0, 8);
+    });
 }
 
 function loadChromeBookmarks() {
@@ -1297,6 +1356,8 @@ function setSuggestionItemStyle(li, isActive) {
     if (itemType === 'shortcut') {
         if (bookmarkType === 'user') {
             li.className = "suggestion-item bg-emerald-user" + (isActive ? " active" : "");
+        } else if (bookmarkType === 'history') {
+            li.className = "suggestion-item bg-amber-history" + (isActive ? " active" : "");
         } else {
             li.className = "suggestion-item bg-cyan-system" + (isActive ? " active" : "");
         }
@@ -1363,6 +1424,16 @@ function showSuggestions(query, matchedBookmarks, suggestions) {
                         <span><strong>${escapeHtml(item.displayText)}</strong> öffnen</span>
                     </div>
                     <span class="kbd-badge">Tab ⇥</span>
+                `;
+            } else if (item.bookmarkType === 'history') {
+                li.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-amber-400">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span><strong>${escapeHtml(item.displayText)}</strong> (Verlauf)</span>
+                    </div>
+                    <span class="kbd-badge kbd-badge-amber">Tab ⇥</span>
                 `;
             } else {
                 li.innerHTML = `
