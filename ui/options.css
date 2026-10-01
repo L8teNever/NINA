@@ -234,12 +234,6 @@ input[type="range"]:focus { outline: none; }
   letter-spacing: -0.02em;
   line-height: 1.2;
 }
-.options-hero p {
-  margin-top: 0.35rem;
-  font-size: 0.875rem;
-  color: var(--m3-outline-light);
-}
-.dark .options-hero p { color: var(--m3-outline-dark); }
 
 /* ── Settings groups & cards (Android 16 Settings) ─────────────────── */
 .setting-section {
