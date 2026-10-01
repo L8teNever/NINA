@@ -243,10 +243,12 @@ input[type="range"]:focus { outline: none; }
 
 /* ── Settings groups & cards (Android 16 Settings) ─────────────────── */
 .setting-section {
-  scroll-margin-top: 6rem;
-  display: flex;
+  display: none;
   flex-direction: column;
   gap: 0.75rem;
+}
+.setting-section.is-active {
+  display: flex;
 }
 
 .settings-group-header {
