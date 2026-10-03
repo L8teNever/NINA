@@ -16,6 +16,8 @@
 
   let currentSpeed = 1;
   let currentVolume = 1;
+  let volumeLocalUntil = 0;
+  let tabSettingsLoaded = false;
   let autoSkipEnabled = true;
   let autoSkipDelay = 0;
   let pauseOnOpenSetting = false;
@@ -79,6 +81,7 @@
         if (tabRes.speed !== undefined) currentSpeed = clamp(tabRes.speed, SPEED_MIN, SPEED_MAX);
         if (tabRes.volume !== undefined) currentVolume = clamp(tabRes.volume, VOL_MIN, VOL_MAX);
       }
+      tabSettingsLoaded = true;
       updateYouTubeVolumeBoostUI();
       const valEl = document.getElementById('usc-yt-speed-val');
       if (valEl) valEl.textContent = currentSpeed.toFixed(2);
@@ -96,7 +99,9 @@
           const valEl = document.getElementById('usc-yt-speed-val');
           if (valEl) valEl.textContent = currentSpeed.toFixed(2);
         }
-        if (newTabSettings.volume !== undefined) {
+        // Skip our own echoes while the user is dragging the Crunchyroll
+        // slider: async writes can land out of order and snap it back.
+        if (newTabSettings.volume !== undefined && Date.now() > volumeLocalUntil) {
           currentVolume = clamp(newTabSettings.volume, VOL_MIN, VOL_MAX);
           updateYouTubeVolumeBoostUI();
         }
@@ -192,6 +197,7 @@
       });
     }
     if (withToast) showToast('⚡ ' + s.toFixed(2) + '×');
+    if (window.__ninaPaintCrSpeedBtn) window.__ninaPaintCrSpeedBtn();
   }
 
   function bumpSpeed(delta) {
@@ -258,11 +264,23 @@
   // Otherwise picking a native entry after one of ours would get overridden
   // by our still-active higher target rate.
   if (location.hostname.includes('crunchyroll.com')) {
+    // Switches from NINA's settings (section "Crunchyroll" -> Player).
+    // Turning one off takes full effect after reloading the page, since the
+    // player's own controls were already modified.
+    const crPlay = { extraSpeeds: true, volumeBoost: true };
+    const readCrPlay = (o) => {
+      crPlay.extraSpeeds = !(o && o.extraSpeeds === false);
+      crPlay.volumeBoost = !(o && o.volumeBoost === false);
+    };
+    chrome.storage.sync.get(['nina_cr_options'], (r) => readCrPlay(r.nina_cr_options));
+    chrome.storage.onChanged.addListener((c, area) => { if (area === 'sync' && c.nina_cr_options) readCrPlay(c.nina_cr_options.newValue); });
+
     const CR_EXTRA_SPEEDS = [1.25, 1.5, 1.75, 2, 2.5, 3];
     const SPEED_LABEL_RE = /^(\d+(?:[.,]\d+)?)\s*x$/i;
     const MENU_TITLE_RE = /abspielgeschwindigkeit|wiedergabegeschwindigkeit|playback speed/i;
     let crCheckTemplate = null;
     let crCheckLabelDepth = 0;
+    let crHighlight = null; // { selected, plain } background colors of native rows
 
     const isLeaf = (el) => el.children.length === 0;
     const parseSpeedLabel = (text) => {
@@ -301,8 +319,35 @@
           svg.style.visibility = customActive ? 'hidden' : '';
         });
       }
+      // Same for the gray "selected" highlight: Crunchyroll keeps it on its
+      // own row, so move it to ours by swapping inline background colors.
+      const selected = nativeRows.find((r) => r.row.querySelector('svg:not([data-nina-check])'));
+      const plain = nativeRows.find((r) => r !== selected);
+      const highlightEl = (row) => {
+        // The highlight sits on the row itself or on its first wrapper.
+        if (!selected || !plain) return row;
+        const s = selected.row, p = plain.row;
+        const bg = (el) => el && getComputedStyle(el).backgroundColor;
+        if (s.style.backgroundColor || bg(s) !== bg(p)) return row;
+        return row.firstElementChild || row;
+      };
+      if (selected && plain && !crHighlight) {
+        const se = highlightEl(selected.row), pe = highlightEl(plain.row);
+        const sb = getComputedStyle(se).backgroundColor, pb = getComputedStyle(pe).backgroundColor;
+        if (sb !== pb) crHighlight = { selected: sb, plain: pb };
+      }
+      if (selected && crHighlight) {
+        const el = highlightEl(selected.row);
+        if (customActive) el.style.setProperty('background-color', crHighlight.plain, 'important');
+        else el.style.removeProperty('background-color');
+      }
       for (const row of rowsParent.querySelectorAll(':scope > [data-nina-speed]')) {
         const active = Math.abs(parseFloat(row.dataset.ninaSpeed) - currentSpeed) < 0.01;
+        if (crHighlight) {
+          const el = highlightEl(row);
+          if (active) el.style.setProperty('background-color', crHighlight.selected, 'important');
+          else el.style.removeProperty('background-color');
+        }
         const existing = row.querySelector('[data-nina-check]');
         if (active && !existing && crCheckTemplate) {
           const check = crCheckTemplate.cloneNode(true);
@@ -322,6 +367,7 @@
     }
 
     function enhanceCrunchyrollSpeedMenu() {
+      if (!crPlay.extraSpeeds) return;
       if (!document.querySelector('video')) return;
       const labels = findNativeSpeedLabels();
       if (!labels) return;
@@ -400,7 +446,441 @@
         try { enhanceCrunchyrollSpeedMenu(); } catch (_) {}
       });
     }).observe(document.documentElement, { childList: true, subtree: true });
+
+    // ---- Volume slider up to 600% ----
+    // Linear 0-600%: every 100% takes the same slider distance.
+    const volToPct = (v) => v / VOL_MAX;
+    const pctToVol = (p) => p * VOL_MAX;
+
+    let crVolTouched = false;
+    let crVolSaveTimer = null;
+    function setVolumeTo(v) {
+      v = clamp(v, VOL_MIN, VOL_MAX);
+      currentVolume = v;
+      volumeLocalUntil = Date.now() + 1000;
+      const video = findMainVideo();
+      crVolTouched = true;
+      if (video) {
+        video.muted = false;
+        // audio-patch only applies on its message round trip; set the native
+        // volume right away so 100% is really full volume.
+        try { video.volume = Math.min(v, 1); } catch (_) {}
+      }
+      // Dragging fires dozens of events; save only the final value so
+      // overlapping get/set round trips can't write an older one last.
+      clearTimeout(crVolSaveTimer);
+      crVolSaveTimer = setTimeout(() => {
+        if (!myTabId || !chrome.runtime || !chrome.runtime.id) return;
+        chrome.storage.local.get(['tab_speeds'], (res) => {
+          const tabSpeeds = res.tab_speeds || {};
+          tabSpeeds[myTabId] = { ...(tabSpeeds[myTabId] || {}), volume: currentVolume };
+          volumeLocalUntil = Date.now() + 1000;
+          chrome.storage.local.set({ tab_speeds: tabSpeeds });
+        });
+      }, 120);
+    }
+
+    // Reuse Crunchyroll's own slider (input[type=range] 0-100 whose orange
+    // fill comes from --volume-percent) so it looks exactly native, but remap
+    // its scale: lower half = 0-100%, upper half = 100-600%. Its input events
+    // are swallowed before React sees them, otherwise the player would try
+    // to set video.volume above 1 (throws) and fight our value.
+    function crVolEls() {
+      return {
+        input: document.querySelector('input[data-testid="volume-slider"]'),
+        label: document.querySelector('[data-testid="volume-slider-percentage"]'),
+        container: document.querySelector('[data-testid="volume-slider-container"]')
+      };
+    }
+
+    function paintCrunchyrollVolume() {
+      const { input, label, container } = crVolEls();
+      if (!input) return;
+      // Fine steps so dragging is smooth instead of snapping to whole numbers.
+      if (input.step !== 'any') input.step = 'any';
+      const pos = Math.round(volToPct(currentVolume) * 1000) / 10;
+      const shown = String(Math.round(currentVolume * 100));
+      if (Math.abs(Number(input.value) - pos) > 0.05) input.value = String(pos);
+      const pct = pos + '%';
+      if (input.style.getPropertyValue('--volume-percent') !== pct) input.style.setProperty('--volume-percent', pct);
+      if (label && label.textContent !== shown) label.textContent = shown;
+      if (container) {
+        if (container.getAttribute('aria-valuemax') !== '600') container.setAttribute('aria-valuemax', '600');
+        if (container.getAttribute('aria-valuenow') !== shown) {
+          container.setAttribute('aria-valuenow', shown);
+          container.setAttribute('aria-valuetext', shown + '%');
+        }
+      }
+    }
+
+    const onCrVolInput = (e) => {
+      if (!crPlay.volumeBoost) return;
+      const t = e.target;
+      if (!(t instanceof HTMLInputElement) || t.dataset.testid !== 'volume-slider') return;
+      e.stopImmediatePropagation();
+      setVolumeTo(pctToVol(Number(t.value) / 100));
+      paintCrunchyrollVolume();
+    };
+
+    // Mouse wheel over the open volume popup: even 10% steps.
+    const onCrVolWheel = (e) => {
+      if (!crPlay.volumeBoost) return;
+      const { container } = crVolEls();
+      if (!container || !container.contains(e.target)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const v = currentVolume + (e.deltaY < 0 ? 0.1 : -0.1);
+      setVolumeTo(Math.round(v * 10) / 10);
+      paintCrunchyrollVolume();
+    };
+    window.addEventListener('wheel', onCrVolWheel, { capture: true, passive: false });
+    window.addEventListener('input', onCrVolInput, true);
+    window.addEventListener('change', onCrVolInput, true);
+
+    // React re-renders write its own value/fill/text back; re-assert ours.
+    let crVolObserved = null;
+    function ensureCrunchyrollVolumeSlider() {
+      if (!crPlay.volumeBoost) return;
+      const { input, container } = crVolEls();
+      if (!input || !container) return;
+      // Keep the tab's saved volume (carried over between episodes) instead
+      // of whatever the player restored on load.
+      const vid = findMainVideo();
+      if (vid && tabSettingsLoaded && !vid.muted && Math.abs(vid.volume - Math.min(currentVolume, 1)) > 0.02) {
+        try { vid.volume = Math.min(currentVolume, 1); } catch (_) {}
+      }
+      if (crVolObserved !== container) {
+        crVolObserved = container;
+        new MutationObserver(paintCrunchyrollVolume).observe(container, {
+          subtree: true, attributes: true, attributeFilter: ['style', 'value', 'aria-valuenow'],
+          childList: true, characterData: true
+        });
+        container.addEventListener('mouseenter', paintCrunchyrollVolume);
+      }
+      paintCrunchyrollVolume();
+    }
+    // The "1x" button in the control bar only knows Crunchyroll's own rates
+    // (speed-patch spoofs playbackRate), so write the real speed into it and
+    // re-assert whenever React re-renders it.
+    let crSpeedBtnObserved = null;
+    function paintCrunchyrollSpeedButton() {
+      if (!crPlay.extraSpeeds) return;
+      const btn = document.querySelector('[data-testid="playback-speed-button"]');
+      if (!btn) return;
+      const textEl = [btn, ...btn.querySelectorAll('*')].find((c) => c.children.length === 0 && /x$/i.test((c.textContent || '').trim()));
+      if (!textEl) return;
+      const want = (Math.round(currentSpeed * 100) / 100) + 'x';
+      if (textEl.textContent !== want) textEl.textContent = want;
+      if (crSpeedBtnObserved !== btn) {
+        crSpeedBtnObserved = btn;
+        new MutationObserver(paintCrunchyrollSpeedButton)
+          .observe(btn, { subtree: true, childList: true, characterData: true });
+      }
+    }
+    window.__ninaPaintCrSpeedBtn = paintCrunchyrollSpeedButton;
+
+    // Mouse wheel over the "1x" button: change the speed in 0.05 steps.
+    window.addEventListener('wheel', (e) => {
+      if (!crPlay.extraSpeeds || !e.deltaY) return;
+      const btn = e.target instanceof Element && e.target.closest('[data-testid="playback-speed-button"]');
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const next = Math.round((currentSpeed + (e.deltaY < 0 ? 0.05 : -0.05)) * 100) / 100;
+      setSpeedTo(next, false);
+      paintCrunchyrollSpeedButton();
+    }, { capture: true, passive: false });
+
+    // Speed and volume stay as they are across episodes of the same show; a
+    // different show starts again at 1x. The show is read from the page's
+    // /series/<id> link because the tab title only holds the episode name.
+    let crSeriesChecked = '';
+    function checkCrunchyrollSeries() {
+      if (!tabSettingsLoaded || !myTabId || !location.pathname.includes('/watch/')) return;
+      if (crSeriesChecked === location.pathname) return;
+      const link = document.querySelector('a[href*="/series/"]');
+      const m = link && /\/series\/([^/?#]+)/.exec(link.getAttribute('href'));
+      if (!m) return;
+      crSeriesChecked = location.pathname;
+      const series = m[1];
+      chrome.storage.local.get(['tab_speeds'], (res) => {
+        const tabSpeeds = res.tab_speeds || {};
+        const cur = tabSpeeds[myTabId] || {};
+        if (cur.crSeries === series) return;
+        const next = { ...cur, crSeries: series };
+        // One write for both, so a separate speed write can't race this one.
+        if (cur.crSeries) {
+          next.speed = 1;
+          currentSpeed = 1;
+          paintCrunchyrollSpeedButton();
+        }
+        tabSpeeds[myTabId] = next;
+        chrome.storage.local.set({ tab_speeds: tabSpeeds });
+      });
+    }
+
+    setInterval(() => {
+      try { checkCrunchyrollSeries(); } catch (_) {}
+      try { ensureCrunchyrollVolumeSlider(); } catch (_) {}
+      try { paintCrunchyrollSpeedButton(); } catch (_) {}
+    }, 500);
   }
+
+  // (Volume slider up to 600 % in the Prime/Disney+/Joyn/Netflix players:
+  // content/stream-volume.js)
+
+  // ---- Stay in fullscreen across episodes ----
+  // When an episode ends in fullscreen and the next one loads (new page or
+  // SPA route + remounted player), the browser drops fullscreen. The wish is
+  // kept in sessionStorage (same tab + same site, survives reloads):
+  //   1. try requestFullscreen() on the new player — works if the user
+  //      clicked "next" recently (transient user activation),
+  //   2. otherwise put the browser window into fullscreen via the background
+  //      and stretch the player over the page ("pseudo fullscreen"); the
+  //      next click/key upgrades to real fullscreen, Esc leaves.
+  (function keepFullscreenAcrossEpisodes() {
+    // Not on YouTube: its player keeps fullscreen itself on autoplay, and
+    // opening another video from fullscreen should leave it there.
+    if (/(^|\.)youtube\.com$/i.test(location.hostname)) return;
+    // Settings: "Vollbild bei der nächsten Folge beibehalten" (all sites).
+    let keepFsEnabled = true;
+    chrome.storage.sync.get(['nina_keep_fullscreen'], (r) => { keepFsEnabled = r.nina_keep_fullscreen !== false; });
+    chrome.storage.onChanged.addListener((c, area) => {
+      if (area === 'sync' && c.nina_keep_fullscreen) keepFsEnabled = c.nina_keep_fullscreen.newValue !== false;
+    });
+    const WANT_KEY = 'nina_want_fullscreen';
+    const SEL_KEY = 'nina_fullscreen_selector';
+    const PSEUDO_ATTR = 'data-nina-pseudo-fs';
+    const ss = {
+      get: (k) => { try { return sessionStorage.getItem(k); } catch (_) { return null; } },
+      set: (k, v) => { try { sessionStorage.setItem(k, v); } catch (_) {} },
+      del: (k) => { try { sessionStorage.removeItem(k); } catch (_) {} }
+    };
+
+    const style = document.createElement('style');
+    style.textContent = `
+      [${PSEUDO_ATTR}] {
+        position: fixed !important; inset: 0 !important;
+        width: 100vw !important; height: 100vh !important;
+        max-width: none !important; max-height: none !important;
+        margin: 0 !important; padding: 0 !important; border: 0 !important;
+        transform: none !important; overflow: hidden !important;
+        z-index: 2147483646 !important;
+        background: #000 !important;
+      }
+      video[${PSEUDO_ATTR}], [${PSEUDO_ATTR}] video {
+        width: 100% !important; height: 100% !important;
+        max-width: none !important; max-height: none !important;
+        object-fit: contain !important;
+      }
+      html[${PSEUDO_ATTR}-root], html[${PSEUDO_ATTR}-root] body { overflow: hidden !important; }
+    `;
+    (document.head || document.documentElement).appendChild(style);
+
+    function describe(el) {
+      if (el.id) return '#' + CSS.escape(el.id);
+      const tid = el.getAttribute('data-testid');
+      if (tid) return el.tagName.toLowerCase() + '[data-testid="' + tid.replace(/"/g, '\\"') + '"]';
+      const cls = [...el.classList].filter((c) => /^[a-z_-][\w-]*$/i.test(c)).slice(0, 2);
+      return el.tagName.toLowerCase() + cls.map((c) => '.' + CSS.escape(c)).join('');
+    }
+
+    // The element to make fullscreen: whatever the player used last time if
+    // it exists again, else the outermost ancestor of the video that's still
+    // about the video's size (the player box, not the whole page).
+    function findTarget() {
+      const video = findMainVideo();
+      if (!video) return null;
+      // While stretched, sizes no longer reflect the page layout; keep the
+      // current element as long as it still holds the video.
+      if (pseudoEl && pseudoEl.isConnected && (pseudoEl === video || pseudoEl.contains(video))) return pseudoEl;
+      const vr = video.getBoundingClientRect();
+      // Only trust the remembered element if it's unambiguous and roughly
+      // the player's size — a generic class selector can otherwise match an
+      // outer page wrapper, which would blow up the whole page instead of
+      // the video.
+      const sel = ss.get(SEL_KEY);
+      if (sel) {
+        try {
+          const all = document.querySelectorAll(sel);
+          const el = all.length === 1 ? all[0] : null;
+          const r = el && el.getBoundingClientRect();
+          // A shadow-DOM player (Disney+) is reported as its host element.
+          if (el && (el.contains(video) || el.shadowRoot) &&
+              r.width <= vr.width * 1.1 + 4 && r.height <= vr.height * 1.4 + 4) return el;
+        } catch (_) {}
+      }
+      let best = video;
+      for (let n = video.parentElement; n && n !== document.body; n = n.parentElement) {
+        const r = n.getBoundingClientRect();
+        if (r.width > vr.width * 1.1 + 4 || r.height > vr.height * 1.25 + 4) break;
+        best = n;
+      }
+      return best;
+    }
+
+    // Pseudo fullscreen = browser window in fullscreen + the player stretched
+    // over the page. The player element itself can be replaced by the site at
+    // any time (React remounts it on episode change, ads, quality switch...),
+    // so the styling is re-applied to whatever the current player is on every
+    // tick instead of being bound to one element.
+    let pseudoActive = false;
+    let pseudoEl = null;
+    let pseudoSince = 0;
+    let sawFullWindow = false;
+
+    function clearPseudoFrom(el) {
+      if (!el) return;
+      el.removeAttribute(PSEUDO_ATTR);
+      try { el.hidePopover(); } catch (_) {}
+      if (el.dataset.ninaPopover) {
+        el.removeAttribute('popover');
+        delete el.dataset.ninaPopover;
+      }
+    }
+
+    function applyPseudoTo(target) {
+      if (pseudoEl === target && target.isConnected && target.hasAttribute(PSEUDO_ATTR)) return;
+      if (pseudoEl && pseudoEl !== target) clearPseudoFrom(pseudoEl);
+      pseudoEl = target;
+      target.setAttribute(PSEUDO_ATTR, '');
+      document.documentElement.setAttribute(PSEUDO_ATTR + '-root', '');
+      // Lift the player into the browser's top layer (no user gesture
+      // needed for popovers): position:fixed alone breaks when an ancestor
+      // has a transform/overflow/stacking context, leaving the page visible.
+      try {
+        if (!target.hasAttribute('popover')) {
+          target.setAttribute('popover', 'manual');
+          target.dataset.ninaPopover = '1';
+        }
+        if (!target.matches(':popover-open')) target.showPopover();
+      } catch (_) {}
+    }
+
+    function enterPseudo(target) {
+      if (!pseudoActive) {
+        pseudoActive = true;
+        pseudoSince = Date.now();
+        sawFullWindow = window.innerHeight >= screen.height - 40;
+        try { chrome.runtime.sendMessage({ type: 'NINA_WINDOW_FULLSCREEN', on: true }); } catch (_) {}
+      }
+      applyPseudoTo(target);
+    }
+
+    function leavePseudo(restoreWindow) {
+      clearPseudoFrom(pseudoEl);
+      pseudoEl = null;
+      pseudoActive = false;
+      document.documentElement.removeAttribute(PSEUDO_ATTR + '-root');
+      if (restoreWindow) {
+        try { chrome.runtime.sendMessage({ type: 'NINA_WINDOW_FULLSCREEN', on: false }); } catch (_) {}
+      }
+    }
+
+    // First real interaction while in pseudo mode: switch to real
+    // fullscreen (the click/key provides the needed user activation).
+    function onUserGesture(e) {
+      if (!pseudoActive) return;
+      if (e.type === 'keydown' && e.key === 'Escape') {
+        leavePseudo(true);
+        ss.del(WANT_KEY);
+        return;
+      }
+      const el = pseudoEl && pseudoEl.isConnected ? pseudoEl : findTarget();
+      if (!el) return;
+      // An open popover can't go fullscreen, so close it first.
+      try { el.hidePopover(); } catch (_) {}
+      el.requestFullscreen().then(() => {
+        leavePseudo(false); // window stays fullscreen until real fullscreen ends
+      }).catch(() => {
+        try { el.showPopover(); } catch (_) {}
+      });
+    }
+    document.addEventListener('keydown', onUserGesture, true);
+    document.addEventListener('mousedown', onUserGesture, true);
+
+    let restoring = false;
+    function restore() {
+      if (!keepFsEnabled) return;
+      if (restoring || document.fullscreenElement || pseudoActive) return;
+      if (ss.get(WANT_KEY) !== '1' || !isWatchPage()) return;
+      restoring = true;
+      const started = Date.now();
+      const attempt = () => {
+        if (document.fullscreenElement || pseudoActive || ss.get(WANT_KEY) !== '1') { restoring = false; return; }
+        const target = findTarget();
+        const video = target && findMainVideo();
+        if (!target || !video || video.getBoundingClientRect().width < 200) {
+          if (Date.now() - started < 20000) setTimeout(attempt, 500);
+          else restoring = false;
+          return;
+        }
+        target.requestFullscreen().then(() => {
+          restoring = false;
+        }).catch(() => {
+          enterPseudo(target);
+          restoring = false;
+        });
+      };
+      attempt();
+    }
+
+    let exitTimer = null;
+    document.addEventListener('fullscreenchange', () => {
+      const fs = document.fullscreenElement;
+      if (fs) {
+        if (!isWatchPage()) return;
+        clearTimeout(exitTimer);
+        ss.set(WANT_KEY, '1');
+        ss.set(SEL_KEY, describe(fs));
+        return;
+      }
+      // Left fullscreen. If the page navigates away / the episode changes
+      // within a moment, it was the episode switch -> keep the wish. If we're
+      // still on the same URL afterwards, the user left on purpose.
+      const href = location.href;
+      clearTimeout(exitTimer);
+      exitTimer = setTimeout(() => {
+        if (location.href !== href) { restore(); return; }
+        if (pseudoActive) return;
+        ss.del(WANT_KEY);
+        // Window fullscreen we set as a bridge isn't needed anymore.
+        try { chrome.runtime.sendMessage({ type: 'NINA_WINDOW_FULLSCREEN', on: false }); } catch (_) {}
+      }, 1500);
+    });
+
+    // Window fullscreen left by the user (F11 / Esc handled by Chrome): the
+    // viewport shrinks again. Only counts once the window was actually seen
+    // at full size — the resize events while it's still growing into
+    // fullscreen used to cancel pseudo mode right after it started.
+    window.addEventListener('resize', () => {
+      if (!pseudoActive) return;
+      const full = window.innerHeight >= screen.height - 40;
+      if (full) { sawFullWindow = true; return; }
+      if (sawFullWindow && Date.now() - pseudoSince > 1500) {
+        leavePseudo(false);
+        ss.del(WANT_KEY);
+      }
+    });
+
+    // Keep the stretch on the current player, and catch SPA episode switches.
+    let lastHref = location.href;
+    setInterval(() => {
+      if (pseudoActive) {
+        if (!isWatchPage()) { leavePseudo(true); return; }
+        const t = findTarget();
+        if (t) applyPseudoTo(t);
+        return;
+      }
+      if (location.href !== lastHref) {
+        lastHref = location.href;
+        restore();
+      }
+    }, 300);
+
+    // Fresh page load (non-SPA episode switch).
+    restore();
+  })();
 
   // Capture volumechange events to sync native adjustments back to storage
   document.addEventListener('volumechange', (e) => {
@@ -1442,7 +1922,9 @@
     // YouTube gets its own native-styled speed/volume controls (see
     // ensureYouTubeSpeedControls/ensureYouTubeVolumeBoost) — don't also show
     // the generic floating badge/panel there.
-    if (!isWatchPage() || isYouTubeHost) {
+    // Crunchyroll's own speed menu and volume slider are extended natively
+    // (see the crunchyroll.com block above), so the badge is redundant there too.
+    if (!isWatchPage() || isYouTubeHost || host.includes('crunchyroll.com')) {
       const { overlay: existing, backdrop: existingBackdrop } = getExistingOverlayEls();
       if (existing) {
         existing.style.setProperty('display', 'none', 'important');

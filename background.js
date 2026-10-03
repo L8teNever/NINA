@@ -1,6 +1,8 @@
 // background.js — Service worker
-// Opens the side panel on toolbar click and re-injects speed/frame scripts
-// after SPA navigations on streaming sites.
+// Re-injects speed/frame scripts after SPA navigations on streaming sites
+// (the toolbar icon opens ui/popup.html).
+
+importScripts('lib/anilist-bg.js', 'lib/sync-extra-bg.js');
 
 const STREAMING_HOSTS = [
   'joyn.de', 'youtube.com', 'youtu.be', 'netflix.com',
@@ -24,9 +26,7 @@ function isStreamingUrl(url) {
   }
 }
 
-chrome.action.onClicked.addListener((tab) => {
-  if (tab && tab.id != null) chrome.sidePanel.open({ tabId: tab.id });
-});
+// Toolbar icon: opens ui/popup.html (manifest action.default_popup).
 
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   if (changeInfo.status !== 'complete') return;
@@ -70,6 +70,10 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
           speed = 1.0;
           shouldUpdate = true;
         }
+      } else if (platform === 'crunchyroll') {
+        // Crunchyroll's tab title only holds the episode name, not the show,
+        // so a title compare would reset on every episode. universal.js
+        // detects series changes from the page's /series/ link instead.
       } else {
         const currentSeries = getSeriesName(current.showName);
         const newSeries = getSeriesName(showName);
@@ -85,7 +89,8 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
         showName: showName || current.showName || '',
         videoId: videoId || current.videoId || '',
         platform: platform,
-        url: url
+        url: url,
+        crSeries: current.crSeries
       };
 
       chrome.storage.local.set({ tab_speeds: tabSpeeds });
@@ -112,6 +117,59 @@ chrome.tabs.onRemoved.addListener((tabId) => {
     }
   });
 });
+
+// ── Speed & volume on ANY website ────────────────────────────────────────────
+// Streaming sites get the patch scripts via the manifest. Every other http(s)
+// page gets them injected as soon as the side panel sets a speed or volume
+// for that tab (and again after it navigates, while a value is set). The same
+// scripts then apply it: speed-patch (playbackRate), audio-patch (gain up to
+// 600 %), frame-speed (bridge from tab_speeds).
+const patchedTabs = new Set();
+
+async function injectPlaybackPatches(tabId) {
+  if (patchedTabs.has(tabId)) return;
+  patchedTabs.add(tabId);
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId, allFrames: true },
+      world: 'MAIN',
+      files: ['content/speed-patch.js', 'content/audio-patch.js'],
+    });
+    await chrome.scripting.executeScript({
+      target: { tabId, allFrames: true },
+      files: ['content/frame-speed.js'],
+    });
+  } catch (_) {
+    patchedTabs.delete(tabId); // e.g. chrome:// pages, Web Store
+  }
+}
+
+const hasPlaybackSettings = (s) => !!s && ((s.volume !== undefined && Math.abs(s.volume - 1) > 0.001) || (s.speed !== undefined && Math.abs(s.speed - 1) > 0.001));
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== 'local' || !changes.tab_speeds) return;
+  const now = changes.tab_speeds.newValue || {};
+  const before = changes.tab_speeds.oldValue || {};
+  for (const id of Object.keys(now)) {
+    const tabId = Number(id);
+    if (patchedTabs.has(tabId) || !hasPlaybackSettings(now[id])) continue;
+    const a = now[id], b = before[id] || {};
+    if (a.volume === b.volume && a.speed === b.speed) continue;
+    chrome.tabs.get(tabId, (tab) => {
+      if (chrome.runtime.lastError || !tab || !/^https?:/i.test(tab.url || '') || isStreamingUrl(tab.url)) return;
+      injectPlaybackPatches(tabId);
+    });
+  }
+});
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status === 'loading') { patchedTabs.delete(tabId); return; }
+  if (changeInfo.status !== 'complete' || !tab || !/^https?:/i.test(tab.url || '') || isStreamingUrl(tab.url)) return;
+  chrome.storage.local.get(['tab_speeds'], (res) => {
+    if (hasPlaybackSettings((res.tab_speeds || {})[tabId])) injectPlaybackPatches(tabId);
+  });
+});
+chrome.tabs.onRemoved.addListener((tabId) => patchedTabs.delete(tabId));
 
 // Broadcast speed, volume, and fast-forward updates to all frames in all active streaming tabs
 chrome.storage.onChanged.addListener((changes, area) => {
@@ -231,6 +289,66 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
     chrome.tabs.create({ url: chrome.runtime.getURL(url) });
     sendResponse({ ok: true });
+    return true;
+  }
+
+  // Keyboard shortcuts (content/hotkeys.js, settings "Tastenkürzel")
+  if (message.type === 'NINA_HOTKEY_SEARCH' || message.type === 'NINA_HOTKEY_PANEL') {
+    // pressed inside an iframe: the search overlay / NINA panel live in the top frame
+    const type = message.type === 'NINA_HOTKEY_SEARCH' ? 'NINA_TOGGLE_SEARCH' : 'NINA_TOGGLE_PANEL';
+    if (sender.tab) chrome.tabs.sendMessage(sender.tab.id, { type }, { frameId: 0 }, () => void chrome.runtime.lastError);
+    sendResponse({ ok: true });
+    return false;
+  }
+
+  if (message.type === 'NINA_HOTKEY_OPEN_URL') {
+    let url = String(message.url || '').trim();
+    if (url && !/^[a-z][\w+.-]*:/i.test(url)) url = 'https://' + url;
+    if (!/^https?:\/\/[^\s]+$/i.test(url)) { sendResponse({ ok: false }); return false; }
+    if (message.newTab === false && sender.tab) {
+      chrome.tabs.update(sender.tab.id, { url });
+    } else {
+      const opts = { url };
+      if (sender.tab) { opts.index = sender.tab.index + 1; opts.windowId = sender.tab.windowId; }
+      chrome.tabs.create(opts);
+    }
+    sendResponse({ ok: true });
+    return false;
+  }
+
+  // Keep-fullscreen across episodes: a freshly loaded page can't call
+  // requestFullscreen() without a user gesture, but the extension may put
+  // the whole browser window into fullscreen. Remember the previous state
+  // so leaving restores it.
+  if (message.type === 'NINA_OPEN_OPTIONS') {
+    const hash = message.hash ? '#' + String(message.hash).replace(/[^\w-]/g, '') : '';
+    chrome.tabs.create({ url: chrome.runtime.getURL('ui/options.html') + hash });
+    sendResponse({ ok: true });
+    return false;
+  }
+
+  if (message.type === 'NINA_WINDOW_FULLSCREEN') {
+    const windowId = sender.tab && sender.tab.windowId;
+    if (windowId === undefined) { sendResponse({ ok: false }); return false; }
+    chrome.storage.session.get(['nina_prev_window_state'], (res) => {
+      const prev = res.nina_prev_window_state || {};
+      chrome.windows.get(windowId, (win) => {
+        if (chrome.runtime.lastError || !win) { sendResponse({ ok: false }); return; }
+        if (message.on) {
+          if (win.state !== 'fullscreen') {
+            prev[windowId] = win.state;
+            chrome.storage.session.set({ nina_prev_window_state: prev });
+          }
+          chrome.windows.update(windowId, { state: 'fullscreen' }, () => sendResponse({ ok: !chrome.runtime.lastError }));
+        } else {
+          const state = prev[windowId];
+          delete prev[windowId];
+          chrome.storage.session.set({ nina_prev_window_state: prev });
+          if (win.state !== 'fullscreen' || !state) { sendResponse({ ok: true }); return; }
+          chrome.windows.update(windowId, { state }, () => sendResponse({ ok: !chrome.runtime.lastError }));
+        }
+      });
+    });
     return true;
   }
 

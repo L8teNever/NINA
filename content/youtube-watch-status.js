@@ -149,7 +149,8 @@
       const furthest = isFinite(winner.lastPosition) && isFinite(loser.lastPosition)
         ? Math.max(winner.lastPosition, loser.lastPosition)
         : (winner.lastPosition ?? loser.lastPosition);
-      merged[id] = { ...winner, lastPosition: furthest };
+      // Loser first so metadata (title etc.) survives if only one side has it.
+      merged[id] = { ...loser, ...winner, lastPosition: furthest };
     }
     return merged;
   }
@@ -196,13 +197,26 @@
   // fires several times a second, so persisting/rescanning the whole
   // thumbnail grid on every 1% tick would be wasteful. This only writes on
   // an actual state change: unset -> started -> watched.
+  // Title/channel of the video on this page, for the overview in the
+  // options page. Only filled when the id is the one being watched here.
+  function pageMeta(videoId) {
+    if (new URLSearchParams(location.search).get('v') !== videoId) return {};
+    const meta = {};
+    const h1 = document.querySelector('ytd-watch-metadata h1, h1.ytd-watch-metadata');
+    const title = (h1 && h1.textContent.trim()) || document.title.replace(/^\(\d+\)\s*/, '').replace(/\s*-\s*YouTube$/, '').trim();
+    if (title) meta.title = title;
+    const ch = document.querySelector('ytd-watch-metadata ytd-channel-name a, #owner ytd-channel-name a');
+    if (ch && ch.textContent.trim()) meta.channel = ch.textContent.trim();
+    return meta;
+  }
+
   function setStatus(videoId, status) {
     if (!videoId || !enabled) return;
     const existing = statusMap[videoId];
     // Never downgrade an already-watched video back to "started".
     if (existing && existing.status === STATUS_WATCHED && status === STATUS_STARTED) return;
     if (existing && existing.status === status) return;
-    statusMap[videoId] = { ...existing, status, updatedAt: Date.now() };
+    statusMap[videoId] = { ...existing, ...pageMeta(videoId), status, updatedAt: Date.now() };
     persistLocal();
     scheduleDriveSync();
     refreshAllBadges();
@@ -222,8 +236,8 @@
     // The marker tracks the furthest point ever reached, not just the last
     // one — rewinding, or reloading and starting from 0, shouldn't erase it.
     const furthest = existing && isFinite(existing.lastPosition) ? Math.max(existing.lastPosition, position) : position;
-    if (existing && furthest === existing.lastPosition && existing.duration === duration) return;
-    statusMap[videoId] = { ...existing, lastPosition: furthest, duration, updatedAt: Date.now() };
+    if (existing && furthest === existing.lastPosition && existing.duration === duration && existing.title) return;
+    statusMap[videoId] = { ...existing, ...pageMeta(videoId), lastPosition: furthest, duration, updatedAt: Date.now() };
     persistLocal();
     scheduleDriveSync();
     renderResumeMarker();

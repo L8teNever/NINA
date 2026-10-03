@@ -622,8 +622,10 @@ function showSection(sectionId) {
   if (!sectionId || !document.getElementById(sectionId)) return;
   activeSectionId = sectionId;
 
+  // sub-pages (e.g. one streaming service) light up their parent's link
+  const navId = document.getElementById(sectionId).dataset.parent || sectionId;
   document.querySelectorAll('.sidebar-link').forEach((link) => {
-    link.classList.toggle('active', link.getAttribute('data-target') === sectionId);
+    link.classList.toggle('active', link.getAttribute('data-target') === navId);
   });
 
   applySectionVisibility();
@@ -663,6 +665,16 @@ function setupSidebarNavigation() {
       }
       showSection(link.getAttribute('data-target'));
     });
+  });
+
+  // buttons that open another page of the settings (platform tiles, "back")
+  document.addEventListener('click', (e) => {
+    const go = e.target.closest && e.target.closest('[data-goto]');
+    if (!go) return;
+    e.preventDefault();
+    const searchInput = $('searchInput');
+    if (searchInput && searchInput.value) searchInput.value = '';
+    showSection(go.dataset.goto);
   });
 
   const hashId = (location.hash || '').replace('#', '');
@@ -867,19 +879,75 @@ function searchBookmarksRecursive(node, query) {
 // ==========================================
 // RESET SETTINGS
 // ==========================================
-function resetAllSettings() {
-  if (!confirm('Alle Einstellungen auf Standard zurücksetzen?')) return;
+// Settings kept in their own keys by other parts of NINA (Crunchyroll,
+// shortcuts, new tab, notifications, AniList switches). Data — notes,
+// bookmarks/shortcuts, watch status, AniList/Drive login, API key — stays.
+const RESET_SYNC_KEYS = [
+  'nina_cr_options', 'nina_cr_autolike', 'nina_keep_fullscreen', 'nina_hotkeys',
+  'nina_notif_default', 'nina_notif_muted', 'nina_notif_enabled', 'nina_notif_newtab', 'nina_notif_desktop',
+  'nina_news_strip', 'nina_newtab_layout', 'nina_anilist_autosync', 'nina_anilist_plan_watchlist',
+  'nina_volume_boost'
+];
+const RESET_LOCAL_KEYS = ['nina_widget_html'];
+
+// Styled yes/no dialog (instead of the browser's confirm()).
+function ninaConfirm(title, text, okLabel) {
+  return new Promise((resolve) => {
+    const back = document.createElement('div');
+    back.className = 'nina-confirm-back';
+    back.innerHTML = '<div class="nina-confirm" role="alertdialog" aria-modal="true"><h3></h3><p></p>' +
+      '<div class="nina-confirm-btns"><button type="button" class="opt-btn opt-btn-tonal" data-a="no">Abbrechen</button>' +
+      '<button type="button" class="opt-btn opt-btn-danger" data-a="yes"></button></div></div>';
+    back.querySelector('h3').textContent = title;
+    back.querySelector('p').textContent = text;
+    back.querySelector('[data-a="yes"]').textContent = okLabel;
+    const finish = (ok) => {
+      document.removeEventListener('keydown', onKey, true);
+      back.classList.remove('open');
+      setTimeout(() => back.remove(), 180);
+      resolve(ok);
+    };
+    const onKey = (e) => { if (e.key === 'Escape') { e.preventDefault(); finish(false); } };
+    back.addEventListener('mousedown', (e) => { if (e.target === back) finish(false); });
+    back.querySelector('[data-a="no"]').addEventListener('click', () => finish(false));
+    back.querySelector('[data-a="yes"]').addEventListener('click', () => finish(true));
+    document.addEventListener('keydown', onKey, true);
+    document.body.appendChild(back);
+    requestAnimationFrame(() => back.classList.add('open'));
+    back.querySelector('[data-a="no"]').focus();
+  });
+}
+
+async function resetAllSettings() {
+  const ok = await ninaConfirm('Alle Einstellungen zurücksetzen?',
+    'Alle NINA-Einstellungen gehen zurück auf Standard – auch Crunchyroll, Tastenkürzel, Startseiten-Anordnung, Hintergrund und Benachrichtigungen. Notizen, Kürzel, Gesehen-Status und deine Verbindungen bleiben erhalten. Das lässt sich nicht rückgängig machen.',
+    'Ja, alles zurücksetzen');
+  if (!ok) return;
   currentSettings = { ...DEFAULT_SETTINGS };
   _ignoreSyncEcho = Date.now();
-  chrome.storage.sync.remove(STORAGE_KEY);
-  chrome.storage.local.remove([STORAGE_KEY, BG_IMAGE_KEY]);
+  chrome.storage.sync.remove([STORAGE_KEY, ...RESET_SYNC_KEYS]);
+  chrome.storage.local.remove([STORAGE_KEY, BG_IMAGE_KEY, ...RESET_LOCAL_KEYS]);
   initializeUI();
+  saveSettings(); // writes the defaults and the joyn_* copies the content scripts read
   showToast('Alle Einstellungen zurückgesetzt');
+  // the other sections (Crunchyroll, Tastenkürzel, …) read their keys on load
+  setTimeout(() => location.reload(), 900);
 }
 
 // Live-Übernahme: Wird eine Einstellung auf einem anderen Gerät geändert,
 // aktualisiert sich diese Seite automatisch.
 if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged) {
+  // Background image from another PC (or the new tab page): take it over,
+  // so the next save here doesn't write the old one back.
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'local' || !changes[BG_IMAGE_KEY]) return;
+    const img = changes[BG_IMAGE_KEY].newValue || null;
+    if (img === currentSettings.bgImage) return;
+    currentSettings.bgImage = img;
+    updateClearBgButtonVisibility();
+    $('overlay-control').classList.toggle('hidden', !img);
+  });
+
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== 'sync') return;
 
@@ -995,9 +1063,8 @@ document.addEventListener('DOMContentLoaded', () => {
 const PERM_LABELS = {
   bookmarks:  { name: 'Lesezeichen',          desc: 'Damit deine Chrome-Lesezeichen in der Suche & im Lesezeichen-Widget erscheinen.' },
   storage:    { name: 'Speicher',             desc: 'Speichert deine Einstellungen und Notizen.' },
-  tabs:       { name: 'Tabs',                 desc: 'Für neuen Tab, Seitenleiste und das Öffnen des Notiz-Tabs.' },
-  scripting:  { name: 'Skripte ausführen',    desc: 'Steuert Player & Funktionen auf Streaming-Seiten.' },
-  sidePanel:  { name: 'Seitenleiste',         desc: 'Zeigt die NINA-Seitenleiste an.' },
+  tabs:       { name: 'Tabs',                 desc: 'Für neuen Tab, das Popup (Tempo/Lautstärke pro Tab) und das Öffnen des Notiz-Tabs.' },
+  scripting:  { name: 'Skripte ausführen',    desc: 'Steuert Player, Tempo & Lautstärke auf Webseiten.' },
   identity:   { name: 'Google-Anmeldung',     desc: 'Für die Google-Drive-Synchronisierung der Notizen.' },
   favicon:    { name: 'Favicons',             desc: 'Zeigt die Webseiten-Symbole bei Lesezeichen an.' },
   activeTab:  { name: 'Aktiver Tab',          desc: 'Zugriff auf die aktuell geöffnete Seite bei Bedarf.' }

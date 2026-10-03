@@ -15,7 +15,9 @@
   window.__uscAudioCtx  = null;
   window.__uscGainNodes = new WeakMap();
   let currentGain = 1;
-  let hasUserGesture = false;
+  // Injected later into an already-used page (any website, see background.js):
+  // a click on the page before counts too.
+  let hasUserGesture = !!(navigator.userActivation && navigator.userActivation.hasBeenActive);
 
   function ensureCtx() {
     if (window.__uscAudioCtx) return window.__uscAudioCtx;

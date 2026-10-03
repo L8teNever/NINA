@@ -953,27 +953,13 @@ function escapeHtml(str) {
               .replace(/'/g, "&#039;");
 }
 
-// Globaler Keydown-Listener für Ctrl+Space und Shift+Space in der Capturing-Phase (true)
-// um sicherzustellen, dass Webseiten die Tasteneingabe nicht blockieren können.
-document.addEventListener('keydown', (e) => {
-    // Falls der Fokus in einem Eingabefeld liegt, ignorieren wir den Trigger (um normales Tippen nicht zu stören)
-    const target = e.target;
-    const isInput = target && (
-        target.tagName === 'INPUT' || 
-        target.tagName === 'TEXTAREA' || 
-        target.isContentEditable
-    );
-    if (isInput) return;
-
-    // Leertaste abfangen (e.key === " " oder e.code === "Space" oder e.keyCode === 32)
-    const isSpace = e.key === " " || e.code === "Space" || e.keyCode === 32;
-
-    if (isSpace && (e.ctrlKey || e.shiftKey) && !e.altKey && !e.metaKey) {
-        e.preventDefault(); 
-        e.stopPropagation(); // Verhindert, dass die Webseite den Event abfängt und blockiert
-        toggleSearchOverlay();
-    }
-}, true);
+// Die Tastenkombination (Standard Strg/Umschalt + Leertaste, in den
+// Einstellungen unter "Tastenkürzel" änderbar) fängt content/hotkeys.js ab.
+// Im Hauptframe ruft es toggleSearchOverlay() direkt auf, aus iframes kommt
+// der Befehl über den Hintergrund-Service hier an.
+chrome.runtime.onMessage.addListener((msg) => {
+    if (msg && msg.type === 'NINA_TOGGLE_SEARCH') toggleSearchOverlay();
+});
 
 // Eager initialization on script run so styles and DOM structure are ready before keypress
 if (document.readyState === 'loading') {

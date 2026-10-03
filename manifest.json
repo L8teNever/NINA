@@ -2,12 +2,12 @@
   "manifest_version": 3,
   "name": "__MSG_appName__",
   "short_name": "__MSG_appName__",
-  "version": "3.2.8",
-  "version_name": "3.2.8",
+  "version": "3.3.0",
+  "version_name": "3.2.9",
   "description": "__MSG_appDesc__",
   "default_locale": "en",
   "author": "NINA",
-  "permissions": ["activeTab", "storage", "scripting", "tabs", "sidePanel", "bookmarks", "identity", "favicon", "history", "topSites"],
+  "permissions": ["activeTab", "storage", "scripting", "tabs", "bookmarks", "identity", "favicon", "history", "topSites", "alarms", "notifications"],
   "oauth2": {
     "client_id": "787110895260-0hdnailkthmap4errfrgjr3odf1re87s.apps.googleusercontent.com",
     "scopes": [
@@ -55,7 +55,8 @@
     "https://www.googleapis.com/*",
     "https://oauth2.googleapis.com/*",
     "https://accounts.google.com/*",
-    "https://generativelanguage.googleapis.com/*"
+    "https://generativelanguage.googleapis.com/*",
+    "https://graphql.anilist.co/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -211,7 +212,20 @@
     },
     {
       "matches": ["*://*.crunchyroll.com/*"],
+      "js": ["content/cr-api-main.js"],
+      "run_at": "document_start",
+      "world": "MAIN",
+      "all_frames": false
+    },
+    {
+      "matches": ["*://*.crunchyroll.com/*"],
       "js": ["content/crunchyroll-watch-status.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    },
+    {
+      "matches": ["*://*.crunchyroll.com/*"],
+      "js": ["content/anilist-crunchyroll.js"],
       "run_at": "document_idle",
       "all_frames": false
     },
@@ -220,6 +234,26 @@
       "js": ["content/overlay-search.js"],
       "run_at": "document_end",
       "all_frames": false
+    },
+    {
+      "matches": [
+        "*://*.primevideo.com/*",
+        "*://*.amazon.de/*",
+        "*://*.amazon.com/*",
+        "*://*.amazon.co.uk/*",
+        "*://*.disneyplus.com/*",
+        "*://*.joyn.de/*",
+        "*://*.netflix.com/*"
+      ],
+      "js": ["content/stream-volume.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    },
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["lib/hotkeys-shared.js", "content/hotkeys.js"],
+      "run_at": "document_start",
+      "all_frames": true
     },
     {
       "matches": ["http://*/*", "https://*/*"],
@@ -241,10 +275,8 @@
     "page": "ui/options.html",
     "open_in_tab": true
   },
-  "side_panel": {
-    "default_path": "ui/sidepanel.html"
-  },
   "action": {
+    "default_popup": "ui/popup.html",
     "default_title": "__MSG_appName__",
     "default_icon": {
       "16": "icons/icon16.png",
@@ -253,11 +285,22 @@
       "128": "icons/icon128.png"
     }
   },
+  "commands": {
+    "_execute_action": {
+      "description": "NINA-Fenster öffnen"
+    }
+  },
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
+  },
+  "sandbox": {
+    "pages": ["ui/widget-sandbox.html"]
+  },
+  "content_security_policy": {
+    "sandbox": "sandbox allow-scripts allow-forms allow-popups allow-modals; script-src 'self' 'unsafe-inline' 'unsafe-eval'; child-src 'self'; img-src * data: blob:; style-src 'self' 'unsafe-inline' https:; font-src * data:; connect-src *"
   },
   "web_accessible_resources": [
     {
@@ -270,6 +313,10 @@
         "ui/tailwind.min.css"
       ],
       "matches": ["<all_urls>"]
+    },
+    {
+      "resources": ["ui/popup.html"],
+      "matches": ["http://*/*", "https://*/*"]
     }
   ]
 }

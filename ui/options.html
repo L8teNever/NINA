@@ -7,6 +7,82 @@
   <link rel="stylesheet" href="tailwind.min.css">
   <link rel="stylesheet" href="sidepanel-custom.css">
   <link rel="stylesheet" href="options.css">
+  <style>
+    /* Crunchyroll language picker */
+    .cr-lang-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .cr-lang-chip { padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid rgba(100,116,139,.35); background: transparent; color: #64748b; }
+    .dark .cr-lang-chip { color: #94a3b8; }
+    .cr-lang-chip.on { background: #006A72; border-color: #006A72; color: #fff; }
+    .dark .cr-lang-chip.on { background: #80D8DF; border-color: #80D8DF; color: #000; }
+    .cr-lang-rest { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #64748b; cursor: pointer; }
+    .dark .cr-lang-rest { color: #94a3b8; }
+
+    /* AniList */
+    .al-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
+    .al-a { color: #3db4f2; text-decoration: none; font-weight: 600; }
+    .al-a:hover { text-decoration: underline; }
+    .al-btn-link { background: none; border: 0; cursor: pointer; font-size: 12px; padding: 0; }
+    .al-copy-row { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+    .al-sync-item { display: flex; gap: 14px; padding: 14px 20px; }
+    .al-sync-item + .al-sync-item { border-top: 1px solid rgba(100,116,139,.15); }
+    .al-sync-icon { flex: 0 0 auto; width: 36px; height: 36px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: rgba(61,180,242,.12); color: #3db4f2; }
+    .al-sync-icon svg { width: 20px; height: 20px; }
+    .al-sync-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+    .al-sync-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .al-sync-head .opt-btn { flex: 0 0 auto; }
+    .al-sync-title { font-size: 14px; font-weight: 600; color: #1e293b; margin: 0; }
+    .dark .al-sync-title { color: #f1f5f9; }
+    .al-sync-desc { font-size: 12px; color: #64748b; margin: 2px 0 0; line-height: 1.45; }
+    .dark .al-sync-desc { color: #94a3b8; }
+    .al-progress-wrap { display: flex; flex-direction: column; gap: 6px; }
+    .al-progress { height: 6px; border-radius: 3px; background: rgba(100,116,139,.2); overflow: hidden; }
+    .al-progress > div { height: 100%; width: 0; background: #3db4f2; transition: width .3s; }
+    .al-sync-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 6px 0; }
+    .al-sync-row .opt-btn { flex: 0 0 auto; }
+    .al-log { max-height: 260px; overflow-y: auto; padding: 10px 12px; border-radius: 12px; background: rgba(100,116,139,.1); font-size: 12px; line-height: 1.6; }
+    .al-log .ok { color: #3dd16f; }
+    .al-log .skip { color: #94a3b8; }
+    .al-log .err { color: #f87171; }
+    .al-code { padding: 4px 8px; border-radius: 8px; background: rgba(100,116,139,.12); font-size: 12px; word-break: break-all; }
+
+    /* Gesehen & Angefangen */
+    .wh-series { display: flex; flex-direction: column; gap: 6px; }
+    .wh-series-head { cursor: pointer; }
+    .wh-chevron { flex: 0 0 auto; width: 20px; text-align: center; font-size: 14px; color: #64748b; }
+    .wh-open { flex: 0 0 auto; font-size: 12px; font-weight: 600; color: #f47521; text-decoration: none; padding: 3px 8px; border-radius: 999px; }
+    .wh-open:hover { background: rgba(244,117,33,.12); }
+    .wh-series-items { display: flex; flex-direction: column; gap: 6px; margin-left: 28px; }
+    .wh-series-items .wh-thumb { width: 96px; }
+    .wh-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .wh-group { display: flex; border-radius: 12px; overflow: hidden; border: 1px solid rgba(100,116,139,.25); }
+    .wh-chip { padding: 6px 12px; font-size: 12px; font-weight: 600; background: transparent; color: #64748b; border: 0; cursor: pointer; }
+    .wh-chip + .wh-chip { border-left: 1px solid rgba(100,116,139,.25); }
+    .wh-chip.active { background: #006A72; color: #fff; }
+    .dark .wh-chip { color: #94a3b8; }
+    .dark .wh-chip.active { background: #80D8DF; color: #000; }
+    .wh-search { flex: 1; min-width: 140px; padding: 6px 12px; font-size: 13px; border-radius: 12px; border: 1px solid rgba(100,116,139,.25); background: rgba(100,116,139,.08); color: inherit; outline: none; }
+    .wh-refresh { padding: 6px 12px; font-size: 12px; font-weight: 600; border-radius: 12px; border: 0; cursor: pointer; background: #006A72; color: #fff; }
+    .dark .wh-refresh { background: #80D8DF; color: #000; }
+    .wh-refresh:disabled { opacity: .5; cursor: default; }
+    .wh-summary { font-size: 12px; color: #64748b; }
+    .dark .wh-summary { color: #94a3b8; }
+    .wh-list { display: flex; flex-direction: column; gap: 8px; }
+    .wh-item { display: flex; gap: 12px; align-items: center; padding: 8px; border-radius: 16px; background: rgba(100,116,139,.08); text-decoration: none; color: inherit; transition: background .15s; }
+    .wh-item:hover { background: rgba(100,116,139,.16); }
+    .wh-thumb { flex: 0 0 auto; width: 120px; aspect-ratio: 16/9; border-radius: 10px; object-fit: cover; background: rgba(100,116,139,.2); }
+    .wh-thumb-cr { display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #f47521; }
+    .wh-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+    .wh-title { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #1e293b; }
+    .dark .wh-title { color: #f1f5f9; }
+    .wh-sub { font-size: 11px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dark .wh-sub { color: #94a3b8; }
+    .wh-progress { height: 4px; border-radius: 2px; background: rgba(100,116,139,.2); overflow: hidden; }
+    .wh-progress > div { height: 100%; }
+    .wh-badge { flex: 0 0 auto; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; color: #fff; }
+    .wh-watched { background: #3dd16f; }
+    .wh-started { background: #f5a623; }
+    .wh-more { width: 100%; padding: 8px; font-size: 12px; font-weight: 600; border-radius: 12px; border: 1px solid rgba(100,116,139,.25); background: transparent; color: inherit; cursor: pointer; }
+  </style>
 </head>
 <body class="bg-m3-background-light dark:bg-m3-background-dark text-slate-800 dark:text-slate-100 font-sans transition-colors duration-300 min-h-screen overflow-hidden flex select-none">
 
@@ -22,6 +98,8 @@
     <symbol id="ms-cloud" viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/></symbol>
     <symbol id="ms-edit" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.996.996 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></symbol>
     <symbol id="ms-verified" viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></symbol>
+    <symbol id="ms-visibility" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></symbol>
+    <symbol id="ms-keyboard" viewBox="0 0 24 24"><path d="M20 5H4c-1.1 0-1.99.9-1.99 2L2 17c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-9 3h2v2h-2V8zm0 3h2v2h-2v-2zM8 8h2v2H8V8zm0 3h2v2H8v-2zm-1 2H5v-2h2v2zm0-3H5V8h2v2zm9 7H8v-2h8v2zm0-4h-2v-2h2v2zm0-3h-2V8h2v2zm3 3h-2v-2h2v2zm0-3h-2V8h2v2z"/></symbol>
     <symbol id="ms-mail" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></symbol>
   </svg>
 
@@ -36,6 +114,10 @@
       <a href="#cat-general" class="sidebar-link" data-target="cat-general">
         <svg class="ms-icon" aria-hidden="true"><use href="#ms-language"></use></svg>
         <span data-i18n="settings_group_general">Allgemein & Sprache</span>
+      </a>
+      <a href="#cat-hotkeys" class="sidebar-link" data-target="cat-hotkeys">
+        <svg class="ms-icon" aria-hidden="true"><use href="#ms-keyboard"></use></svg>
+        <span>Tastenkürzel</span>
       </a>
       <a href="#cat-playback" class="sidebar-link" data-target="cat-playback">
         <svg class="ms-icon" aria-hidden="true"><use href="#ms-bolt"></use></svg>
@@ -65,6 +147,14 @@
         <svg class="ms-icon" aria-hidden="true"><use href="#ms-cloud"></use></svg>
         <span>Notizen & Drive Sync</span>
       </a>
+      <a href="#cat-watch-history" class="sidebar-link" data-target="cat-watch-history">
+        <svg class="ms-icon" aria-hidden="true"><use href="#ms-visibility"></use></svg>
+        <span>Gesehen & Angefangen</span>
+      </a>
+      <a href="#cat-anilist" class="sidebar-link" data-target="cat-anilist">
+        <svg class="ms-icon" aria-hidden="true"><use href="#ms-link"></use></svg>
+        <span>AniList</span>
+      </a>
       <a href="#cat-ai-text" class="sidebar-link" data-target="cat-ai-text">
         <svg class="ms-icon" aria-hidden="true"><use href="#ms-edit"></use></svg>
         <span data-i18n="settings_group_ai_text">KI-Textverbesserung</span>
@@ -87,9 +177,6 @@
         <svg class="ms-icon" aria-hidden="true"><use href="#ms-search"></use></svg>
         <input type="text" id="searchInput" placeholder="Einstellungen durchsuchen..." class="options-search">
       </div>
-      <button id="btnResetAll" class="options-icon-btn" title="Einstellungen zurücksetzen">
-        <svg class="ms-icon ms-icon-lg" aria-hidden="true"><use href="#ms-restart"></use></svg>
-      </button>
     </div>
 
     <div class="flex-1 overflow-y-auto px-8 py-6 custom-scrollbar" id="settingsContainer">
@@ -134,6 +221,78 @@
               </label>
             </div>
           </div>
+
+          <div class="settings-card settings-danger">
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">Alle Einstellungen zurücksetzen</span>
+                <span class="desc">Setzt alle NINA-Einstellungen auf Standard (auch Crunchyroll, Tastenkürzel, Startseite, Benachrichtigungen). Deine Daten bleiben: Notizen, Kürzel, Gesehen-Status, AniList- und Drive-Verbindung, API-Schlüssel.</span>
+              </div>
+              <button type="button" id="btnResetAll" class="opt-btn opt-btn-danger text-xs">
+                <svg class="ms-icon" aria-hidden="true"><use href="#ms-restart"></use></svg>
+                Zurücksetzen …
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 1b: Tastenkürzel -->
+        <section id="cat-hotkeys" class="setting-section">
+          <header class="settings-group-header">
+            <svg class="ms-icon" aria-hidden="true"><use href="#ms-keyboard"></use></svg>
+            <h2>Tastenkürzel</h2>
+          </header>
+
+          <p class="hk-intro">Jede Aktion kann beliebig viele Tasten oder Tastenkombinationen haben – mit <b>+</b> fügst du weitere hinzu, mit <b>×</b> entfernst du eine. Kürzel ohne Strg/Alt (z.&nbsp;B. nur „F2“ oder Umschalt&nbsp;+&nbsp;…) greifen nicht, solange du in einem Textfeld tippst.</p>
+
+          <div class="settings-card">
+            <div class="hk-card-head">NINA-Fenster <span>Geschwindigkeit &amp; Lautstärke</span></div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">Auf der Seite einblenden</span>
+                <span class="desc">Kleines Fenster oben rechts direkt auf der Webseite (auch im neuen Tab und über Vollbild-Videos). Nochmal drücken, Esc oder ein Klick daneben schließt es.</span>
+                <div class="hk-combos" data-hk-owner="popup"></div>
+              </div>
+              <label class="md-switch">
+                <input type="checkbox" id="hk-popup-on">
+                <span class="md-switch-track"></span>
+              </label>
+            </div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">Normales Popup (wie Klick aufs NINA-Symbol)</span>
+                <span class="desc">Dieses Kürzel verwaltet Chrome selbst – es klappt überall, auch auf <code>chrome://</code>-Seiten, kann aber nur eine Kombination mit Strg/Alt sein und nur in Chrome geändert werden.</span>
+                <div class="hk-combos">
+                  <span class="hk-static" id="hk-chrome-current">…</span>
+                </div>
+              </div>
+              <button type="button" id="hk-chrome-shortcuts" class="opt-btn opt-btn-tonal text-xs">In Chrome ändern</button>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <div class="hk-card-head">Suche <span>mit Notizen &amp; Kürzeln</span></div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">Suche öffnen</span>
+                <span class="desc">Öffnet die NINA-Suche über der aktuellen Webseite. Im neuen Tab springt das Kürzel ins Suchfeld.</span>
+                <div class="hk-combos" data-hk-owner="search"></div>
+              </div>
+              <label class="md-switch">
+                <input type="checkbox" id="hk-search-on">
+                <span class="md-switch-track"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <div class="hk-card-head">Eigene Kürzel <span>Webseite oder Notiz direkt öffnen</span></div>
+            <div class="settings-card-pad space-y-3">
+              <div id="hk-custom-list" class="hk-list"></div>
+              <button type="button" id="hk-add" class="opt-btn opt-btn-tonal text-xs">+ Kürzel hinzufügen</button>
+            </div>
+          </div>
+          <p id="hk-hint" class="hk-hint"></p>
         </section>
 
         <!-- 2: Wiedergabe & Skipper -->
@@ -173,6 +332,20 @@
                 </div>
                 <input type="range" id="autoSkipDelaySlider" min="0" max="10" step="1" value="0" class="w-full slider-aqua">
               </div>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <div class="settings-card-title">Vollbild</div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">Vollbild bei der nächsten Folge beibehalten</span>
+                <span class="desc">Schaust du im Vollbild und die nächste Folge startet, geht sie wieder in Vollbild (Netflix, Disney+, Crunchyroll, …; nicht auf YouTube). Ohne Klick kann Chrome nur das Fenster auf Vollbild schalten – der erste Klick/Tastendruck macht daraus echtes Vollbild.</span>
+              </div>
+              <label class="md-switch">
+                <input type="checkbox" data-sync-bool="nina_keep_fullscreen" checked>
+                <span class="md-switch-track"></span>
+              </label>
             </div>
           </div>
         </section>
@@ -297,16 +470,60 @@
           </div>
         </section>
 
-        <!-- 4: Streaming-Plattformen -->
+        <!-- 4: Streaming-Plattformen: overview, one page per service -->
         <section id="cat-platforms" class="setting-section">
           <header class="settings-group-header">
             <svg class="ms-icon" aria-hidden="true"><use href="#ms-tv"></use></svg>
             <h2 data-i18n="settings_group_platforms">Streaming-Plattformen</h2>
           </header>
+          <p class="pf-intro">Was NINA bei den einzelnen Anbietern ergänzt – wähle einen Anbieter.</p>
+          <div class="pf-grid">
+            <button type="button" class="pf-tile" data-goto="cat-crunchyroll" style="--pf:#f47521">
+              <span class="pf-logo">C</span>
+              <span class="pf-text"><b>Crunchyroll</b><small>Gesehen-Status, AniList, Sprachen, Player</small></span>
+              <svg class="pf-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+            </button>
+            <button type="button" class="pf-tile" data-goto="cat-prime" style="--pf:#00a8e1">
+              <span class="pf-logo">P</span>
+              <span class="pf-text"><b>Prime Video</b><small>Lautstärke bis 600 %, X-Ray</small></span>
+              <svg class="pf-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+            </button>
+            <button type="button" class="pf-tile" data-goto="cat-netflix" style="--pf:#e50914">
+              <span class="pf-logo">N</span>
+              <span class="pf-text"><b>Netflix</b><small>Lautstärke bis 600 %</small></span>
+              <svg class="pf-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+            </button>
+            <button type="button" class="pf-tile" data-goto="cat-disney" style="--pf:#2f6bff">
+              <span class="pf-logo">D+</span>
+              <span class="pf-text"><b>Disney+</b><small>Lautstärke bis 600 %</small></span>
+              <svg class="pf-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+            </button>
+            <button type="button" class="pf-tile" data-goto="cat-joyn" style="--pf:#f5d800">
+              <span class="pf-logo">J</span>
+              <span class="pf-text"><b>Joyn</b><small>Lautstärke bis 600 %</small></span>
+              <svg class="pf-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+            </button>
+          </div>
+          <p class="pf-intro">Geschwindigkeit, Intro-Skip und „Vollbild beibehalten“ gelten für alle Anbieter – die stehen unter „Wiedergabe &amp; Skipper“.</p>
+        </section>
+
+        <!-- Prime Video -->
+        <section id="cat-prime" class="setting-section" data-parent="cat-platforms">
+          <header class="settings-group-header">
+            <button type="button" class="pf-back" data-goto="cat-platforms" title="Zurück zu Streaming-Plattformen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+            <h2>Prime Video</h2>
+          </header>
 
           <div class="settings-card">
-            <div class="settings-card-title">Amazon Prime</div>
-            <div class="settings-row">
+            <div class="settings-card-title">Player</div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">Lautstärke bis 600 % &amp; Mausrad</span>
+                <span class="desc">Primes Lautstärkeregler geht bis 600 % (gleichmäßige Skala, der Wert steht darunter). Mausrad über dem Lautsprecher-Symbol: 10-%-Schritte. Ausschalten wirkt nach Neuladen der Seite.</span>
+              </div>
+              <label class="md-switch"><input type="checkbox" data-vol-boost="prime" checked><span class="md-switch-track"></span></label>
+            </div>
+            <div class="setting-item settings-row">
               <div class="settings-row-copy">
                 <span class="title" data-i18n="xray_title">X-Ray ausblenden</span>
                 <span class="desc" data-i18n="xray_desc">Blendet das X-Ray-Overlay bei Prime Video aus.</span>
@@ -316,10 +533,14 @@
                 <span class="md-switch-track"></span>
               </label>
             </div>
+          </div>
+
+          <div class="settings-card">
+            <div class="settings-card-title">Kommt noch</div>
             <div class="settings-row is-disabled">
               <div class="settings-row-copy">
-                <span class="title line-through" data-i18n="controls_title">Steuerungsleiste ausblenden</span>
-                <span class="desc"><span data-i18n="prime_controls_desc">Blendet die untere Player-Leiste (Timeline, Buttons etc.) aus.</span> <span class="text-m3-primary-light dark:text-m3-primary-dark font-medium" data-i18n="coming_soon">(kommt noch)</span></span>
+                <span class="title" data-i18n="controls_title">Steuerungsleiste ausblenden</span>
+                <span class="desc" data-i18n="prime_controls_desc">Blendet die untere Player-Leiste (Timeline, Buttons etc.) aus.</span>
               </div>
               <label class="md-switch">
                 <input type="checkbox" id="toggleHidePrimeControls" disabled>
@@ -328,8 +549,8 @@
             </div>
             <div class="settings-row is-disabled">
               <div class="settings-row-copy">
-                <span class="title line-through" data-i18n="topbar_title">Kopfleiste ausblenden</span>
-                <span class="desc"><span data-i18n="prime_topbar_desc">Blendet die obere Leiste (Zurück-Pfeil & Filmtitel) aus.</span> <span class="text-m3-primary-light dark:text-m3-primary-dark font-medium" data-i18n="coming_soon">(kommt noch)</span></span>
+                <span class="title" data-i18n="topbar_title">Kopfleiste ausblenden</span>
+                <span class="desc" data-i18n="prime_topbar_desc">Blendet die obere Leiste (Zurück-Pfeil &amp; Filmtitel) aus.</span>
               </div>
               <label class="md-switch">
                 <input type="checkbox" id="toggleHidePrimeTopbar" disabled>
@@ -338,8 +559,8 @@
             </div>
             <div class="settings-row is-disabled">
               <div class="settings-row-copy">
-                <span class="title line-through" data-i18n="nextup_title">"Nächste Folge" ausblenden</span>
-                <span class="desc"><span data-i18n="prime_nextup_desc">Blendet die automatische Einblendung für die nächste Episode aus.</span> <span class="text-m3-primary-light dark:text-m3-primary-dark font-medium" data-i18n="coming_soon">(kommt noch)</span></span>
+                <span class="title" data-i18n="nextup_title">"Nächste Folge" ausblenden</span>
+                <span class="desc" data-i18n="prime_nextup_desc">Blendet die automatische Einblendung für die nächste Episode aus.</span>
               </div>
               <label class="md-switch">
                 <input type="checkbox" id="toggleHidePrimeNextup" disabled>
@@ -348,8 +569,8 @@
             </div>
             <div class="settings-row is-disabled">
               <div class="settings-row-copy">
-                <span class="title line-through" data-i18n="prime_settings_title">"3-Punkte-Menü" ausblenden</span>
-                <span class="desc"><span data-i18n="prime_settings_desc">Blendet das Optionen-Menü (drei vertikale Punkte) oben rechts aus.</span> <span class="text-m3-primary-light dark:text-m3-primary-dark font-medium" data-i18n="coming_soon">(kommt noch)</span></span>
+                <span class="title" data-i18n="prime_settings_title">"3-Punkte-Menü" ausblenden</span>
+                <span class="desc" data-i18n="prime_settings_desc">Blendet das Optionen-Menü (drei vertikale Punkte) oben rechts aus.</span>
               </div>
               <label class="md-switch">
                 <input type="checkbox" id="toggleHidePrimeSettings" disabled>
@@ -357,25 +578,250 @@
               </label>
             </div>
           </div>
+        </section>
+
+        <!-- Netflix -->
+        <section id="cat-netflix" class="setting-section" data-parent="cat-platforms">
+          <header class="settings-group-header">
+            <button type="button" class="pf-back" data-goto="cat-platforms" title="Zurück zu Streaming-Plattformen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+            <h2>Netflix</h2>
+          </header>
+          <div class="settings-card">
+            <div class="settings-card-title">Player</div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">Lautstärke bis 600 % &amp; Mausrad</span>
+                <span class="desc">Netflix' Lautstärkeregler geht bis 600 % (gleichmäßige Skala, der Wert steht darüber). Mausrad über dem Lautsprecher-Symbol: 10-%-Schritte. Ausschalten wirkt nach Neuladen der Seite.</span>
+              </div>
+              <label class="md-switch"><input type="checkbox" data-vol-boost="netflix" checked><span class="md-switch-track"></span></label>
+            </div>
+          </div>
+        </section>
+
+        <!-- Disney+ -->
+        <section id="cat-disney" class="setting-section" data-parent="cat-platforms">
+          <header class="settings-group-header">
+            <button type="button" class="pf-back" data-goto="cat-platforms" title="Zurück zu Streaming-Plattformen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+            <h2>Disney+</h2>
+          </header>
+          <div class="settings-card">
+            <div class="settings-card-title">Player</div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">Lautstärke bis 600 % &amp; Mausrad</span>
+                <span class="desc">Der Lautstärkeregler von Disney+ geht bis 600 % (gleichmäßige Skala, der Wert steht darüber). Mausrad über dem Lautsprecher-Symbol: 10-%-Schritte. Ausschalten wirkt nach Neuladen der Seite.</span>
+              </div>
+              <label class="md-switch"><input type="checkbox" data-vol-boost="disney" checked><span class="md-switch-track"></span></label>
+            </div>
+          </div>
+        </section>
+
+        <!-- Joyn -->
+        <section id="cat-joyn" class="setting-section" data-parent="cat-platforms">
+          <header class="settings-group-header">
+            <button type="button" class="pf-back" data-goto="cat-platforms" title="Zurück zu Streaming-Plattformen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+            <h2>Joyn</h2>
+          </header>
+          <div class="settings-card">
+            <div class="settings-card-title">Player</div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">Lautstärke bis 600 % &amp; Mausrad</span>
+                <span class="desc">Joyns Lautstärkeregler geht bis 600 % (gleichmäßige Skala, der Wert steht darüber). Mausrad über dem Lautsprecher-Symbol: 10-%-Schritte. Ausschalten wirkt nach Neuladen der Seite.</span>
+              </div>
+              <label class="md-switch"><input type="checkbox" data-vol-boost="joyn" checked><span class="md-switch-track"></span></label>
+            </div>
+          </div>
+        </section>
+
+        <!-- Crunchyroll: everything NINA adds there, switchable -->
+        <section id="cat-crunchyroll" class="setting-section" data-parent="cat-platforms">
+          <header class="settings-group-header">
+            <button type="button" class="pf-back" data-goto="cat-platforms" title="Zurück zu Streaming-Plattformen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+            <h2>Crunchyroll</h2>
+          </header>
 
           <div class="settings-card">
-            <div class="settings-row">
-              <span class="settings-card-title !p-0" data-i18n="settings_other_platforms">Weitere Plattformen</span>
-              <span class="text-[9px] bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full font-semibold" data-i18n="in_kuerze">In Kürze</span>
+            <div class="settings-card-title">Gesehen &amp; Angefangen erkennen</div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">Folgen-Status auf Crunchyroll</span>
+                <span class="desc">Merkt sich, welche Folgen du angefangen oder gesehen hast (inkl. Drive-Sync). Aus = alles hier unten ruht. Ab wie viel Prozent „Gesehen“ gilt, stellst du unter „YouTube Features“ ein.</span>
+              </div>
+              <label class="md-switch">
+                <input type="checkbox" id="cr-master-toggle" checked>
+                <span class="md-switch-track"></span>
+              </label>
             </div>
-            <div class="settings-card-pad grid grid-cols-3 gap-2 pt-0">
-              <div class="platform-tile">
-                <span class="name">Netflix</span>
-                <span class="hint">Skipper & UI Autohide</span>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">Wiedergabeverlauf im Hintergrund auswerten</span>
+                <span class="desc">Liest deinen Crunchyroll-Verlauf (alle 6 Std.) und prüft die Staffeln der Serien darin – so werden Poster auch ohne Öffnen der Serie markiert.</span>
               </div>
-              <div class="platform-tile">
-                <span class="name">Joyn</span>
-                <span class="hint">UI Autohide</span>
+              <label class="md-switch"><input type="checkbox" data-cr-opt="historySync" checked><span class="md-switch-track"></span></label>
+            </div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">Alle Staffeln beim Öffnen einer Serie laden</span>
+                <span class="desc">Beim Öffnen einer Serie werden alle ihre Staffeln samt Crunchyrolls „Gesehen“-Stand geladen (für die Zahlen im Staffel-Menü).</span>
               </div>
-              <div class="platform-tile">
-                <span class="name">Disney+</span>
-                <span class="hint">Skipper & UI Autohide</span>
+              <label class="md-switch"><input type="checkbox" data-cr-opt="seriesSync" checked><span class="md-switch-track"></span></label>
+            </div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">„Mehr anzeigen“ automatisch drücken</span>
+                <span class="desc">Bei langen Staffeln die restlichen Folgen nachladen, wenn alle sichtbaren gesehen sind – damit die Staffel als komplett erkannt wird.</span>
               </div>
+              <label class="md-switch"><input type="checkbox" data-cr-opt="autoExpand" checked><span class="md-switch-track"></span></label>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <div class="settings-card-title">Anzeige</div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">Folgen-Vorschaubilder markieren</span>
+                <span class="desc">„✓ Gesehen“ / „▶ Angefangen“ oben links auf den Folgenbildern.</span>
+              </div>
+              <label class="md-switch"><input type="checkbox" data-cr-opt="episodeMarks" checked><span class="md-switch-track"></span></label>
+            </div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">Serien-Poster markieren</span>
+                <span class="desc">Abzeichen und Fortschrittsbalken auf den Postern (Startseite, Vorschläge, Suche …).</span>
+              </div>
+              <label class="md-switch"><input type="checkbox" data-cr-opt="posterMarks" checked><span class="md-switch-track"></span></label>
+            </div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">„Neue Folge“ auf dem Poster</span>
+                <span class="desc">Ist eine neue Folge erschienen (AniList-Neuigkeiten, nur Serien mit eingeschalteter Glocke), steht „Neue Folge“ auf dem Poster. Wählbar, wann es wieder verschwindet.</span>
+              </div>
+              <select class="opt-select" data-cr-opt-select="newEpBadge" style="width:auto;min-width:220px">
+                <option value="watched">Bis die Folge gesehen ist</option>
+                <option value="visited">Bis die Serie geöffnet wurde</option>
+                <option value="off">Aus</option>
+              </select>
+            </div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">Gesehenes ausgrauen</span>
+                <span class="desc">Gesehene Bilder stark, angefangene leicht ausgrauen (beim Drüberfahren wieder farbig). Aus = nur Abzeichen.</span>
+              </div>
+              <label class="md-switch"><input type="checkbox" data-cr-opt="dimWatched" checked><span class="md-switch-track"></span></label>
+            </div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">Synchro-Sprachen unter den Serien</span>
+                <span class="desc">Statt „Untertitel | Synchro“ die echten Synchron-Sprachen, z. B. „Synchro: DE, JA, EN +6“. Komplette Liste im Tooltip.</span>
+              </div>
+              <select class="opt-select" data-cr-lang-mode="langAudio" style="width:auto;min-width:190px">
+                <option value="picked">Nur ausgewählte</option>
+                <option value="all">Alle</option>
+                <option value="off">Aus</option>
+              </select>
+            </div>
+            <div class="settings-nested space-y-3">
+              <p class="text-xs text-slate-500 dark:text-slate-400">Ausgewählte Synchro-Sprachen (stehen immer zuerst):</p>
+              <div class="cr-lang-chips" data-cr-lang-pick="langPickAudio" data-default="de-DE,ja-JP,en-US"></div>
+            </div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">Untertitel-Sprachen unter den Serien</span>
+                <span class="desc">Die Untertitel-Sprachen als zweite Zeile, z. B. „Untertitel: DE, EN +12“.</span>
+              </div>
+              <select class="opt-select" data-cr-lang-mode="langSubs" style="width:auto;min-width:190px">
+                <option value="picked">Nur ausgewählte</option>
+                <option value="all">Alle</option>
+                <option value="off">Aus</option>
+              </select>
+            </div>
+            <div class="settings-nested space-y-3">
+              <p class="text-xs text-slate-500 dark:text-slate-400">Ausgewählte Untertitel-Sprachen (stehen immer zuerst):</p>
+              <div class="cr-lang-chips" data-cr-lang-pick="langPickSubs" data-default="de-DE,en-US"></div>
+              <label class="cr-lang-rest"><input type="checkbox" id="cr-lang-rest" checked> Anzahl der übrigen Sprachen anzeigen („+6“)</label>
+            </div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">Zahlen im Staffel-Menü</span>
+                <span class="desc">„20/25 Episoden“ bei jeder Staffel im Staffel-Auswahlmenü.</span>
+              </div>
+              <label class="md-switch"><input type="checkbox" data-cr-opt="seasonCounts" checked><span class="md-switch-track"></span></label>
+            </div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">Status im Player</span>
+                <span class="desc">„▶ Angefangen“ / „✓ Gesehen“ in der Steuerleiste des Players.</span>
+              </div>
+              <label class="md-switch"><input type="checkbox" data-cr-opt="playerStatus" checked><span class="md-switch-track"></span></label>
+            </div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">„Bis hier geschaut“-Strich</span>
+                <span class="desc">Grauer Strich in der Zeitleiste bis zur weitesten Stelle, die du je erreicht hast.</span>
+              </div>
+              <label class="md-switch"><input type="checkbox" data-cr-opt="resumeMarker" checked><span class="md-switch-track"></span></label>
+            </div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">AniList-Leiste auf der Serienseite</span>
+                <span class="desc">Status, Folge, Wertung und Verknüpfung unter der Staffel-Auswahl. Einrichtung unter „AniList“.</span>
+              </div>
+              <label class="md-switch"><input type="checkbox" data-cr-opt="anilistBar" checked><span class="md-switch-track"></span></label>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <div class="settings-card-title">Player</div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">Dort weiterschauen, wo du aufgehört hast</span>
+                <span class="desc">Öffnest du eine angefangene Folge wieder, springt sie zu der Stelle, an der du zuletzt warst (auch geräteübergreifend über Drive). Nicht bei fertig geschauten Folgen.</span>
+              </div>
+              <label class="md-switch"><input type="checkbox" data-cr-opt="resumePlayback" data-default-off><span class="md-switch-track"></span></label>
+            </div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">Mehr Geschwindigkeiten</span>
+                <span class="desc">1.25x bis 3x im „Abspielgeschwindigkeit“-Menü, und der „1x“-Knopf zeigt die echte Geschwindigkeit. Ausschalten wirkt nach Neuladen der Seite.</span>
+              </div>
+              <label class="md-switch"><input type="checkbox" data-cr-opt="extraSpeeds" checked><span class="md-switch-track"></span></label>
+            </div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">Lautstärke bis 600 %</span>
+                <span class="desc">Crunchyrolls Lautstärkeregler geht bis 600 % (gleichmäßige Skala, Mausrad). Ausschalten wirkt nach Neuladen der Seite.</span>
+              </div>
+              <label class="md-switch"><input type="checkbox" data-cr-opt="volumeBoost" checked><span class="md-switch-track"></span></label>
+            </div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">Folgen automatisch liken</span>
+                <span class="desc">Drückt Crunchyrolls „Gefällt mir“ bei der laufenden Folge, sobald sie „Angefangen“ bzw. „Gesehen“ ist – nur wenn du noch nichts bewertet hast.</span>
+              </div>
+              <select id="cr-autolike" class="opt-select" style="width:auto;min-width:170px">
+                <option value="off">Aus</option>
+                <option value="started">Bei „Angefangen“</option>
+                <option value="watched">Bei „Gesehen“</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <div class="settings-card-title">Watchlist</div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">Watchlist-Serien beim Öffnen auf AniList „Geplant“</span>
+                <span class="desc">Öffnest du eine Serie von deiner Watchlist, kommen ihre ungesehenen Staffeln ohne AniList-Status auf „Geplant“. Neu hinzugefügte Serien und der „Alle übertragen“-Knopf: unter „AniList“.</span>
+              </div>
+              <label class="md-switch"><input type="checkbox" data-cr-opt="planOnOpen" checked><span class="md-switch-track"></span></label>
+            </div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">Fertige Serien von der Watchlist entfernen</span>
+                <span class="desc">Komplett gesehene Serien nimmt NINA von deiner Crunchyroll-Watchlist (laufende Serien bleiben drauf).</span>
+              </div>
+              <label class="md-switch"><input type="checkbox" data-sync-bool="nina_cr_watchlist_cleanup" checked><span class="md-switch-track"></span></label>
             </div>
           </div>
         </section>
@@ -505,6 +951,38 @@
               </div>
             </div>
           </div>
+
+          <div class="settings-card">
+            <div class="hk-card-head">Startseite <span>Bausteine &amp; Anordnung</span></div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">Anime-Neuigkeiten: Anzahl Karten</span>
+                <span class="desc">Wie viele Neuigkeiten unter der Suche stehen.</span>
+              </div>
+              <div class="nt-stepper" data-nt-news="count" data-min="1" data-max="12"></div>
+            </div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">Anime-Neuigkeiten: Spalten</span>
+                <span class="desc">Wie viele Karten nebeneinander.</span>
+              </div>
+              <div class="nt-stepper" data-nt-news="cols" data-min="1" data-max="6"></div>
+            </div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">Sichtbare Bausteine</span>
+                <span class="desc" id="nt-blocks-desc">Uhr, Suche, Neuigkeiten und deine eigenen Bausteine ein- oder ausblenden. Verschieben, Größe ändern und neue Bausteine: Rechtsklick auf der Startseite → „Startseite anordnen …“.</span>
+                <div id="nt-blocks" class="nt-blocks"></div>
+              </div>
+            </div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">Anordnung zurücksetzen</span>
+                <span class="desc">Uhr, Suche und Neuigkeiten wieder in der Standard-Anordnung. Eigene Bausteine werden dabei entfernt.</span>
+              </div>
+              <button type="button" id="nt-layout-reset" class="opt-btn opt-btn-tonal text-xs">Zurücksetzen</button>
+            </div>
+          </div>
         </section>
 
         <!-- 7: Notizen & Google Drive Sync -->
@@ -536,6 +1014,196 @@
                 <li>Nur Dateien, die NINA selbst erstellt hat, werden gelesen (<code class="text-xs bg-slate-100 dark:bg-white/5 px-1 rounded">drive.file</code> Scope)</li>
                 <li>Beim Öffnen des Notizen-Overlays wird automatisch synchronisiert</li>
               </ul>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <div class="settings-card-title">Daten sichern &amp; übertragen</div>
+            <div class="settings-row">
+              <div class="settings-row-copy">
+                <span class="title">Alle NINA-Daten als Datei</span>
+                <span id="nina-backup-status" class="desc">Exportiert Einstellungen, Gesehen/Angefangen (YouTube &amp; Crunchyroll), Notizen, Verknüpfungen usw. in eine Datei – z. B. um sie in eine andere NINA-Installation zu übernehmen. Anmeldungen (Google, AniList) sind nicht enthalten.</span>
+              </div>
+              <div class="flex gap-2">
+                <button id="nina-export-btn" class="opt-btn opt-btn-filled text-xs">Exportieren</button>
+                <button id="nina-import-btn" class="opt-btn opt-btn-filled text-xs">Importieren</button>
+                <input type="file" id="nina-import-file" accept="application/json,.json" hidden>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 8: Gesehen & Angefangen (Watch-Status aus Drive + lokal) -->
+        <section id="cat-watch-history" class="setting-section">
+          <header class="settings-group-header">
+            <svg class="ms-icon" aria-hidden="true"><use href="#ms-visibility"></use></svg>
+            <h2>Gesehen & Angefangen</h2>
+          </header>
+
+          <div class="settings-card">
+          <div class="settings-card-pad space-y-4">
+
+          <div class="wh-toolbar">
+            <div class="wh-group" id="wh-platform">
+              <button data-platform="youtube" class="wh-chip active">YouTube</button>
+              <button data-platform="crunchyroll" class="wh-chip">Crunchyroll</button>
+            </div>
+            <div class="wh-group" id="wh-filter">
+              <button data-filter="all" class="wh-chip active">Alle</button>
+              <button data-filter="watched" class="wh-chip">Gesehen</button>
+              <button data-filter="started" class="wh-chip">Angefangen</button>
+            </div>
+            <input type="text" id="wh-search" class="wh-search" placeholder="Suchen…">
+            <button id="wh-refresh" class="wh-refresh">Aktualisieren</button>
+          </div>
+
+          <p id="wh-summary" class="wh-summary">Lade…</p>
+          <div id="wh-list" class="wh-list"></div>
+          <button id="wh-more" class="wh-more" hidden>Mehr anzeigen</button>
+          </div>
+          </div>
+        </section>
+
+        <!-- 8b: AniList -->
+        <section id="cat-anilist" class="setting-section">
+          <header class="settings-group-header">
+            <svg class="ms-icon" aria-hidden="true"><use href="#ms-link"></use></svg>
+            <h2>AniList</h2>
+          </header>
+
+          <div class="settings-card">
+            <div class="settings-row">
+              <div class="flex items-center gap-3">
+                <img id="al-avatar" class="al-avatar" alt="" hidden>
+                <div>
+                  <p class="text-sm font-semibold text-slate-800 dark:text-slate-100">AniList-Konto</p>
+                  <p id="al-status-text" class="text-xs text-slate-500 dark:text-slate-400">Nicht verbunden</p>
+                </div>
+              </div>
+              <button id="al-connect-btn" class="opt-btn opt-btn-filled text-xs">Verbinden</button>
+            </div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">Fortschritt automatisch übertragen</span>
+                <span class="desc">Wenn NINA eine Folge als „Gesehen“ markiert, wird sie auf AniList eingetragen (nur vorwärts, letzte Folge = abgeschlossen).</span>
+              </div>
+              <label class="md-switch">
+                <input type="checkbox" id="al-autosync" checked>
+                <span class="md-switch-track"></span>
+              </label>
+            </div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">Anime-Neuigkeiten auf der Startseite</span>
+                <span class="desc">Glocke oben rechts im neuen Tab und die 3 neuesten unter der Suche: neue Folgen von Serien, die du schaust, und neue Staffeln/Fortsetzungen zu Serien auf deiner Liste (AniLists eigene Benachrichtigungen).</span>
+              </div>
+              <label class="md-switch">
+                <input type="checkbox" data-sync-bool="nina_notif_newtab" checked>
+                <span class="md-switch-track"></span>
+              </label>
+            </div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">Neuigkeiten pro Serie – Standard</span>
+                <span class="desc">„An“: alle Serien melden, einzelne schaltest du aus. „Aus“: keine Serie meldet, einzelne schaltest du ein. Ein-/Ausschalten per Glocke neben „Wertung“ in der AniList-Leiste auf Crunchyroll oder in der Neuigkeiten-Leiste im neuen Tab.</span>
+              </div>
+              <select class="opt-select" data-sync-select="nina_notif_default" style="width:auto;min-width:190px">
+                <option value="on">An – einzeln ausschalten</option>
+                <option value="off">Aus – einzeln einschalten</option>
+              </select>
+            </div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">Desktop-Benachrichtigungen</span>
+                <span class="desc">Zusätzlich echte Windows-Benachrichtigungen bei neuen Folgen/Staffeln (geprüft alle 30 Min., solange Chrome läuft). Klick darauf öffnet die Serie auf Crunchyroll.</span>
+              </div>
+              <label class="md-switch">
+                <input type="checkbox" data-sync-bool="nina_notif_desktop" data-default-off>
+                <span class="md-switch-track"></span>
+              </label>
+            </div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">Neue Watchlist-Serien als „Geplant“ eintragen</span>
+                <span class="desc">Fügst du auf Crunchyroll eine Serie zur Watchlist hinzu, kommen ihre noch ungesehenen Staffeln auf AniList auf „Geplant“ – nur wenn sie dort noch gar keinen Status haben. Für die Serien, die schon auf der Watchlist sind, unten einmal „Watchlist übertragen“ drücken.</span>
+              </div>
+              <label class="md-switch">
+                <input type="checkbox" id="al-plan-watchlist" checked>
+                <span class="md-switch-track"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <div class="settings-card-title">Abgleich</div>
+
+            <div class="al-sync-item">
+              <div class="al-sync-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
+              </div>
+              <div class="al-sync-body">
+                <div class="al-sync-head">
+                  <div>
+                    <p class="al-sync-title">NINA → AniList</p>
+                    <p class="al-sync-desc">Bisher in NINA erkannte Crunchyroll-Folgen und Staffeln auf AniList nachtragen – nur vorwärts, nie verringern.</p>
+                  </div>
+                  <button id="al-export-btn" class="opt-btn opt-btn-filled text-xs">Vorschau</button>
+                </div>
+                <div id="al-export-log" class="al-log" hidden></div>
+                <button id="al-export-run" class="opt-btn opt-btn-filled text-xs" hidden>Jetzt übertragen</button>
+              </div>
+            </div>
+
+            <div class="al-sync-item">
+              <div class="al-sync-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 20l1.41-1.41L7.83 13H20v-2H7.83l5.58-5.59L12 4l-8 8z"/></svg>
+              </div>
+              <div class="al-sync-body">
+                <div class="al-sync-head">
+                  <div>
+                    <p class="al-sync-title">AniList → NINA</p>
+                    <p id="al-import-desc" class="al-sync-desc">Deine AniList-Liste laden: Serien-Poster werden markiert, und beim Öffnen einer Serie werden ihre Folgen bis zu deinem AniList-Stand als gesehen markiert.</p>
+                  </div>
+                  <button id="al-import-btn" class="opt-btn opt-btn-filled text-xs">Importieren</button>
+                </div>
+                <div id="al-import-log" class="al-log" hidden></div>
+              </div>
+            </div>
+
+            <div class="al-sync-item">
+              <div class="al-sync-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
+              </div>
+              <div class="al-sync-body">
+                <div class="al-sync-head">
+                  <div>
+                    <p class="al-sync-title">Crunchyroll-Watchlist → AniList „Geplant“</p>
+                    <p id="al-wl-desc" class="al-sync-desc">Alle Serien deiner Watchlist auf einmal: ungesehene Staffeln ohne AniList-Status kommen auf „Geplant“. Läuft in einem Crunchyroll-Tab (wird geöffnet – bitte offen lassen), ca. 10 s pro Serie.</p>
+                  </div>
+                  <button id="al-wl-btn" class="opt-btn opt-btn-filled text-xs">Übertragen</button>
+                </div>
+                <div id="al-wl-progress" class="al-progress-wrap" hidden>
+                  <div class="al-progress"><div id="al-wl-bar"></div></div>
+                  <p id="al-wl-status" class="al-sync-desc"></p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <div class="settings-card-pad space-y-3">
+              <p class="text-xs font-semibold text-slate-600 dark:text-slate-300">Einrichtung (einmalig)</p>
+              <ol class="text-xs text-slate-500 dark:text-slate-400 space-y-1.5 list-decimal pl-4">
+                <li>Auf <a href="https://anilist.co/settings/developer" target="_blank" rel="noopener" class="al-a">anilist.co/settings/developer</a> „Create New Client“ wählen.</li>
+                <li>Name beliebig (z. B. NINA), als <strong>Redirect URL</strong> genau diese eintragen:
+                  <div class="al-copy-row"><code id="al-redirect" class="al-code">…</code><button id="al-copy" class="al-a al-btn-link">Kopieren</button></div>
+                </li>
+                <li>Speichern und die angezeigte <strong>ID</strong> (Zahl) hier eintragen, dann „Verbinden“.</li>
+              </ol>
+              <div class="al-copy-row">
+                <input type="text" id="al-client-id" class="wh-search" placeholder="Client-ID, z. B. 12345" inputmode="numeric">
+              </div>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Die Client-ID wird mit deinem Google-Konto synchronisiert. Die Redirect-URL hängt von der Erweiterungs-ID ab — Store-Version und lokale Version haben je eine eigene.</p>
             </div>
           </div>
         </section>
@@ -710,6 +1378,16 @@
     <span id="toastText">Gespeichert</span>
   </div>
 
+  <script src="nina-select.js" data-auto="select"></script>
+  <script src="../lib/google-drive.js"></script>
   <script src="options.js"></script>
+  <script src="watch-history.js"></script>
+  <script src="anilist-settings.js"></script>
+  <script src="crunchyroll-settings.js"></script>
+  <script src="backup.js"></script>
+  <script src="../lib/hotkeys-shared.js"></script>
+  <script src="hotkeys-settings.js"></script>
+  <script src="newtab-settings.js"></script>
+  <script src="platform-settings.js"></script>
 </body>
 </html>
