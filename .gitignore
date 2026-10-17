@@ -41,3 +41,6 @@ lerna-debug.log*
 # Lokale Test-Profile
 .chrome-profile/
 test-profile/
+
+# Lokale Verknüpfung zur Zusatz-Erweiterung NINA-AniWorld (eigenes Repo)
+NINA-AniWorld

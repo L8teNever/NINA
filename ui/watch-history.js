@@ -18,8 +18,18 @@
       driveRead: () => window.NinaDrive.getCrunchyrollWatchStatus(),
       url: (id) => 'https://www.crunchyroll.com/watch/' + encodeURIComponent(id),
       thumb: null
+    },
+    // Prime Video, Disney+, Joyn, Netflix (content/stream-watch.js)
+    stream: {
+      localKey: 'nina_stream_watch_status',
+      driveRead: () => window.NinaDrive.getStreamWatchStatus(),
+      url: (id) => (data.stream[id] && data.stream[id].url) || '#',
+      thumb: null
     }
   };
+  const STREAM_NAMES = { prime: 'Prime Video', disney: 'Disney+', joyn: 'Joyn', netflix: 'Netflix' };
+  // services of partner extensions (lib/partner-bg.js)
+  chrome.storage.local.get(['nina_partner_platforms'], (r) => { for (const p of Object.values(r.nina_partner_platforms || {})) if (p && p.id) STREAM_NAMES[p.id] = p.name; });
   const PAGE_SIZE = 50;
   // Crunchyroll stores whole seasons as 'season:<id>' next to episodes.
   const isSeason = (k) => k.startsWith('season:');
@@ -29,7 +39,7 @@
   let query = '';
   let shown = PAGE_SIZE;
   let driveState = 'unknown'; // 'connected' | 'offline' | 'error'
-  const data = { youtube: {}, crunchyroll: {} };
+  const data = { youtube: {}, crunchyroll: {}, stream: {} };
   const ytTitleCache = {}; // videoId -> { title, channel } | 'pending' | 'failed'
 
   const $ = (id) => document.getElementById(id);
@@ -125,7 +135,7 @@
     $('wh-summary').textContent = counts.watched + ' gesehen · ' + counts.started + ' angefangen' + (seasonsWatched ? ' · ' + seasonsWatched + (seasonsWatched === 1 ? ' Staffel' : ' Staffeln') + ' komplett' : '') + (driveNote ? ' — ' + driveNote : '');
 
     list.textContent = '';
-    if (platform === 'crunchyroll') { renderSeries(list); return; }
+    if (platform === 'crunchyroll' || platform === 'stream') { renderSeries(list); return; }
     if (!all.length) list.appendChild(emptyNote());
     for (const [id, e] of all.slice(0, shown)) list.appendChild(renderItem(id, e));
     $('wh-more').hidden = all.length <= shown;
@@ -148,7 +158,7 @@
   function groupSeries() {
     const groups = new Map();
     const idToKey = new Map(); // seriesId -> group key, to merge id-only entries
-    const entriesAll = Object.entries(data.crunchyroll)
+    const entriesAll = Object.entries(data[platform])
       .filter(([, e]) => e && (e.status === 'watched' || e.status === 'started'))
       // Named entries first, so hint-only ones can join their show below.
       .sort((a, b) => (b[1].series ? 1 : 0) - (a[1].series ? 1 : 0));
@@ -157,6 +167,7 @@
     }
     for (const [id, e] of entriesAll) {
       let key = (e.seriesId && idToKey.get(e.seriesId)) || normName(e.series) || normName(e.seriesHint) || '';
+      if (platform === 'stream') key = (e.platform || '') + ':' + key; // same name on two services: two cards
       // seriesHint comes from poster alt text and can carry extra words;
       // attach it to a known show whose name it contains.
       if (!e.series && key) {
@@ -170,6 +181,11 @@
       (isSeason(id) ? g.seasons : g.episodes).push([id, e]);
     }
     for (const g of groups.values()) {
+      if (platform === 'stream') {
+        const e0 = g.episodes.map(([, e]) => e)[0] || {};
+        g.service = STREAM_NAMES[e0.platform] || '';
+        g.url = g.episodes.map(([, e]) => e).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)).map((e) => e.url).find(Boolean) || '';
+      }
       if (!g.name) {
         const hint = g.episodes.map(([, e]) => e.seriesHint).find(Boolean);
         g.name = g.key ? (hint || 'Serie ohne Namen') : 'Unbekannte Serie';
@@ -215,7 +231,8 @@
     title.textContent = g.name;
     const sub = document.createElement('div');
     sub.className = 'wh-sub';
-    const parts = [g.watchedEpisodes + (g.watchedEpisodes === 1 ? ' Folge' : ' Folgen') + ' gesehen'];
+    const parts = g.service ? [g.service] : [];
+    parts.push(g.watchedEpisodes + (g.watchedEpisodes === 1 ? ' Folge' : ' Folgen') + ' gesehen');
     const started = g.episodes.length - g.watchedEpisodes;
     if (started) parts.push(started + ' angefangen');
     const seasonsDone = g.seasons.filter(([, e]) => e.status === 'watched').length;
@@ -229,10 +246,10 @@
     badge.textContent = g.status === 'watched' ? 'Gesehen' : 'Angefangen';
 
     head.append(chevron, body);
-    if (g.seriesId) {
+    if (g.seriesId || g.url) {
       const link = document.createElement('a');
       link.className = 'wh-open';
-      link.href = 'https://www.crunchyroll.com/series/' + encodeURIComponent(g.seriesId);
+      link.href = g.seriesId ? 'https://www.crunchyroll.com/series/' + encodeURIComponent(g.seriesId) : g.url;
       link.target = '_blank';
       link.rel = 'noopener';
       link.textContent = 'Öffnen';
@@ -255,7 +272,8 @@
       const byTitle = (a, b) => String(a[1].seasonTitle || a[1].title || a[0])
         .localeCompare(String(b[1].seasonTitle || b[1].title || b[0]), 'de', { numeric: true });
       for (const [id, e] of [...g.seasons].sort(byTitle)) inner.appendChild(renderItem(id, e));
-      for (const [id, e] of [...g.episodes].sort(byTitle)) inner.appendChild(renderItem(id, e));
+      const byEpisode = (x, y) => (x[1].season - y[1].season) || (x[1].episode - y[1].episode);
+      for (const [id, e] of [...g.episodes].sort(platform === 'stream' ? byEpisode : byTitle)) inner.appendChild(renderItem(id, e));
       wrap.appendChild(inner);
     }
     return wrap;
@@ -279,7 +297,7 @@
     } else {
       thumb = document.createElement('div');
       thumb.className = 'wh-thumb-cr';
-      thumb.textContent = season ? 'Staffel' : 'Crunchyroll';
+      thumb.textContent = season ? 'Staffel' : platform === 'stream' ? (STREAM_NAMES[e.platform] || 'Stream') : 'Crunchyroll';
     }
     thumb.classList.add('wh-thumb');
 
@@ -296,6 +314,7 @@
     } else {
       title.textContent = season
         ? [e.series, e.seasonTitle].filter(Boolean).join(' – ') || 'Staffel'
+        : platform === 'stream' ? (e.movie ? 'Film' : 'S' + e.season + ' F' + e.episode + (e.title ? ' – ' + e.title : ''))
         : (e.title || ('Folge ' + id));
     }
     const who = platform === 'youtube' ? ((meta && meta.channel) || e.channel)
@@ -303,7 +322,7 @@
       : (e.series || e.seriesHint);
     const parts = [];
     if (who) parts.push(who);
-    if (isFinite(e.lastPosition) && isFinite(e.duration) && e.duration > 0) {
+    if (isFinite(e.lastPosition) && isFinite(e.duration) && e.duration > 1) { // 1 = only a share known (read from the service page)
       parts.push(fmtTime(e.lastPosition) + ' / ' + fmtTime(e.duration));
     }
     if (e.updatedAt) parts.push(fmtDate(e.updatedAt));

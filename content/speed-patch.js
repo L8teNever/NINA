@@ -267,6 +267,11 @@
     }, { capture: true });
   }
 
+  let lastUserInteraction = 0;
+  ['pointerdown', 'mousedown', 'keydown', 'touchstart'].forEach((evt) => {
+    window.addEventListener(evt, () => { lastUserInteraction = Date.now(); }, { capture: true, passive: true });
+  });
+
   function getEffectiveRate(video) {
     if (video && video.getAttribute('data-usc-ad') === 'true') {
       return location.hostname.includes('netflix.com') ? (navigator.userAgent.includes('Edg') ? 3 : 8) : 1;
@@ -280,7 +285,7 @@
         return targetFFRate;
       }
     }
-    return Math.abs(targetRate - 1) >= EPSILON ? targetRate : (intendedRates.get(video) ?? 1.0);
+    return targetRate;
   }
 
   // Get original descriptors
@@ -311,13 +316,20 @@
 
     intendedRates.set(this, r);
 
+    // If the user clicked/selected a speed option in the player UI, sync it as targetRate
+    const isUserChoice = (Date.now() - lastUserInteraction < 2000);
+    if (isUserChoice) {
+      targetRate = r;
+      try { localStorage.setItem(KEY, r); } catch (_) {}
+      try { window.postMessage({ __ninaSpeedFromPlayer: r }, '*'); } catch (_) {}
+    }
+
     // Apply effective speed rate (taking fast-forward hold into account)
     const rateToSet = getEffectiveRate(this);
 
     if (origSet) {
       origSet.call(this, rateToSet);
-    } else {
-      // Fallback
+    } else if (rateDesc && rateDesc.set) {
       rateDesc.set.call(this, rateToSet);
     }
   }
@@ -337,11 +349,18 @@
 
     intendedDefaultRates.set(this, r);
 
-    const rateToSet = Math.abs(targetRate - 1) >= EPSILON ? targetRate : r;
+    const isUserChoice = (Date.now() - lastUserInteraction < 2000);
+    if (isUserChoice) {
+      targetRate = r;
+      try { localStorage.setItem(KEY, r); } catch (_) {}
+      try { window.postMessage({ __ninaSpeedFromPlayer: r }, '*'); } catch (_) {}
+    }
+
+    const rateToSet = getEffectiveRate(this);
 
     if (origDefaultSet) {
       origDefaultSet.call(this, rateToSet);
-    } else {
+    } else if (defaultDesc && defaultDesc.set) {
       defaultDesc.set.call(this, rateToSet);
     }
   }
@@ -400,9 +419,6 @@
 
   function snapBack(video) {
     const desired = getEffectiveRate(video);
-    const isOverriding = isUniversalFFActive || Math.abs(targetRate - 1) >= EPSILON || (isYouTube && isPointerDown && Math.abs((intendedRates.get(video) ?? 1.0) - 2.0) < EPSILON);
-    if (!isOverriding) return;
-
     const current = origGet ? origGet.call(video) : video.playbackRate;
     if (Math.abs(current - desired) > EPSILON) {
       forceRate(video, desired);

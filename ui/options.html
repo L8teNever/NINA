@@ -147,6 +147,10 @@
         <svg class="ms-icon" aria-hidden="true"><use href="#ms-cloud"></use></svg>
         <span>Notizen & Drive Sync</span>
       </a>
+      <a href="library.html" target="_blank" class="sidebar-link sidebar-link-external">
+        <svg class="ms-icon" aria-hidden="true"><use href="#ms-play"></use></svg>
+        <span>Meine Serien ↗</span>
+      </a>
       <a href="#cat-watch-history" class="sidebar-link" data-target="cat-watch-history">
         <svg class="ms-icon" aria-hidden="true"><use href="#ms-visibility"></use></svg>
         <span>Gesehen & Angefangen</span>
@@ -485,22 +489,22 @@
             </button>
             <button type="button" class="pf-tile" data-goto="cat-prime" style="--pf:#00a8e1">
               <span class="pf-logo">P</span>
-              <span class="pf-text"><b>Prime Video</b><small>Lautstärke bis 600 %, X-Ray</small></span>
+              <span class="pf-text"><b>Prime Video</b><small>Gesehen-Status, AniList, 600 %, X-Ray</small></span>
               <svg class="pf-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
             </button>
             <button type="button" class="pf-tile" data-goto="cat-netflix" style="--pf:#e50914">
               <span class="pf-logo">N</span>
-              <span class="pf-text"><b>Netflix</b><small>Lautstärke bis 600 %</small></span>
+              <span class="pf-text"><b>Netflix</b><small>Gesehen-Status, AniList, Lautstärke bis 600 %</small></span>
               <svg class="pf-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
             </button>
             <button type="button" class="pf-tile" data-goto="cat-disney" style="--pf:#2f6bff">
               <span class="pf-logo">D+</span>
-              <span class="pf-text"><b>Disney+</b><small>Lautstärke bis 600 %</small></span>
+              <span class="pf-text"><b>Disney+</b><small>Gesehen-Status, AniList, Lautstärke bis 600 %</small></span>
               <svg class="pf-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
             </button>
             <button type="button" class="pf-tile" data-goto="cat-joyn" style="--pf:#f5d800">
               <span class="pf-logo">J</span>
-              <span class="pf-text"><b>Joyn</b><small>Lautstärke bis 600 %</small></span>
+              <span class="pf-text"><b>Joyn</b><small>Gesehen-Status, AniList, Lautstärke bis 600 %</small></span>
               <svg class="pf-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
             </button>
           </div>
@@ -522,6 +526,20 @@
                 <span class="desc">Primes Lautstärkeregler geht bis 600 % (gleichmäßige Skala, der Wert steht darunter). Mausrad über dem Lautsprecher-Symbol: 10-%-Schritte. Ausschalten wirkt nach Neuladen der Seite.</span>
               </div>
               <label class="md-switch"><input type="checkbox" data-vol-boost="prime" checked><span class="md-switch-track"></span></label>
+            </div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">Gesehen &amp; Angefangen erfassen</span>
+                <span class="desc">Merkt sich bei Serien, welche Folgen du auf Prime Video angefangen oder gesehen hast (Liste unter „Gesehen &amp; Angefangen“, mit Google-Drive-Sync). Ab wie viel Prozent „Gesehen“ gilt, stellst du unter „YouTube Features“ ein.</span>
+              </div>
+              <label class="md-switch"><input type="checkbox" data-stream-track="prime" data-field="track" checked><span class="md-switch-track"></span></label>
+            </div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">AniList-Fortschritt übertragen</span>
+                <span class="desc">Nur wenn du in „Meine Serien → Einstellungen“ „Mit AniList verknüpfen“ einschaltest: Gesehene Folgen von Animes, die schon auf deiner AniList-Liste stehen, werden dort eingetragen. Ohne diesen Schalter bleibt alles in NINA.</span>
+              </div>
+              <label class="md-switch"><input type="checkbox" data-stream-track="prime" data-field="anilist" checked><span class="md-switch-track"></span></label>
             </div>
             <div class="setting-item settings-row">
               <div class="settings-row-copy">
@@ -595,6 +613,20 @@
               </div>
               <label class="md-switch"><input type="checkbox" data-vol-boost="netflix" checked><span class="md-switch-track"></span></label>
             </div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">Gesehen &amp; Angefangen erfassen</span>
+                <span class="desc">Merkt sich bei Serien, welche Folgen du auf Netflix angefangen oder gesehen hast (Liste unter „Gesehen &amp; Angefangen“, mit Google-Drive-Sync). Ab wie viel Prozent „Gesehen“ gilt, stellst du unter „YouTube Features“ ein.</span>
+              </div>
+              <label class="md-switch"><input type="checkbox" data-stream-track="netflix" data-field="track" checked><span class="md-switch-track"></span></label>
+            </div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">AniList-Fortschritt übertragen</span>
+                <span class="desc">Nur wenn du in „Meine Serien → Einstellungen“ „Mit AniList verknüpfen“ einschaltest: Gesehene Folgen von Animes, die schon auf deiner AniList-Liste stehen, werden dort eingetragen. Ohne diesen Schalter bleibt alles in NINA.</span>
+              </div>
+              <label class="md-switch"><input type="checkbox" data-stream-track="netflix" data-field="anilist" checked><span class="md-switch-track"></span></label>
+            </div>
           </div>
         </section>
 
@@ -613,6 +645,20 @@
               </div>
               <label class="md-switch"><input type="checkbox" data-vol-boost="disney" checked><span class="md-switch-track"></span></label>
             </div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">Gesehen &amp; Angefangen erfassen</span>
+                <span class="desc">Merkt sich bei Serien, welche Folgen du auf Disney+ angefangen oder gesehen hast (Liste unter „Gesehen &amp; Angefangen“, mit Google-Drive-Sync). Ab wie viel Prozent „Gesehen“ gilt, stellst du unter „YouTube Features“ ein.</span>
+              </div>
+              <label class="md-switch"><input type="checkbox" data-stream-track="disney" data-field="track" checked><span class="md-switch-track"></span></label>
+            </div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">AniList-Fortschritt übertragen</span>
+                <span class="desc">Nur wenn du in „Meine Serien → Einstellungen“ „Mit AniList verknüpfen“ einschaltest: Gesehene Folgen von Animes, die schon auf deiner AniList-Liste stehen, werden dort eingetragen. Ohne diesen Schalter bleibt alles in NINA.</span>
+              </div>
+              <label class="md-switch"><input type="checkbox" data-stream-track="disney" data-field="anilist" checked><span class="md-switch-track"></span></label>
+            </div>
           </div>
         </section>
 
@@ -630,6 +676,20 @@
                 <span class="desc">Joyns Lautstärkeregler geht bis 600 % (gleichmäßige Skala, der Wert steht darüber). Mausrad über dem Lautsprecher-Symbol: 10-%-Schritte. Ausschalten wirkt nach Neuladen der Seite.</span>
               </div>
               <label class="md-switch"><input type="checkbox" data-vol-boost="joyn" checked><span class="md-switch-track"></span></label>
+            </div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">Gesehen &amp; Angefangen erfassen</span>
+                <span class="desc">Merkt sich bei Serien, welche Folgen du auf Joyn angefangen oder gesehen hast (Liste unter „Gesehen &amp; Angefangen“, mit Google-Drive-Sync). Ab wie viel Prozent „Gesehen“ gilt, stellst du unter „YouTube Features“ ein.</span>
+              </div>
+              <label class="md-switch"><input type="checkbox" data-stream-track="joyn" data-field="track" checked><span class="md-switch-track"></span></label>
+            </div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">AniList-Fortschritt übertragen</span>
+                <span class="desc">Nur wenn du in „Meine Serien → Einstellungen“ „Mit AniList verknüpfen“ einschaltest: Gesehene Folgen von Animes, die schon auf deiner AniList-Liste stehen, werden dort eingetragen. Ohne diesen Schalter bleibt alles in NINA.</span>
+              </div>
+              <label class="md-switch"><input type="checkbox" data-stream-track="joyn" data-field="anilist" checked><span class="md-switch-track"></span></label>
             </div>
           </div>
         </section>
@@ -1047,6 +1107,7 @@
             <div class="wh-group" id="wh-platform">
               <button data-platform="youtube" class="wh-chip active">YouTube</button>
               <button data-platform="crunchyroll" class="wh-chip">Crunchyroll</button>
+              <button data-platform="stream" class="wh-chip">Prime · Disney+ · Joyn · Netflix</button>
             </div>
             <div class="wh-group" id="wh-filter">
               <button data-filter="all" class="wh-chip active">Alle</button>
@@ -1162,9 +1223,13 @@
                 <div class="al-sync-head">
                   <div>
                     <p class="al-sync-title">AniList → NINA</p>
-                    <p id="al-import-desc" class="al-sync-desc">Deine AniList-Liste laden: Serien-Poster werden markiert, und beim Öffnen einer Serie werden ihre Folgen bis zu deinem AniList-Stand als gesehen markiert.</p>
+                    <p id="al-import-desc" class="al-sync-desc">Alle Animes von deiner AniList-Liste direkt in deine NINA-Bibliothek importieren (inkl. Status, Bewertung, Folgen &amp; Cover). Serien-Poster auf Streaming-Seiten werden markiert.</p>
                   </div>
                   <button id="al-import-btn" class="opt-btn opt-btn-filled text-xs">Importieren</button>
+                </div>
+                <div id="al-import-progress" class="al-progress-wrap" hidden>
+                  <div class="al-progress"><div id="al-import-bar"></div></div>
+                  <p id="al-import-status" class="al-sync-desc"></p>
                 </div>
                 <div id="al-import-log" class="al-log" hidden></div>
               </div>

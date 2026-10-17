@@ -52,6 +52,7 @@
 
   async function init() {
     $('settings').addEventListener('click', () => { chrome.runtime.openOptionsPage(); closeMe(); });
+    $('library').addEventListener('click', () => { chrome.tabs.create({ url: chrome.runtime.getURL('ui/library.html') }); closeMe(); });
     $('reset').addEventListener('click', () => { setSpeed(1); setAudio(100); });
     $('speed').addEventListener('input', (e) => setSpeed(e.target.value));
     $('audio').addEventListener('input', (e) => setAudio(e.target.value));

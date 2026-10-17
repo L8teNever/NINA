@@ -1,4 +1,6 @@
-// anilist-crunchyroll.js — AniList on Crunchyroll.
+// anilist-crunchyroll.js — AniList on Crunchyroll. OPT-IN: only active when
+// "Mit AniList verknüpfen" is on in Meine Serien → Einstellungen (without it
+// NINA's own bar from stream-series.js is all that shows up).
 //  • Show page: a bar above the episode list with the linked AniList entry
 //    (average score, your status, episode progress, your score), editable.
 //  • Watch page: when NINA marks the episode "Gesehen", the AniList progress
@@ -688,16 +690,24 @@
   // Settings page switch "AniList-Leiste auf der Serienseite" (in the
   // shared Crunchyroll options object).
   let barEnabled = true;
-  chrome.storage.sync.get(['nina_cr_options'], (r) => { barEnabled = !(r.nina_cr_options && r.nina_cr_options.anilistBar === false); });
+  // AniList is optional: NINA's own library is the tracking (the NINA bar of
+  // stream-series.js). Everything here only runs with "Mit AniList verknüpfen"
+  // switched on in Meine Serien → Einstellungen.
+  let aniOn = false;
+  chrome.storage.sync.get(['nina_cr_options', 'nina_library_settings'], (r) => {
+    barEnabled = !(r.nina_cr_options && r.nina_cr_options.anilistBar === false);
+    aniOn = !!(r.nina_library_settings && r.nina_library_settings.anilistSync);
+  });
   chrome.storage.onChanged.addListener((changes, area) => {
-    if (area !== 'sync' || !changes.nina_cr_options) return;
-    barEnabled = !(changes.nina_cr_options.newValue && changes.nina_cr_options.newValue.anilistBar === false);
+    if (area !== 'sync' || !(changes.nina_cr_options || changes.nina_library_settings)) return;
+    if (changes.nina_cr_options) barEnabled = !(changes.nina_cr_options.newValue && changes.nina_cr_options.newValue.anilistBar === false);
+    if (changes.nina_library_settings) aniOn = !!(changes.nina_library_settings.newValue && changes.nina_library_settings.newValue.anilistSync);
     barKey = null;
     ensureBar();
   });
 
   function ensureBar() {
-    if (!barEnabled) {
+    if (!barEnabled || !aniOn) {
       const old = document.querySelector('.nina-al-bar');
       if (old) old.remove();
       return;
@@ -712,15 +722,18 @@
     let headerRow = titleEl;
     while (headerRow && headerRow.parentElement !== anchor) headerRow = headerRow.parentElement;
     let bar = document.querySelector('.nina-al-bar');
-    const misplaced = bar && (bar.parentElement !== anchor || (headerRow && bar.previousElementSibling !== headerRow));
+    // under NINA's own bar (stream-series.js) when that one is there
+    const ninaBar = document.querySelector('.nina-bar');
+    const above = ninaBar && ninaBar.parentElement === anchor ? ninaBar : headerRow;
+    const misplaced = bar && (bar.parentElement !== anchor || (above && bar.previousElementSibling !== above));
     if (misplaced) {
       // Move it back (keeps its content, no new AniList request).
-      if (headerRow) headerRow.insertAdjacentElement('afterend', bar);
+      if (above) above.insertAdjacentElement('afterend', bar);
       else anchor.prepend(bar);
     }
     if (!bar) {
       bar = el('div', 'nina-al-bar');
-      if (headerRow) headerRow.insertAdjacentElement('afterend', bar);
+      if (above) above.insertAdjacentElement('afterend', bar);
       else anchor.prepend(bar);
       barKey = null;
     }
@@ -753,6 +766,7 @@
   }
 
   async function pushEpisode(episodeId) {
+    if (!aniOn) return;
     const link = document.querySelector('a[href*="/series/"]');
     const sid = link && /\/series\/([^/?#]+)/.exec(link.getAttribute('href'));
     const ep = episodeNumber();

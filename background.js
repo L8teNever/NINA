@@ -2,7 +2,7 @@
 // Re-injects speed/frame scripts after SPA navigations on streaming sites
 // (the toolbar icon opens ui/popup.html).
 
-importScripts('lib/anilist-bg.js', 'lib/sync-extra-bg.js');
+importScripts('lib/anilist-bg.js', 'lib/sync-extra-bg.js', 'lib/library-core.js', 'lib/library-providers.js', 'lib/partner-bg.js', 'lib/view-log-bg.js');
 
 const STREAMING_HOSTS = [
   'joyn.de', 'youtube.com', 'youtu.be', 'netflix.com',
@@ -282,6 +282,14 @@ function cleanShowName(name) {
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  // NINA card on a streaming site → "Meine Serien" (a show's page)
+  if (message.type === 'NINA_OPEN_LIBRARY') {
+    const hash = message.hash ? '#' + String(message.hash).replace(/[^\w%:\-./]/g, '') : '';
+    chrome.tabs.create({ url: chrome.runtime.getURL('ui/library.html') + hash });
+    sendResponse({ ok: true });
+    return false;
+  }
+
   if (message.type === 'NINA_OPEN_NOTES_TAB') {
     let url = 'ui/notes.html';
     if (message.noteId) {

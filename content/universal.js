@@ -183,7 +183,6 @@
   function setSpeedTo(target, withToast) {
     if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.id) return;
     const s = clamp(target, SPEED_MIN, SPEED_MAX);
-    if (s === currentSpeed) return;
     currentSpeed = s;
     if (myTabId) {
       chrome.storage.local.get(['tab_speeds'], (res) => {
@@ -196,6 +195,7 @@
         chrome.storage.local.set({ tab_speeds: tabSpeeds });
       });
     }
+    try { window.postMessage({ __joynSpeed: s }, '*'); } catch (_) {}
     if (withToast) showToast('⚡ ' + s.toFixed(2) + '×');
     if (window.__ninaPaintCrSpeedBtn) window.__ninaPaintCrSpeedBtn();
   }

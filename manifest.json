@@ -2,11 +2,12 @@
   "manifest_version": 3,
   "name": "__MSG_appName__",
   "short_name": "__MSG_appName__",
-  "version": "3.3.0",
+  "version": "3.3.1",
   "version_name": "3.2.9",
   "description": "__MSG_appDesc__",
   "default_locale": "en",
   "author": "NINA",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAk2HHio2N4GpDl4rnIlfctSYpfPwLX62ig1K27qnA40Q7FYGqaNVCLtnyzKme0eWGBizhj0YOlGbyLWtdv2ofKdc94FGmKZ+KgrvZCdLayKQ2vY40t79C6ezjEiApJEWq0qgT8NM0xiqV9r9QulUDnVXtwQDupoujNH1ZGO8uNCEkags4S17oTABf/tEw8WeOhGTGWDTI3OJXBOjkG7lTFT9K8zfE9StmXL69uuZcBvgIDik6g+pqabufmgyZ16Rq8jHuggTq5ARvdNJcT8B50ZgA1bXv7FHlTLcvhK8P9RangjC/s77JH+epAK7dtF35mrha0vi6q7auyC950PcvyQIDAQAB",
   "permissions": ["activeTab", "storage", "scripting", "tabs", "bookmarks", "identity", "favicon", "history", "topSites", "alarms", "notifications"],
   "oauth2": {
     "client_id": "787110895260-0hdnailkthmap4errfrgjr3odf1re87s.apps.googleusercontent.com",
@@ -230,6 +231,12 @@
       "all_frames": false
     },
     {
+      "matches": ["*://*.crunchyroll.com/*"],
+      "js": ["lib/library-core.js", "lib/library-providers.js", "content/stream-series.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    },
+    {
       "matches": ["http://*/*", "https://*/*"],
       "js": ["content/overlay-search.js"],
       "run_at": "document_end",
@@ -245,7 +252,7 @@
         "*://*.joyn.de/*",
         "*://*.netflix.com/*"
       ],
-      "js": ["content/stream-volume.js"],
+      "js": ["content/stream-volume.js", "content/stream-watch.js", "lib/library-core.js", "lib/library-providers.js", "content/stream-series.js"],
       "run_at": "document_idle",
       "all_frames": false
     },

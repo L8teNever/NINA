@@ -81,6 +81,25 @@
     });
   } catch (_) {}
 
+  window.addEventListener('message', (e) => {
+    if (!e.data) return;
+    if (typeof e.data.__ninaSpeedFromPlayer === 'number') {
+      const sp = parseFloat(e.data.__ninaSpeedFromPlayer);
+      if (isFinite(sp) && sp > 0 && myTabId) {
+        lastPushedRate = sp;
+        try { localStorage.setItem(CACHE_KEY, sp); } catch (_) {}
+        chrome.storage.local.get(['tab_speeds'], (res) => {
+          const tabSpeeds = res.tab_speeds || {};
+          const cur = tabSpeeds[myTabId] || {};
+          if (cur.speed !== sp) {
+            tabSpeeds[myTabId] = { ...cur, speed: sp };
+            chrome.storage.local.set({ tab_speeds: tabSpeeds });
+          }
+        });
+      }
+    }
+  });
+
   // ── Live updates ─────────────────────────────────────────────────────────────
   try {
     chrome.storage.onChanged.addListener((changes, area) => {

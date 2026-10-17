@@ -115,19 +115,43 @@
     exportPlan = null;
   }
 
+  function showImportProgress(p) {
+    const wrap = $('al-import-progress');
+    if (!wrap) return;
+    if (p.running) {
+      wrap.hidden = false;
+      if ($('al-import-bar')) $('al-import-bar').style.width = (p.pct || 0) + '%';
+      if ($('al-import-status')) $('al-import-status').textContent = p.message || 'Wird importiert …';
+    } else if (p.done) {
+      wrap.hidden = false;
+      if ($('al-import-bar')) $('al-import-bar').style.width = '100%';
+      if ($('al-import-status')) $('al-import-status').textContent = p.message || 'Fertig!';
+      setTimeout(() => { if (wrap && !p.running) wrap.hidden = true; }, 4000);
+    } else if (p.error) {
+      wrap.hidden = false;
+      if ($('al-import-status')) $('al-import-status').textContent = 'Fehler: ' + p.error;
+    }
+  }
+
   async function runImport() {
     const L = (text, cls) => log(text, cls, 'al-import-log');
     $('al-import-log').textContent = '';
     if (!connected) { L('Bitte zuerst mit AniList verbinden.', 'err'); return; }
     $('al-import-btn').disabled = true;
-    L('AniList-Liste wird geladen …');
+    showImportProgress({ running: true, pct: 5, message: 'AniList-Liste wird geladen …' });
     const r = await call('importList');
     $('al-import-btn').disabled = false;
-    if (!r.ok) { L('Fehler: ' + r.error, 'err'); return; }
-    const c = r.result.counts;
+    if (!r.ok) {
+      showImportProgress({ running: false, error: r.error });
+      L('Fehler: ' + r.error, 'err');
+      return;
+    }
+    const c = r.result.counts || {};
     const names = { CURRENT: 'am Schauen', COMPLETED: 'abgeschlossen', REPEATING: 'erneut', PAUSED: 'pausiert', DROPPED: 'abgebrochen', PLANNING: 'geplant' };
-    L('✓ ' + r.result.total + ' Einträge importiert: ' + Object.keys(c).map((k) => c[k] + ' ' + (names[k] || k)).join(', '), 'ok');
-    L('Serien-Poster auf Crunchyroll zeigen das jetzt an. Folgen werden beim Öffnen der jeweiligen Serie in NINA als gesehen markiert.');
+    const parts = Object.keys(c).map((k) => c[k] + ' ' + (names[k] || k)).join(', ');
+    showImportProgress({ running: false, done: true, pct: 100, message: `✓ ${r.result.total} Animes erfolgreich in NINA importiert!` });
+    L(`✓ ${r.result.total} Animes erfolgreich in NINA importiert: ` + (parts || 'Keine Einträge'), 'ok');
+    L('Alle Animes sind nun direkt in deiner NINA-Bibliothek („Meine Serien“) mit Status, Bewertung und Folgen sichtbar.');
     showImportInfo();
   }
 
@@ -139,6 +163,17 @@
       $('al-import-btn').title = 'Zuletzt: ' + new Date(l.importedAt).toLocaleString('de-DE') + ' (' + l.entries.length + ' Einträge)';
     }
   }
+
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && changes.nina_anilist_import_progress) {
+      showImportProgress(changes.nina_anilist_import_progress.newValue);
+    }
+  });
+  chrome.runtime.onMessage.addListener((msg) => {
+    if (msg && msg.type === 'NINA_ANILIST_IMPORT_PROGRESS') {
+      showImportProgress(msg);
+    }
+  });
 
   // ── Watchlist bulk run (done by crunchyroll-watch-status.js in a
   // Crunchyroll tab, which has the session; progress comes back via storage)
