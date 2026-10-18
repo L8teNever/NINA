@@ -257,6 +257,37 @@
     }
   });
 
+  // ── Shared by the Crunchyroll and Netflix speed-menu extensions below ──
+  const SPEED_LABEL_RE = /^(\d+(?:[.,]\d+)?)\s*x(?!\w)/i;
+  const MENU_TITLE_RE = /abspielgeschwindigkeit|wiedergabegeschwindigkeit|playback speed|vitesse de lecture|velocidad de reproducci/i;
+  const isLeaf = (el) => el.children.length === 0;
+  const parseSpeedLabel = (text) => {
+    const m = SPEED_LABEL_RE.exec((text || '').trim());
+    return m ? parseFloat(m[1].replace(',', '.')) : null;
+  };
+  const speedLabelIn = (row) =>
+    [row, ...row.querySelectorAll('*')].find((c) => isLeaf(c) && parseSpeedLabel(c.textContent) !== null);
+
+  // Locate the menu via its title, then collect the player's own speed
+  // labels inside it. Anchoring on the title keeps the "1x" toggle button
+  // in the control bar (same text, outside the menu) from matching.
+  function findNativeSpeedLabels() {
+    for (const title of document.querySelectorAll('span, div, p, h1, h2, h3, h4, label')) {
+      if (!isLeaf(title) || !MENU_TITLE_RE.test(title.textContent || '')) continue;
+      if (title.closest('#usc-overlay')) continue;
+      for (let node = title.parentElement, i = 0; node && i < 8; node = node.parentElement, i++) {
+        const labels = [];
+        for (const c of node.querySelectorAll('*')) {
+          if (isLeaf(c) && !c.closest('[data-nina-speed]') && parseSpeedLabel(c.textContent) !== null) {
+            labels.push(c);
+          }
+        }
+        if (labels.length >= 2) return labels;
+      }
+    }
+    return null;
+  }
+
   // ── Crunchyroll: extra speeds in its own "Abspielgeschwindigkeit" menu ──
   // The player's menu only offers 0.5x / 0.75x / 1x. Clone its own rows for
   // higher speeds so they look native, and route every selection — ours and
@@ -276,39 +307,9 @@
     chrome.storage.onChanged.addListener((c, area) => { if (area === 'sync' && c.nina_cr_options) readCrPlay(c.nina_cr_options.newValue); });
 
     const CR_EXTRA_SPEEDS = [1.25, 1.5, 1.75, 2, 2.5, 3];
-    const SPEED_LABEL_RE = /^(\d+(?:[.,]\d+)?)\s*x$/i;
-    const MENU_TITLE_RE = /abspielgeschwindigkeit|wiedergabegeschwindigkeit|playback speed/i;
     let crCheckTemplate = null;
     let crCheckLabelDepth = 0;
     let crHighlight = null; // { selected, plain } background colors of native rows
-
-    const isLeaf = (el) => el.children.length === 0;
-    const parseSpeedLabel = (text) => {
-      const m = SPEED_LABEL_RE.exec((text || '').trim());
-      return m ? parseFloat(m[1].replace(',', '.')) : null;
-    };
-    const speedLabelIn = (row) =>
-      [row, ...row.querySelectorAll('*')].find((c) => isLeaf(c) && parseSpeedLabel(c.textContent) !== null);
-
-    // Locate the menu via its title, then collect Crunchyroll's own speed
-    // labels inside it. Anchoring on the title keeps the "1x" toggle button
-    // in the control bar (same text, outside the menu) from matching.
-    function findNativeSpeedLabels() {
-      for (const title of document.querySelectorAll('span, div, p, h1, h2, h3, h4, label')) {
-        if (!isLeaf(title) || !MENU_TITLE_RE.test(title.textContent || '')) continue;
-        if (title.closest('#usc-overlay')) continue;
-        for (let node = title.parentElement, i = 0; node && i < 8; node = node.parentElement, i++) {
-          const labels = [];
-          for (const c of node.querySelectorAll('*')) {
-            if (isLeaf(c) && !c.closest('[data-nina-speed]') && parseSpeedLabel(c.textContent) !== null) {
-              labels.push(c);
-            }
-          }
-          if (labels.length >= 2) return labels;
-        }
-      }
-      return null;
-    }
 
     function updateSpeedChecks(rowsParent, nativeRows) {
       const customActive = !nativeRows.some((r) => Math.abs(r.speed - currentSpeed) < 0.01);
@@ -624,6 +625,150 @@
       try { ensureCrunchyrollVolumeSlider(); } catch (_) {}
       try { paintCrunchyrollSpeedButton(); } catch (_) {}
     }, 500);
+  }
+
+  // ── Netflix: extra speeds (2x / 2.5x / 3x) in its "Wiedergabegeschwindigkeit" menu ──
+  // Netflix's own menu stops at 1.5x. Clone one of its (unselected) entries
+  // for each higher speed so they look native, and route every selection —
+  // ours and Netflix's — through setSpeedTo() so speed-patch.js enforces it.
+  // Netflix still believes it is at its own rate (speed-patch spoofs the
+  // getter), so the "selected" look is driven from currentSpeed instead.
+  if (location.hostname.includes('netflix.com')) {
+    const NF_EXTRA_SPEEDS = [2, 2.5, 3];
+    let nfCtx = null;       // { rowsParent, nativeRows } of the menu currently in the DOM
+    let nfPlain = null;     // per-element look of an unselected entry
+    let nfSelected = null;  // per-element look of the selected entry
+    const NF_ARIA = ['aria-checked', 'aria-selected', 'aria-current'];
+
+    const rowLook = (row) =>
+      [row, ...row.querySelectorAll('*')].map((el) => {
+        const aria = {};
+        for (const a of NF_ARIA) if (el.hasAttribute(a)) aria[a] = el.getAttribute(a);
+        return { cls: el.getAttribute('class') || '', aria };
+      });
+    const lookSig = (look) => look.map((l) => l.cls + JSON.stringify(l.aria)).join('|');
+    const rowSig = (row) => lookSig(rowLook(row));
+    const nfApplied = new WeakMap(); // row -> 'selected' | 'plain', what we last painted
+
+    function applyRowLook(row, look) {
+      const els = [row, ...row.querySelectorAll('*')];
+      if (els.length !== look.length) return;
+      els.forEach((el, i) => {
+        if ((el.getAttribute('class') || '') !== look[i].cls) el.setAttribute('class', look[i].cls);
+        for (const [a, v] of Object.entries(look[i].aria)) {
+          if (el.getAttribute(a) !== v) el.setAttribute(a, v);
+        }
+      });
+    }
+
+    function updateNetflixSpeedMenu() {
+      if (!nfCtx || !nfCtx.rowsParent.isConnected) return;
+      // Remember how Netflix draws the selected entry the first time we see
+      // it, before we move the selection to one of our own rows.
+      if (!nfSelected) {
+        const sigs = nfCtx.nativeRows.map((r) => rowSig(r.row));
+        const counts = new Map();
+        sigs.forEach((s) => counts.set(s, (counts.get(s) || 0) + 1));
+        const odd = nfCtx.nativeRows.filter((r, i) => counts.get(sigs[i]) === 1);
+        if (odd.length === 1 && counts.size === 2) nfSelected = rowLook(odd[0].row);
+      }
+      if (!nfSelected || !nfPlain) return;
+      const selSig = lookSig(nfSelected), plainSig = lookSig(nfPlain);
+      for (const { row, speed } of [...nfCtx.nativeRows, ...nfCtx.customRows]) {
+        const want = Math.abs(speed - currentSpeed) < 0.01 ? 'selected' : 'plain';
+        const cur = rowSig(row);
+        if (cur === (want === 'selected' ? selSig : plainSig)) { nfApplied.set(row, want); continue; }
+        // Anything else (hover, focus) is left alone unless Netflix repainted
+        // the entry in the opposite state or we haven't painted it yet.
+        if (nfApplied.get(row) === want && cur !== (want === 'selected' ? plainSig : selSig)) continue;
+        applyRowLook(row, want === 'selected' ? nfSelected : nfPlain);
+        nfApplied.set(row, want);
+      }
+    }
+
+    function enhanceNetflixSpeedMenu() {
+      if (!document.querySelector('video')) return;
+      const labels = findNativeSpeedLabels();
+      if (!labels) { nfCtx = null; return; }
+
+      let rowsParent = labels[0].parentElement;
+      while (rowsParent && !labels.every((l) => rowsParent.contains(l))) rowsParent = rowsParent.parentElement;
+      if (!rowsParent) return;
+
+      const nativeRows = labels.map((label) => {
+        let row = label;
+        while (row && row.parentElement !== rowsParent) row = row.parentElement;
+        return { row, speed: parseSpeedLabel(label.textContent) };
+      }).filter((r) => r.row);
+      if (nativeRows.length < 2) return;
+      nativeRows.sort((a, b) => a.speed - b.speed);
+
+      // The unselected entries all look the same; the selected one is the odd one out.
+      const sigs = nativeRows.map((r) => rowSig(r.row));
+      const counts = new Map();
+      sigs.forEach((s) => counts.set(s, (counts.get(s) || 0) + 1));
+      let plainIdx = 0;
+      sigs.forEach((s, i) => { if (counts.get(s) > counts.get(sigs[plainIdx])) plainIdx = i; });
+      const template = nativeRows[plainIdx].row;
+      if (!nfPlain || counts.get(sigs[plainIdx]) > 1) nfPlain = rowLook(template);
+
+      const existing = [...rowsParent.querySelectorAll(':scope > [data-nina-speed]')];
+      const useComma = labels.some((l) => (l.textContent || '').includes(','));
+      let customRows;
+      if (existing.length) {
+        customRows = existing.map((row) => ({ row, speed: parseFloat(row.dataset.ninaSpeed) }));
+      } else {
+        let insertAfter = nativeRows[nativeRows.length - 1].row;
+        customRows = NF_EXTRA_SPEEDS.filter((s) => s > nativeRows[nativeRows.length - 1].speed).map((s) => {
+          const row = template.cloneNode(true);
+          row.dataset.ninaSpeed = String(s);
+          delete row.dataset.ninaBound;
+          row.removeAttribute('id');
+          row.querySelectorAll('[id]').forEach((n) => n.removeAttribute('id'));
+          const label = speedLabelIn(row);
+          if (label) {
+            const txt = String(s) + 'x';
+            label.textContent = useComma ? txt.replace('.', ',') : txt;
+          }
+          row.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setSpeedTo(s, false);
+            updateNetflixSpeedMenu();
+          });
+          insertAfter.after(row);
+          insertAfter = row;
+          return { row, speed: s };
+        });
+      }
+
+      for (const { row, speed } of nativeRows) {
+        if (row.dataset.ninaBound) continue;
+        row.dataset.ninaBound = '1';
+        // Netflix may skip its own update when it thinks nothing changed, so
+        // set the speed ourselves too, then repaint once React has settled.
+        row.addEventListener('click', () => {
+          setSpeedTo(speed, false);
+          setTimeout(updateNetflixSpeedMenu, 60);
+        });
+      }
+
+      nfCtx = { rowsParent, nativeRows, customRows };
+      updateNetflixSpeedMenu();
+    }
+
+    // Netflix's player re-renders constantly; look for the menu at most every 300 ms.
+    let nfMenuTimer = null;
+    new MutationObserver(() => {
+      if (nfMenuTimer) return;
+      nfMenuTimer = setTimeout(() => {
+        nfMenuTimer = null;
+        try { enhanceNetflixSpeedMenu(); } catch (_) {}
+      }, 300);
+    }).observe(document.documentElement, { childList: true, subtree: true });
+
+    // React writes its own classes back when it re-renders; re-assert ours.
+    setInterval(() => { try { updateNetflixSpeedMenu(); } catch (_) {} }, 500);
   }
 
   // (Volume slider up to 600 % in the Prime/Disney+/Joyn/Netflix players:

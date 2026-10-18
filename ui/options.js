@@ -885,7 +885,7 @@ function searchBookmarksRecursive(node, query) {
 const RESET_SYNC_KEYS = [
   'nina_cr_options', 'nina_cr_autolike', 'nina_keep_fullscreen', 'nina_hotkeys',
   'nina_notif_default', 'nina_notif_muted', 'nina_notif_enabled', 'nina_notif_newtab', 'nina_notif_desktop',
-  'nina_news_strip', 'nina_newtab_layout', 'nina_anilist_autosync', 'nina_anilist_plan_watchlist',
+  'nina_news_strip', 'nina_newtab_layout', 'nina_newtab_enabled', 'nina_anilist_autosync', 'nina_anilist_plan_watchlist',
   'nina_volume_boost', 'nina_stream_track', 'nina_library_settings'
 ];
 const RESET_LOCAL_KEYS = ['nina_widget_html'];
