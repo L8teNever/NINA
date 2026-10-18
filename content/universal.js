@@ -2043,9 +2043,10 @@
     // YouTube gets its own native-styled speed/volume controls (see
     // ensureYouTubeSpeedControls/ensureYouTubeVolumeBoost) — don't also show
     // the generic floating badge/panel there.
-    // Crunchyroll's own speed menu and volume slider are extended natively
-    // (see the crunchyroll.com block above), so the badge is redundant there too.
-    if (!isWatchPage() || isYouTubeHost || host.includes('crunchyroll.com')) {
+    // Crunchyroll's and Netflix's own speed menu and volume slider are
+    // extended natively (see the crunchyroll.com / netflix.com blocks above
+    // and stream-volume.js), so the badge is redundant there too.
+    if (!isWatchPage() || isYouTubeHost || host.includes('crunchyroll.com') || host.includes('netflix.com')) {
       const { overlay: existing, backdrop: existingBackdrop } = getExistingOverlayEls();
       if (existing) {
         existing.style.setProperty('display', 'none', 'important');

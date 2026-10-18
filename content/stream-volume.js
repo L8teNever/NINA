@@ -188,7 +188,7 @@
       const x = r.left + r.width / 2;
       // Netflix's popup is taller than ours: look above, inside and at the
       // top edge of our box
-      const ys = [r.top - 12, r.top + 6, r.top + r.height / 2, r.bottom - 6];
+      const ys = [r.top - 40, r.top - 12, r.top + 6, r.top + r.height / 2, r.bottom - 6, r.bottom + 3];
       box.style.pointerEvents = 'none';
       const hits = new Set();
       for (const y of ys) for (const e of document.elementsFromPoint(x, y)) hits.add(e);
@@ -231,6 +231,14 @@
       }, 450);
     }
     if (VOL_PLATFORM === 'netflix') {
+      // Netflix mounts its own popup right after the hover. Hide it in the
+      // observer callback — before the browser paints — instead of waiting
+      // for the 120 ms probe, which let the old slider flash behind ours.
+      new MutationObserver(() => {
+        if (!nf || !nf.box.classList.contains('open')) return;
+        const btn = document.querySelector('[data-uia^="control-volume"]');
+        if (btn) nfHideNative(nf.box, btn);
+      }).observe(document.documentElement, { childList: true, subtree: true });
       window.addEventListener('pointerover', (ev) => {
         if (!volOn) return;
         const btn = document.querySelector('[data-uia^="control-volume"]');
