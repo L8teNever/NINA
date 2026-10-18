@@ -741,6 +741,21 @@
       }
     }).observe(document.documentElement, { childList: true, subtree: true });
 
+    // Mouse wheel over the speed button (or the open menu): one stop forward / back.
+    const NF_STOPS = [0.5, 0.75, 1, 1.25, 1.5, ...NF_EXTRA_SPEEDS];
+    window.addEventListener('wheel', (e) => {
+      if (!e.deltaY || !(e.target instanceof Element)) return;
+      if (!e.target.closest('[data-uia*="speed" i], [' + NF_TRACK_ATTR + ']')) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const up = e.deltaY < 0;
+      // currentSpeed can sit between stops (hotkeys use 0.25 steps): go to the next stop in that direction
+      const next = up ? NF_STOPS.find((s) => s > currentSpeed + 0.01) : [...NF_STOPS].reverse().find((s) => s < currentSpeed - 0.01);
+      if (next === undefined) return;
+      setSpeedTo(next, true);
+      paintNetflixTrack();
+    }, { capture: true, passive: false });
+
     // Safety net (menu re-rendered without new nodes) and repaint after a hotkey.
     setInterval(() => {
       try { enhanceNetflixSpeedMenu(); paintNetflixTrack(); } catch (_) {}
