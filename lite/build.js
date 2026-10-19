@@ -102,6 +102,56 @@ for (const f of [
 ]) copy(f);
 copy('ui/options.js', 'lite/ui/options.js');
 
+// ── phone / battery ────────────────────────────────────────────────────────
+// Lite also runs in Android browsers with extension support (Lemur, Kiwi).
+// The page scripts are shared with NINA, so the heavy parts are trimmed here at
+// build time (every patch must match, otherwise the build fails): fewer full
+// DOM scans, slower polling, nothing while the tab is hidden.
+const patchOut = (rel, pairs) => {
+  const file = path.join(OUT, rel);
+  let text = fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
+  for (const [from, to] of pairs) {
+    if (!text.includes(from)) throw new Error('battery patch does not match in ' + rel + ': ' + from.slice(0, 60));
+    text = text.replace(from, () => to);
+  }
+  fs.writeFileSync(file, text);
+};
+// speed-patch: every DOM change used to trigger a scan of the whole page
+patchOut('content/speed-patch.js', [
+  [`    queueMicrotask(() => {
+      scanQueued = false;
+      scan();
+    });`, `    setTimeout(() => {
+      scanQueued = false;
+      scan();
+    }, 250);`],
+  ['setInterval(scan, 1500);', 'setInterval(scan, 4000);']
+]);
+// universal: the Netflix / Prime tick ran on every class/style change and every 200 ms
+patchOut('content/universal.js', [
+  ['const observer = new MutationObserver(platformTick);', `let tickTimer = null;
+    const observer = new MutationObserver(() => {
+      if (tickTimer || document.hidden) return;
+      tickTimer = setTimeout(() => { tickTimer = null; platformTick(); }, 400);
+    });`],
+  ['setInterval(platformTick, 200);', 'setInterval(() => { if (!document.hidden) platformTick(); }, 700);']
+]);
+patchOut('content/stream-series.js', [
+  ['setInterval(() => { scan(); scanPosters(); }, 1800);', 'setInterval(() => { if (!document.hidden) { scan(); scanPosters(); } }, 3500);']
+]);
+// popup: scale on phones (viewport, full width, bigger touch targets)
+patchOut('ui/popup.html', [
+  ['<meta charset="UTF-8">', '<meta charset="UTF-8">\n  <meta name="viewport" content="width=device-width, initial-scale=1">'],
+  ['</style>', `@media (max-width: 500px) {
+      body { width: auto; max-width: 480px; margin: 0 auto; padding: 14px; }
+      .icon-btn { width: 44px; height: 44px; }
+      .presets button { height: 40px; font-size: 14px; }
+      input[type=range] { height: 52px; }
+      .card { padding: 16px 16px 14px; }
+    }
+  </style>`]
+]);
+
 // settings page: Lite's template + the AniList section and styles of the main page
 const mainOptions = rd('ui/options.html');
 const styleStart = mainOptions.indexOf('<style>') + '<style>'.length;
@@ -119,6 +169,11 @@ if (secStart < 0) throw new Error('AniList section not found in ui/options.html'
   if (k < 0 || from < 0 || labelEnd < 0) throw new Error('new-tab switch not found in the AniList section');
   anilist = anilist.slice(0, from).trimEnd() + anilist.slice(to);
 }
+
+// wording that only made sense with the new tab / on Windows
+anilist = anilist
+  .replace(' oder in der Neuigkeiten-Leiste im neuen Tab', '')
+  .replace('echte Windows-Benachrichtigungen', 'echte System-Benachrichtigungen');
 
 put('ui/options.html', rd('lite/ui/options.template.html')
   .replace('<!--@STYLE-->', () => style)

@@ -9,6 +9,23 @@
   <link rel="stylesheet" href="options.css">
   <style>
 <!--@STYLE-->
+
+    /* phone: the sidebar becomes a scrolling tab bar on top */
+    @media (max-width: 840px) {
+      html, body { height: 100%; }
+      body { flex-direction: column; height: 100dvh; }
+      #sidebar { display: flex !important; flex-direction: row; align-items: center; width: 100%; height: auto !important; flex: none; border-radius: 0; }
+      #sidebar > div:first-child { display: none; }
+      #sidebar-nav { display: flex; flex-direction: row; gap: 6px; padding: 10px 12px !important; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+      #sidebar-nav::-webkit-scrollbar { display: none; }
+      #sidebar-nav .sidebar-link { flex: none; white-space: nowrap; margin: 0 !important; padding: 10px 16px; }
+      #sidebar-nav .sidebar-nav-label, #sidebar-nav .sidebar-separator { display: none; }
+      body > .flex-1 { height: auto !important; flex: 1 1 0; min-height: 0; }
+      #settingsContainer { padding: 14px 12px !important; }
+      .settings-row { flex-wrap: wrap; gap: 10px; }
+      .settings-row-copy { flex: 1 1 200px; min-width: 0; }
+      .settings-row select { width: 100% !important; min-width: 0 !important; }
+    }
   </style>
 </head>
 <body class="bg-m3-background-light dark:bg-m3-background-dark text-slate-800 dark:text-slate-100 font-sans transition-colors duration-300 min-h-screen overflow-hidden flex select-none">

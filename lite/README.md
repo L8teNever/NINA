@@ -23,3 +23,16 @@ Service Workers) und `lite/ui/` (Einstellungsseite). Ändert sich die Geschwindi
 Lite verwendet denselben `key` (= dieselbe Erweiterungs-ID) und denselben Google-OAuth-Client wie NINA. Dadurch funktioniert die
 Google-Anmeldung (Sync des Seiten-Trackings über Google Drive) ohne eigenen Client – Lite und NINA lassen sich aber nicht
 gleichzeitig installieren.
+
+## Handy (Lemur, Kiwi, …)
+
+Chrome für Android lädt keine Erweiterungen, Chromium-Browser wie Lemur oder Kiwi schon – dort die Zip entpacken und
+den Ordner als entpackte Erweiterung laden. Dafür ist Lite angepasst:
+
+- Einstellungen: auf schmalen Bildschirmen wird die Seitenleiste zu einer Tab-Leiste oben, Zeilen mit Auswahlfeldern brechen um
+- Popup: skaliert auf die Bildschirmbreite, größere Schieberegler und Tasten
+- Meine Serien: war bereits responsiv (Navigationsleiste unten)
+- Akku: `build.js` entschärft beim Bauen die Seitenskripte (`patchOut`) – Seiten-Scan nur gedrosselt statt bei jeder DOM-Änderung,
+  langsameres Polling und nichts, solange der Tab im Hintergrund ist. Passt ein Patch nicht mehr, bricht der Build ab.
+
+Die Google-Anmeldung nutzt `chrome.identity.getAuthToken`; ob ein Chromium-Fork ohne Google-Dienste das unterstützt, hängt vom Browser ab.

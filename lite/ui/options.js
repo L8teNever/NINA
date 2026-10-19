@@ -93,6 +93,8 @@
     document.querySelectorAll('.setting-section').forEach((s) => s.classList.toggle('is-active', s.id === id));
     document.querySelectorAll('.sidebar-link').forEach((l) => l.classList.toggle('active', l.getAttribute('data-target') === id));
     $('settingsContainer').scrollTop = 0;
+    const on = document.querySelector('.sidebar-link.active');
+    if (on && on.scrollIntoView) on.scrollIntoView({ inline: 'center', block: 'nearest' });
     if (history.replaceState) history.replaceState(null, '', '#' + id);
   }
   document.querySelectorAll('.sidebar-link[data-target]').forEach((l) => {
