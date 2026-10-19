@@ -402,6 +402,9 @@ function getSeriesName(showName) {
 // settings (synced as nina_google_web_client_id). Token + expiry are cached.
 const G_WEB_CLIENT = 'nina_google_web_client_id';   // sync
 const G_WEB_TOKEN = 'nina_google_web_token';        // local: { token, expiresAt }
+// the project's Web-application client (redirect https://<extension id>.chromiumapp.org/); a client id is not a secret
+const G_DEFAULT_WEB_CLIENT = '787110895260-usi580p6dk028tmqi6fn6cddiphnau2o.apps.googleusercontent.com';
+const IS_ANDROID = /Android/i.test(navigator.userAgent);
 const G_SCOPES = ['https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/userinfo.email'];
 
 function chromeToken(interactive) {
@@ -423,8 +426,7 @@ async function webToken(interactive) {
   const store = await chrome.storage.local.get([G_WEB_TOKEN]);
   const cached = store[G_WEB_TOKEN];
   if (cached && cached.token && cached.expiresAt > Date.now() + 60000) return cached.token;
-  const clientId = ((await chrome.storage.sync.get([G_WEB_CLIENT]))[G_WEB_CLIENT] || '').trim();
-  if (!clientId) throw new Error('Für diesen Browser zuerst die Web-Client-ID eintragen (Einstellungen → Google-Konto)');
+  const clientId = ((await chrome.storage.sync.get([G_WEB_CLIENT]))[G_WEB_CLIENT] || '').trim() || G_DEFAULT_WEB_CLIENT;
   const url = 'https://accounts.google.com/o/oauth2/v2/auth?' + new URLSearchParams({
     client_id: clientId,
     response_type: 'token',
@@ -444,9 +446,11 @@ async function webToken(interactive) {
 
 async function googleToken(interactive) {
   const { [G_WEB_CLIENT]: webClient } = await chrome.storage.sync.get([G_WEB_CLIENT]);
-  // a web client id is only entered on browsers where the normal way fails;
-  // once it is set, the login window is used (works on desktop Chrome, too)
-  return webClient ? webToken(interactive) : chromeToken(interactive);
+  // phones (no Google account in the browser) and a hand-entered web client use
+  // the login window; desktop Chrome uses its own account, and falls back to
+  // the login window if that fails
+  if (webClient || IS_ANDROID) return webToken(interactive);
+  try { return await chromeToken(interactive); } catch (_) { return webToken(interactive); }
 }
 
 async function googleSignOut(token) {
