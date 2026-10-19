@@ -2753,3 +2753,7 @@ a.et:hover { color: var(--primary); text-decoration: underline; }
   opacity: .8;
 }
 
+/* phones: two posters per row instead of one huge card */
+@media (max-width: 760px) {
+  .grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+}

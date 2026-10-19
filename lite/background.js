@@ -3,7 +3,7 @@
 // background.js (no new tab, notes, Drive, AI text, hotkeys). When the main
 // file's speed handling changes, mirror it here.
 
-importScripts('lib/anilist-bg.js', 'lib/library-core.js', 'lib/library-providers.js', 'lib/view-log-bg.js', 'lib/library-drive-sync.js');
+importScripts('lib/anilist-bg.js', 'lib/library-core.js', 'lib/library-providers.js', 'lib/partner-bg.js', 'lib/view-log-bg.js', 'lib/library-drive-sync.js');
 
 const STREAMING_HOSTS = [
   'joyn.de', 'youtube.com', 'youtu.be', 'netflix.com',

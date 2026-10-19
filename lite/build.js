@@ -24,7 +24,7 @@ const read = (p) => JSON.parse(rd(p));
 
 const main = read('manifest.json');
 // Lite has its own version number (releases tagged lite-v<version>)
-const LITE_VERSION = '3.5.0';
+const LITE_VERSION = '3.5.1';
 
 // content scripts Lite keeps
 const KEEP_JS = new Set([
@@ -92,7 +92,7 @@ for (const cs of contentScripts) {
   for (const f of cs.js) copy(f);
   for (const f of cs.css || []) copy(f);
 }
-for (const f of ['lib/anilist-bg.js', 'lib/view-log-bg.js', 'lib/hotkeys-shared.js', 'lib/library-drive-sync.js']) copy(f);
+for (const f of ['lib/anilist-bg.js', 'lib/view-log-bg.js', 'lib/hotkeys-shared.js', 'lib/library-drive-sync.js', 'lib/partner-bg.js']) copy(f);
 for (const f of fs.readdirSync(path.join(ROOT, 'icons'))) {
   if (/^icon(16|32|48|128)?\.png$/.test(f)) copy('icons/' + f);
 }
