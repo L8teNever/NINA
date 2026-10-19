@@ -1016,6 +1016,8 @@ function initDriveUI() {
             fetch('https://oauth2.googleapis.com/revoke', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: `token=${encodeURIComponent(token)}` }).catch(() => {});
             chrome.identity.removeCachedAuthToken({ token }, () => {});
           }
+          // remembered so the library sync doesn't reconnect by itself
+          chrome.storage.local.set({ nina_drive_off: true });
           chrome.storage.local.remove(DRIVE_AUTH_KEY, () => updateDriveUI(false));
         });
       } else {
@@ -1026,7 +1028,7 @@ function initDriveUI() {
             showToast('Google-Verbindung fehlgeschlagen: ' + (chrome.runtime.lastError ? chrome.runtime.lastError.message : 'kein Token erhalten'));
             return;
           }
-          chrome.storage.local.set({ [DRIVE_AUTH_KEY]: true }, () => {
+          chrome.storage.local.set({ [DRIVE_AUTH_KEY]: true, nina_drive_off: false }, () => {
             fetch('https://www.googleapis.com/oauth2/v1/userinfo?alt=json', {
               headers: { Authorization: `Bearer ${token}` }
             }).then(r => r.json()).then(info => {

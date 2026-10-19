@@ -10,6 +10,9 @@ self.ninaGoogleToken = (interactive) => new Promise((resolve, reject) => {
   });
 });
 
+// silent check whether Chrome still has the Drive grant (reconnect after a reinstall)
+self.ninaGoogleTokenSilent = () => self.ninaGoogleToken(false);
+
 importScripts('lib/anilist-bg.js', 'lib/sync-extra-bg.js', 'lib/library-core.js', 'lib/library-providers.js', 'lib/partner-bg.js', 'lib/view-log-bg.js', 'lib/library-drive-sync.js');
 
 const STREAMING_HOSTS = [
