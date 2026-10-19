@@ -224,6 +224,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true; // async
   }
 
+  if (message.type === 'NINA_DRIVE_PULL') {
+    drivePull().then((r) => sendResponse(r)).catch((e) => sendResponse({ error: e.message }));
+    return true;
+  }
+
   if (message.type === 'NINA_REVOKE_TOKEN') {
     googleSignOut(message.token).then(() => sendResponse({ ok: true }));
     return true;
@@ -458,6 +463,7 @@ async function handleRedirect(tabId, url) {
     const patch = { [G_RESULT]: { state: pending.state, ok: !!res.token, error: res.error || '' } };
     if (res.token) Object.assign(patch, { [G_WEB_TOKEN]: { token: res.token, expiresAt: res.expiresAt }, nina_drive_connected: true });
     await chrome.storage.local.set(patch);
+    if (res.token) drivePull().catch(() => {});
   } finally {
     redirectBusy = false;
   }
@@ -559,3 +565,83 @@ async function googleSignOut(token) {
   }
   await chrome.storage.local.remove(G_WEB_TOKEN);
 }
+
+// ── Watch status from Google Drive ───────────────────────────────────────────
+// The streaming-site scripts (stream-watch.js, crunchyroll-watch-status.js)
+// only pull NINA/…-watch-status.json from Drive when such a site is opened.
+// "Meine Serien" reads local storage only, so a fresh install (e.g. on the
+// phone) stayed empty. The worker pulls both files after the login, when the
+// library opens and every 30 minutes, merged like the site scripts do it.
+const DRIVE_FILES = [
+  { name: 'crunchyroll-watch-status.json', key: 'nina_cr_watch_status', merge: mergeCrStatus },
+  { name: 'stream-watch-status.json', key: 'nina_stream_watch_status', merge: mergeStreamStatus }
+];
+
+function mergeCrStatus(a, b) {   // = crunchyroll-watch-status.js mergeStatusMaps
+  const merged = { ...a };
+  for (const id in b) {
+    const existing = merged[id], incoming = b[id];
+    if (!existing) { merged[id] = incoming; continue; }
+    const winner = (incoming.updatedAt || 0) >= (existing.updatedAt || 0) ? incoming : existing;
+    const loser = winner === incoming ? existing : incoming;
+    const furthest = isFinite(winner.lastPosition) && isFinite(loser.lastPosition)
+      ? Math.max(winner.lastPosition, loser.lastPosition)
+      : (winner.lastPosition ?? loser.lastPosition);
+    merged[id] = { ...loser, ...winner, lastPosition: furthest };
+  }
+  return merged;
+}
+
+function mergeStreamStatus(a, b) {   // = stream-watch.js merge
+  const out = { ...a };
+  for (const id in b) {
+    const x = out[id], y = b[id];
+    if (!x) { out[id] = y; continue; }
+    const win = (y.updatedAt || 0) >= (x.updatedAt || 0) ? y : x;
+    const lose = win === y ? x : y;
+    const status = x.status === 'watched' || y.status === 'watched' ? 'watched' : win.status;
+    out[id] = { ...lose, ...win, status };
+  }
+  return out;
+}
+
+let drivePulling = null;
+function drivePull() {
+  if (drivePulling) return drivePulling;
+  drivePulling = (async () => {
+    const { nina_drive_connected: connected } = await chrome.storage.local.get(['nina_drive_connected']);
+    if (!connected) return { skipped: 'not connected' };
+    const token = await googleToken(false);
+    const get = async (url) => {
+      const r = await fetch(url, { headers: { Authorization: 'Bearer ' + token } });
+      if (!r.ok) throw new Error('Drive ' + r.status);
+      return r.json();
+    };
+    const find = async (name, parentId, mime) => {
+      let q = "name='" + name.replace(/'/g, "\\'") + "' and trashed=false";
+      if (mime) q += " and mimeType='" + mime + "'";
+      if (parentId) q += " and '" + parentId + "' in parents";
+      const res = await get('https://www.googleapis.com/drive/v3/files?spaces=drive&fields=files(id,name)&q=' + encodeURIComponent(q));
+      return res.files && res.files[0];
+    };
+    const folder = await find('NINA', null, 'application/vnd.google-apps.folder');
+    if (!folder) return { files: 0 };
+    let files = 0, entries = 0;
+    for (const f of DRIVE_FILES) {
+      const file = await find(f.name, folder.id);
+      if (!file) continue;
+      const remote = await get('https://www.googleapis.com/drive/v3/files/' + file.id + '?alt=media');
+      const local = (await chrome.storage.local.get([f.key]))[f.key] || {};
+      const merged = f.merge(local, remote || {});
+      if (JSON.stringify(merged) !== JSON.stringify(local)) await chrome.storage.local.set({ [f.key]: merged });
+      files++;
+      entries += Object.keys(remote || {}).length;
+    }
+    await chrome.storage.local.set({ nina_drive_last_pull: { at: Date.now(), files, entries } });
+    return { files, entries };
+  })().finally(() => { drivePulling = null; });
+  return drivePulling;
+}
+
+chrome.alarms.create('nina-drive-pull', { periodInMinutes: 30 });
+chrome.alarms.onAlarm.addListener((a) => { if (a.name === 'nina-drive-pull') drivePull().catch(() => {}); });
