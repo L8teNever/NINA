@@ -54,12 +54,22 @@
       for (const k of MERGE_MAPS) if (local[k]) local[k] = mergeMaps(current[k], local[k]);
       await setAll('local', local);
       if (data.sync && typeof data.sync === 'object') {
-        // sync has small per-item limits; skip anything that doesn't fit.
-        for (const [k, v] of Object.entries(data.sync)) {
-          try { await setAll('sync', { [k]: v }); } catch (_) {}
+        // Chrome allows only 120 sync writes per minute: write in chunks (one
+        // write each); only a chunk that fails is retried key by key, slowly
+        // enough to stay under the limit, skipping what doesn't fit.
+        const entries = Object.entries(data.sync);
+        let failed = 0;
+        for (let i = 0; i < entries.length; i += 25) {
+          const chunk = entries.slice(i, i + 25);
+          try { await setAll('sync', Object.fromEntries(chunk)); continue; } catch (_) {}
+          for (const [k, v] of chunk) {
+            try { await setAll('sync', { [k]: v }); } catch (_) { failed++; }
+            await new Promise((r) => setTimeout(r, 600));
+          }
         }
+        if (failed) status.textContent = failed + ' synchronisierte Einträge passten nicht und wurden übersprungen.';
       }
-      status.textContent = 'Importiert (' + Object.keys(local).length + ' Einträge). Seite wird neu geladen …';
+      status.textContent = 'Importiert (' + Object.keys(local).length + ' lokale, ' + Object.keys(data.sync || {}).length + ' synchronisierte Einträge). Seite wird neu geladen …';
       setTimeout(() => location.reload(), 1200);
     } catch (e) {
       status.textContent = 'Import fehlgeschlagen: ' + (e && e.message || e);
