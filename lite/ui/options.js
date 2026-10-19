@@ -83,7 +83,7 @@
       } else {
         paintDrive('busy');
         const res = await ask({ type: 'NINA_GET_TOKEN', interactive: true });
-        if (res.token) chrome.storage.local.set({ [DRIVE_KEY]: true }, () => { showAccount(res.token); ask({ type: 'NINA_DRIVE_PULL' }); });
+        if (res.token) chrome.storage.local.set({ [DRIVE_KEY]: true }, () => showAccount(res.token));
         else paintDrive('error', res.error);
       }
       busy = false;

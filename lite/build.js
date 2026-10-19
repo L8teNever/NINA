@@ -24,7 +24,7 @@ const read = (p) => JSON.parse(rd(p));
 
 const main = read('manifest.json');
 // Lite has its own version number (releases tagged lite-v<version>)
-const LITE_VERSION = '3.4.0';
+const LITE_VERSION = '3.5.0';
 
 // content scripts Lite keeps
 const KEEP_JS = new Set([
@@ -92,13 +92,13 @@ for (const cs of contentScripts) {
   for (const f of cs.js) copy(f);
   for (const f of cs.css || []) copy(f);
 }
-for (const f of ['lib/anilist-bg.js', 'lib/view-log-bg.js', 'lib/hotkeys-shared.js']) copy(f);
+for (const f of ['lib/anilist-bg.js', 'lib/view-log-bg.js', 'lib/hotkeys-shared.js', 'lib/library-drive-sync.js']) copy(f);
 for (const f of fs.readdirSync(path.join(ROOT, 'icons'))) {
   if (/^icon(16|32|48|128)?\.png$/.test(f)) copy('icons/' + f);
 }
 for (const f of [
   'ui/popup.html', 'ui/popup.js',
-  'ui/library.html', 'ui/library.js', 'ui/library.css',
+  'ui/library.html', 'ui/library.js', 'ui/library.css', 'ui/library-sync.js',
   'ui/options.css', 'ui/sidepanel-custom.css', 'ui/tailwind.min.css',
   'ui/anilist-settings.js', 'ui/crunchyroll-settings.js'
 ]) copy(f);
@@ -141,9 +141,6 @@ patchOut('content/universal.js', [
 patchOut('content/stream-series.js', [
   ['setInterval(() => { scan(); scanPosters(); }, 1800);', 'setInterval(() => { if (!document.hidden) { scan(); scanPosters(); } }, 3500);']
 ]);
-// library: pull the watch status from Drive when it opens
-copy('ui/library-sync.js', 'lite/ui/library-sync.js');
-patchOut('ui/library.html', [['<script src="library.js"></script>', '<script src="library.js"></script>\n  <script src="library-sync.js"></script>']]);
 // popup: scale on phones (viewport, full width, bigger touch targets)
 patchOut('ui/popup.html', [
   ['<meta charset="UTF-8">', '<meta charset="UTF-8">\n  <meta name="viewport" content="width=device-width, initial-scale=1">'],

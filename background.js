@@ -2,7 +2,15 @@
 // Re-injects speed/frame scripts after SPA navigations on streaming sites
 // (the toolbar icon opens ui/popup.html).
 
-importScripts('lib/anilist-bg.js', 'lib/sync-extra-bg.js', 'lib/library-core.js', 'lib/library-providers.js', 'lib/partner-bg.js', 'lib/view-log-bg.js');
+// Google token for the Drive sync of "Meine Serien" (lib/library-drive-sync.js)
+self.ninaGoogleToken = (interactive) => new Promise((resolve, reject) => {
+  chrome.identity.getAuthToken({ interactive: !!interactive }, (token) => {
+    if (chrome.runtime.lastError || !token) reject(new Error(chrome.runtime.lastError ? chrome.runtime.lastError.message : 'Kein Token'));
+    else resolve(token);
+  });
+});
+
+importScripts('lib/anilist-bg.js', 'lib/sync-extra-bg.js', 'lib/library-core.js', 'lib/library-providers.js', 'lib/partner-bg.js', 'lib/view-log-bg.js', 'lib/library-drive-sync.js');
 
 const STREAMING_HOSTS = [
   'joyn.de', 'youtube.com', 'youtu.be', 'netflix.com',
