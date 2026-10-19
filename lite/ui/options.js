@@ -48,56 +48,76 @@
   });
 
   // ── Google account (Drive sync of the watch status) ────────────────────
-  // Same flow as the main settings page: the token comes from chrome.identity,
-  // content/lib/google-drive.js (loaded on the tracked sites) picks the flag up.
+  // The token always comes from the background (lite/background.js →
+  // googleToken), which uses getAuthToken or, with a web client id, the
+  // Google login window.
   const DRIVE_KEY = 'nina_drive_connected';
-  const paintDrive = (connected, email, error) => {
-    $('drive-status-dot').style.background = connected ? '#22c55e' : (error ? '#ef4444' : '#94a3b8');
-    $('drive-status-text').textContent = error ? 'Anmeldung fehlgeschlagen: ' + error
-      : connected ? (email ? 'Verbunden als ' + email : 'Verbunden') : 'Nicht verbunden';
-    $('drive-connect-btn').textContent = connected ? 'Trennen' : 'Verbinden';
+  const WEB_CLIENT_KEY = 'nina_google_web_client_id';
+  const ask = (msg) => new Promise((resolve) => {
+    chrome.runtime.sendMessage(msg, (res) => resolve(chrome.runtime.lastError ? { error: chrome.runtime.lastError.message } : (res || { error: 'Keine Antwort' })));
+  });
+  let busy = false;
+  const paintDrive = (state, detail) => {
+    const colors = { on: '#22c55e', off: '#94a3b8', busy: '#f59e0b', error: '#ef4444' };
+    $('drive-status-dot').style.background = colors[state];
+    $('drive-status-text').textContent = state === 'on' ? (detail ? 'Verbunden als ' + detail : 'Verbunden')
+      : state === 'busy' ? 'Anmeldung läuft …'
+      : state === 'error' ? 'Anmeldung fehlgeschlagen: ' + detail : 'Nicht verbunden';
+    $('drive-connect-btn').textContent = state === 'on' ? 'Trennen' : 'Verbinden';
   };
-  const withEmail = (token) => fetch('https://www.googleapis.com/oauth2/v1/userinfo?alt=json', { headers: { Authorization: 'Bearer ' + token } })
-    .then((r) => r.json()).then((i) => paintDrive(true, i.email)).catch(() => paintDrive(true));
-  chrome.storage.local.get([DRIVE_KEY], (r) => {
-    if (!r[DRIVE_KEY]) { paintDrive(false); return; }
-    chrome.identity.getAuthToken({ interactive: false }, (token) => {
-      if (chrome.runtime.lastError || !token) paintDrive(false); else withEmail(token);
-    });
+  const showAccount = (token) => fetch('https://www.googleapis.com/oauth2/v1/userinfo?alt=json', { headers: { Authorization: 'Bearer ' + token } })
+    .then((r) => r.json()).then((i) => paintDrive('on', i.email)).catch(() => paintDrive('on'));
+  chrome.storage.local.get([DRIVE_KEY], async (r) => {
+    if (!r[DRIVE_KEY]) { paintDrive('off'); return; }
+    const res = await ask({ type: 'NINA_GET_TOKEN', interactive: false });
+    if (res.token) showAccount(res.token); else paintDrive('off');
   });
   $('drive-connect-btn').addEventListener('click', () => {
-    chrome.storage.local.get([DRIVE_KEY], (r) => {
+    if (busy) return;
+    busy = true;
+    chrome.storage.local.get([DRIVE_KEY], async (r) => {
       if (r[DRIVE_KEY]) {
-        chrome.identity.getAuthToken({ interactive: false }, (token) => {
-          if (token) {
-            fetch('https://oauth2.googleapis.com/revoke', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'token=' + encodeURIComponent(token) }).catch(() => {});
-            chrome.identity.removeCachedAuthToken({ token }, () => {});
-          }
-          chrome.storage.local.remove(DRIVE_KEY, () => paintDrive(false));
-        });
+        const res = await ask({ type: 'NINA_GET_TOKEN', interactive: false });
+        await ask({ type: 'NINA_REVOKE_TOKEN', token: res.token });
+        chrome.storage.local.remove(DRIVE_KEY, () => paintDrive('off'));
       } else {
-        chrome.identity.getAuthToken({ interactive: true }, (token) => {
-          if (chrome.runtime.lastError || !token) {
-            paintDrive(false, null, chrome.runtime.lastError ? chrome.runtime.lastError.message : 'kein Token erhalten');
-            return;
-          }
-          chrome.storage.local.set({ [DRIVE_KEY]: true }, () => withEmail(token));
-        });
+        paintDrive('busy');
+        const res = await ask({ type: 'NINA_GET_TOKEN', interactive: true });
+        if (res.token) chrome.storage.local.set({ [DRIVE_KEY]: true }, () => showAccount(res.token));
+        else paintDrive('error', res.error);
       }
+      busy = false;
     });
+  });
+
+  // web client for phone browsers
+  const redirect = chrome.identity && chrome.identity.getRedirectURL ? chrome.identity.getRedirectURL() : '';
+  $('g-redirect').textContent = redirect || '(in diesem Browser nicht verfügbar)';
+  $('g-copy').addEventListener('click', () => {
+    navigator.clipboard.writeText(redirect).then(() => {
+      $('g-copy').textContent = 'Kopiert';
+      setTimeout(() => { $('g-copy').textContent = 'Kopieren'; }, 1500);
+    }).catch(() => {});
+  });
+  const webClient = $('g-web-client');
+  chrome.storage.sync.get([WEB_CLIENT_KEY], (r) => { webClient.value = r[WEB_CLIENT_KEY] || ''; });
+  webClient.addEventListener('change', () => {
+    const v = webClient.value.trim();
+    if (v) chrome.storage.sync.set({ [WEB_CLIENT_KEY]: v }); else chrome.storage.sync.remove(WEB_CLIENT_KEY);
+    chrome.storage.local.remove('nina_google_web_token');
   });
 
   // ── Pages ──────────────────────────────────────────────────────────────
   function showSection(id) {
     if (!id || !$(id)) return;
     document.querySelectorAll('.setting-section').forEach((s) => s.classList.toggle('is-active', s.id === id));
-    document.querySelectorAll('.sidebar-link').forEach((l) => l.classList.toggle('active', l.getAttribute('data-target') === id));
+    document.querySelectorAll('.sidebar-link, .m-tab').forEach((l) => l.classList.toggle('active', l.getAttribute('data-target') === id));
     $('settingsContainer').scrollTop = 0;
-    const on = document.querySelector('.sidebar-link.active');
+    const on = document.querySelector('.m-tab.active');
     if (on && on.scrollIntoView) on.scrollIntoView({ inline: 'center', block: 'nearest' });
     if (history.replaceState) history.replaceState(null, '', '#' + id);
   }
-  document.querySelectorAll('.sidebar-link[data-target]').forEach((l) => {
+  document.querySelectorAll('.sidebar-link[data-target], .m-tab[data-target]').forEach((l) => {
     l.addEventListener('click', (e) => { e.preventDefault(); showSection(l.getAttribute('data-target')); });
   });
   showSection((location.hash || '').replace('#', '') || 'cat-playback');

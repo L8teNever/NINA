@@ -216,30 +216,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return false;
   }
 
-  // Google Drive Auth – chrome.identity nur im Background verfügbar
+  // Google sign-in (Drive sync of the watch status): see googleToken() below
   if (message.type === 'NINA_GET_TOKEN') {
-    chrome.identity.getAuthToken({ interactive: message.interactive || false }, (token) => {
-      if (chrome.runtime.lastError) {
-        sendResponse({ error: chrome.runtime.lastError.message });
-      } else {
-        sendResponse({ token });
-      }
-    });
+    googleToken(!!message.interactive)
+      .then((token) => sendResponse({ token }))
+      .catch((e) => sendResponse({ error: e.message || String(e) }));
     return true; // async
   }
 
   if (message.type === 'NINA_REVOKE_TOKEN') {
-    if (message.token) {
-      // POST statt GET damit Token nicht in URLs/Logs landet
-      fetch('https://oauth2.googleapis.com/revoke', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `token=${encodeURIComponent(message.token)}`
-      }).catch(() => {});
-      chrome.identity.removeCachedAuthToken({ token: message.token }, () => sendResponse({ ok: true }));
-    } else {
-      sendResponse({ ok: true });
-    }
+    googleSignOut(message.token).then(() => sendResponse({ ok: true }));
     return true;
   }
 
@@ -404,4 +390,75 @@ function getSeriesName(showName) {
   s = s.replace(/\b\d+\b/g, '');
   // Clean up extra spaces
   return s.replace(/\s+/g, ' ').trim();
+}
+
+// ── Google sign-in ───────────────────────────────────────────────────────────
+// Desktop Chrome: chrome.identity.getAuthToken with the extension's own OAuth
+// client (manifest "oauth2"). Android Chromium browsers (Lemur, Kiwi …) have
+// no Google account in the browser, so getAuthToken fails or never answers.
+// There the sign-in falls back to launchWebAuthFlow (a Google login window)
+// with a "Web application" OAuth client whose redirect URI is
+// chrome.identity.getRedirectURL() — its client id is entered once in the
+// settings (synced as nina_google_web_client_id). Token + expiry are cached.
+const G_WEB_CLIENT = 'nina_google_web_client_id';   // sync
+const G_WEB_TOKEN = 'nina_google_web_token';        // local: { token, expiresAt }
+const G_SCOPES = ['https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/userinfo.email'];
+
+function chromeToken(interactive) {
+  return new Promise((resolve, reject) => {
+    if (!chrome.identity || !chrome.identity.getAuthToken) { reject(new Error('getAuthToken nicht verfügbar')); return; }
+    // some browsers never call back: give up after a while
+    const timer = setTimeout(() => reject(new Error('Keine Antwort vom Browser')), interactive ? 20000 : 5000);
+    try {
+      chrome.identity.getAuthToken({ interactive }, (token) => {
+        clearTimeout(timer);
+        if (chrome.runtime.lastError || !token) reject(new Error(chrome.runtime.lastError ? chrome.runtime.lastError.message : 'Kein Token erhalten'));
+        else resolve(token);
+      });
+    } catch (e) { clearTimeout(timer); reject(e); }
+  });
+}
+
+async function webToken(interactive) {
+  const store = await chrome.storage.local.get([G_WEB_TOKEN]);
+  const cached = store[G_WEB_TOKEN];
+  if (cached && cached.token && cached.expiresAt > Date.now() + 60000) return cached.token;
+  const clientId = ((await chrome.storage.sync.get([G_WEB_CLIENT]))[G_WEB_CLIENT] || '').trim();
+  if (!clientId) throw new Error('Für diesen Browser zuerst die Web-Client-ID eintragen (Einstellungen → Google-Konto)');
+  const url = 'https://accounts.google.com/o/oauth2/v2/auth?' + new URLSearchParams({
+    client_id: clientId,
+    response_type: 'token',
+    redirect_uri: chrome.identity.getRedirectURL(),
+    scope: G_SCOPES.join(' '),
+    include_granted_scopes: 'true',
+    ...(interactive ? { prompt: 'select_account' } : { prompt: 'none' })
+  });
+  const redirect = await chrome.identity.launchWebAuthFlow({ url, interactive });
+  const params = new URLSearchParams((redirect || '').split('#')[1] || '');
+  const token = params.get('access_token');
+  if (!token) throw new Error(params.get('error') || 'Anmeldung abgebrochen');
+  const expiresAt = Date.now() + (parseInt(params.get('expires_in'), 10) || 3600) * 1000;
+  await chrome.storage.local.set({ [G_WEB_TOKEN]: { token, expiresAt } });
+  return token;
+}
+
+async function googleToken(interactive) {
+  const { [G_WEB_CLIENT]: webClient } = await chrome.storage.sync.get([G_WEB_CLIENT]);
+  // a web client id is only entered on browsers where the normal way fails;
+  // once it is set, the login window is used (works on desktop Chrome, too)
+  return webClient ? webToken(interactive) : chromeToken(interactive);
+}
+
+async function googleSignOut(token) {
+  const { [G_WEB_TOKEN]: cached } = await chrome.storage.local.get([G_WEB_TOKEN]);
+  const tokens = [token, cached && cached.token].filter(Boolean);
+  for (const t of new Set(tokens)) {
+    fetch('https://oauth2.googleapis.com/revoke', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'token=' + encodeURIComponent(t)
+    }).catch(() => {});
+    try { chrome.identity.removeCachedAuthToken({ token: t }, () => void chrome.runtime.lastError); } catch (_) {}
+  }
+  await chrome.storage.local.remove(G_WEB_TOKEN);
 }

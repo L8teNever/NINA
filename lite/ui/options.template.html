@@ -10,18 +10,15 @@
   <style>
 <!--@STYLE-->
 
-    /* phone: the sidebar becomes a scrolling tab bar on top */
+    /* phone: own tab bar on top (the sidebar is hidden below 840 px by options.css) */
+    .m-tabs { display: none; }
     @media (max-width: 840px) {
-      html, body { height: 100%; }
-      body { flex-direction: column; height: 100dvh; }
-      #sidebar { display: flex !important; flex-direction: row; align-items: center; width: 100%; height: auto !important; flex: none; border-radius: 0; }
-      #sidebar > div:first-child { display: none; }
-      #sidebar-nav { display: flex; flex-direction: row; gap: 6px; padding: 10px 12px !important; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
-      #sidebar-nav::-webkit-scrollbar { display: none; }
-      #sidebar-nav .sidebar-link { flex: none; white-space: nowrap; margin: 0 !important; padding: 10px 16px; }
-      #sidebar-nav .sidebar-nav-label, #sidebar-nav .sidebar-separator { display: none; }
-      body > .flex-1 { height: auto !important; flex: 1 1 0; min-height: 0; }
-      #settingsContainer { padding: 14px 12px !important; }
+      .m-tabs { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 10px 12px; flex: none; }
+      .m-tabs::-webkit-scrollbar { display: none; }
+      .m-tab { flex: none; padding: 10px 16px; border-radius: 999px; border: 1px solid rgba(148,163,184,.25); background: transparent; color: #94a3b8; font-size: 14px; font-weight: 600; white-space: nowrap; text-decoration: none; }
+      .m-tab.active { background: #004f56; border-color: transparent; color: #e0f7f9; }
+      body > .flex-1 { min-width: 0; width: 100%; }
+      #settingsContainer { padding: 6px 12px 14px !important; }
       .settings-row { flex-wrap: wrap; gap: 10px; }
       .settings-row-copy { flex: 1 1 200px; min-width: 0; }
       .settings-row select { width: 100% !important; min-width: 0 !important; }
@@ -64,6 +61,12 @@
   </div>
 
   <div class="flex-1 flex flex-col h-screen relative bg-m3-background-light dark:bg-m3-background-dark">
+    <nav class="m-tabs" aria-label="Bereiche">
+      <a href="#cat-playback" class="m-tab" data-target="cat-playback">Wiedergabe</a>
+      <a href="library.html" target="_blank" class="m-tab">Meine Serien ↗</a>
+      <a href="#cat-google" class="m-tab" data-target="cat-google">Google-Konto</a>
+      <a href="#cat-anilist" class="m-tab" data-target="cat-anilist">AniList</a>
+    </nav>
     <div class="flex-1 overflow-y-auto px-8 py-6 custom-scrollbar" id="settingsContainer">
       <div class="max-w-3xl mx-auto space-y-10 pb-20">
 
@@ -149,6 +152,23 @@
                 <li>NINA sieht nur Dateien, die es selbst erstellt hat (<code class="text-xs bg-slate-100 dark:bg-white/5 px-1 rounded">drive.file</code>-Berechtigung).</li>
                 <li>Ohne Anmeldung bleibt alles wie bisher lokal in diesem Browser.</li>
               </ul>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <div class="settings-card-pad space-y-3">
+              <p class="text-xs font-semibold text-slate-600 dark:text-slate-300">Handy-Browser (Lemur, Kiwi …) – einmalig einrichten</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Dort gibt es kein Google-Konto im Browser, deshalb klappt „Verbinden“ nur mit einem eigenen Web-Client. Am PC mit Chrome brauchst du das nicht.</p>
+              <ol class="text-xs text-slate-500 dark:text-slate-400 space-y-1.5 list-decimal pl-4">
+                <li>In der <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener" class="al-a">Google Cloud Console</a> (dasselbe Projekt wie NINA) „Anmeldedaten erstellen → OAuth-Client-ID“ wählen, Typ <strong>Webanwendung</strong>.</li>
+                <li>Unter „Autorisierte Weiterleitungs-URIs“ genau diese eintragen:
+                  <div class="al-copy-row"><code id="g-redirect" class="al-code">…</code><button id="g-copy" class="al-a al-btn-link">Kopieren</button></div>
+                </li>
+                <li>Die angezeigte Client-ID hier eintragen, dann oben „Verbinden“.</li>
+              </ol>
+              <div class="al-copy-row">
+                <input type="text" id="g-web-client" class="wh-search" placeholder="….apps.googleusercontent.com" autocomplete="off" spellcheck="false">
+              </div>
             </div>
           </div>
         </section>
