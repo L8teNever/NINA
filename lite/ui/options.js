@@ -47,6 +47,46 @@
     showDelay();
   });
 
+  // ── Google account (Drive sync of the watch status) ────────────────────
+  // Same flow as the main settings page: the token comes from chrome.identity,
+  // content/lib/google-drive.js (loaded on the tracked sites) picks the flag up.
+  const DRIVE_KEY = 'nina_drive_connected';
+  const paintDrive = (connected, email, error) => {
+    $('drive-status-dot').style.background = connected ? '#22c55e' : (error ? '#ef4444' : '#94a3b8');
+    $('drive-status-text').textContent = error ? 'Anmeldung fehlgeschlagen: ' + error
+      : connected ? (email ? 'Verbunden als ' + email : 'Verbunden') : 'Nicht verbunden';
+    $('drive-connect-btn').textContent = connected ? 'Trennen' : 'Verbinden';
+  };
+  const withEmail = (token) => fetch('https://www.googleapis.com/oauth2/v1/userinfo?alt=json', { headers: { Authorization: 'Bearer ' + token } })
+    .then((r) => r.json()).then((i) => paintDrive(true, i.email)).catch(() => paintDrive(true));
+  chrome.storage.local.get([DRIVE_KEY], (r) => {
+    if (!r[DRIVE_KEY]) { paintDrive(false); return; }
+    chrome.identity.getAuthToken({ interactive: false }, (token) => {
+      if (chrome.runtime.lastError || !token) paintDrive(false); else withEmail(token);
+    });
+  });
+  $('drive-connect-btn').addEventListener('click', () => {
+    chrome.storage.local.get([DRIVE_KEY], (r) => {
+      if (r[DRIVE_KEY]) {
+        chrome.identity.getAuthToken({ interactive: false }, (token) => {
+          if (token) {
+            fetch('https://oauth2.googleapis.com/revoke', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'token=' + encodeURIComponent(token) }).catch(() => {});
+            chrome.identity.removeCachedAuthToken({ token }, () => {});
+          }
+          chrome.storage.local.remove(DRIVE_KEY, () => paintDrive(false));
+        });
+      } else {
+        chrome.identity.getAuthToken({ interactive: true }, (token) => {
+          if (chrome.runtime.lastError || !token) {
+            paintDrive(false, null, chrome.runtime.lastError ? chrome.runtime.lastError.message : 'kein Token erhalten');
+            return;
+          }
+          chrome.storage.local.set({ [DRIVE_KEY]: true }, () => withEmail(token));
+        });
+      }
+    });
+  });
+
   // ── Pages ──────────────────────────────────────────────────────────────
   function showSection(id) {
     if (!id || !$(id)) return;

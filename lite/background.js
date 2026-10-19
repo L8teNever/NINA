@@ -216,6 +216,33 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return false;
   }
 
+  // Google Drive Auth – chrome.identity nur im Background verfügbar
+  if (message.type === 'NINA_GET_TOKEN') {
+    chrome.identity.getAuthToken({ interactive: message.interactive || false }, (token) => {
+      if (chrome.runtime.lastError) {
+        sendResponse({ error: chrome.runtime.lastError.message });
+      } else {
+        sendResponse({ token });
+      }
+    });
+    return true; // async
+  }
+
+  if (message.type === 'NINA_REVOKE_TOKEN') {
+    if (message.token) {
+      // POST statt GET damit Token nicht in URLs/Logs landet
+      fetch('https://oauth2.googleapis.com/revoke', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `token=${encodeURIComponent(message.token)}`
+      }).catch(() => {});
+      chrome.identity.removeCachedAuthToken({ token: message.token }, () => sendResponse({ ok: true }));
+    } else {
+      sendResponse({ ok: true });
+    }
+    return true;
+  }
+
   if (message.type === 'NINA_WINDOW_FULLSCREEN') {
     const windowId = sender.tab && sender.tab.windowId;
     if (windowId === undefined) { sendResponse({ ok: false }); return false; }

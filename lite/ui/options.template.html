@@ -16,6 +16,7 @@
   <svg class="ms-sprite" aria-hidden="true" focusable="false">
     <symbol id="ms-bolt" viewBox="0 0 24 24"><path d="M11 21h-1l1-7H7.5c-.88 0-.33-.75-.14-1.13C10.49 10.54 13.48 6.57 14 4h1l-1 7h3.5c.49 0 .56.33.47.51C13.82 14.07 11.54 18.43 11 21z"/></symbol>
     <symbol id="ms-play" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></symbol>
+    <symbol id="ms-cloud" viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/></symbol>
     <symbol id="ms-link" viewBox="0 0 24 24"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></symbol>
   </svg>
 
@@ -33,6 +34,10 @@
       <a href="library.html" target="_blank" class="sidebar-link sidebar-link-external">
         <svg class="ms-icon" aria-hidden="true"><use href="#ms-play"></use></svg>
         <span>Meine Serien ↗</span>
+      </a>
+      <a href="#cat-google" class="sidebar-link" data-target="cat-google">
+        <svg class="ms-icon" aria-hidden="true"><use href="#ms-cloud"></use></svg>
+        <span>Google-Konto</span>
       </a>
       <a href="#cat-anilist" class="sidebar-link" data-target="cat-anilist">
         <svg class="ms-icon" aria-hidden="true"><use href="#ms-link"></use></svg>
@@ -96,6 +101,37 @@
                 <input type="checkbox" data-sync-bool="nina_keep_fullscreen" checked>
                 <span class="md-switch-track"></span>
               </label>
+            </div>
+          </div>
+        </section>
+
+        <section id="cat-google" class="setting-section">
+          <header class="settings-group-header">
+            <svg class="ms-icon" aria-hidden="true"><use href="#ms-cloud"></use></svg>
+            <h2>Google-Konto</h2>
+          </header>
+
+          <div class="settings-card">
+            <div class="settings-row">
+              <div class="flex items-center gap-3">
+                <div id="drive-status-dot" class="w-2.5 h-2.5 rounded-full bg-slate-400"></div>
+                <div>
+                  <p class="text-sm font-semibold text-slate-800 dark:text-slate-100">Mit Google anmelden</p>
+                  <p id="drive-status-text" class="text-xs text-slate-500 dark:text-slate-400">Nicht verbunden</p>
+                </div>
+              </div>
+              <button id="drive-connect-btn" class="opt-btn opt-btn-filled text-xs">Verbinden</button>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <div class="settings-card-pad opt-info !border-0 !bg-transparent space-y-2">
+              <p class="text-xs font-semibold text-slate-600 dark:text-slate-300">Wofür ist die Anmeldung?</p>
+              <ul class="text-xs text-slate-500 dark:text-slate-400 space-y-1.5 list-disc pl-4">
+                <li>Das <strong class="text-slate-700 dark:text-slate-200">Seiten-Tracking</strong> (gesehene und angefangene Folgen auf Crunchyroll, Netflix, Prime Video, Disney+ und Joyn) wird in deinem <strong class="text-slate-700 dark:text-slate-200">Google Drive → Ordner „NINA“</strong> gesichert und auf allen deinen PCs abgeglichen.</li>
+                <li>NINA sieht nur Dateien, die es selbst erstellt hat (<code class="text-xs bg-slate-100 dark:bg-white/5 px-1 rounded">drive.file</code>-Berechtigung).</li>
+                <li>Ohne Anmeldung bleibt alles wie bisher lokal in diesem Browser.</li>
+              </ul>
             </div>
           </div>
         </section>

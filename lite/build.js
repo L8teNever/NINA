@@ -8,8 +8,9 @@
 // ones), so both stay in sync; only the background worker and the settings
 // page are Lite's own (lite/background.js, lite/ui/).
 //
-// Lite has no "key", so it gets its own extension ID and can be installed
-// next to NINA — but not meant to run together with it on the same sites.
+// Lite uses the same "key" (= same extension ID) and OAuth client as NINA, so
+// the Google sign-in (watch status sync via Drive) works with the existing
+// client. That also means Lite and NINA cannot be installed at the same time.
 
 'use strict';
 const fs = require('fs');
@@ -35,6 +36,15 @@ const KEEP_JS = new Set([
 const contentScripts = main.content_scripts
   .map((cs) => ({ ...cs, js: (cs.js || []).filter((f) => KEEP_JS.has(f)) }))
   .filter((cs) => cs.js.length);
+// Drive sync of the watch status needs window.NinaDrive in the pages that track
+// (the main extension loads it on every page for the notes; Lite only where needed)
+{
+  const driveHosts = [...new Set(contentScripts
+    .filter((cs) => cs.js.includes('content/stream-watch.js') || cs.js.includes('content/crunchyroll-watch-status.js'))
+    .flatMap((cs) => cs.matches))];
+  const at = contentScripts.findIndex((cs) => cs.js.includes('content/stream-watch.js') || cs.js.includes('content/crunchyroll-watch-status.js'));
+  contentScripts.splice(at, 0, { matches: driveHosts, js: ['lib/google-drive.js'], run_at: 'document_idle', all_frames: false });
+}
 // the css only goes where a script of ours goes (overlay.css belongs to universal/joyn/frame-speed)
 for (const cs of contentScripts) if (!cs.css || !cs.css.length) delete cs.css;
 
@@ -43,11 +53,13 @@ const manifest = {
   name: 'NINA Lite',
   short_name: 'NINA Lite',
   version: main.version,
+  key: main.key,
   description: 'Meine Serien (Serien-Tracking & Bibliothek), schnellere Wiedergabe auf jeder Webseite und automatisches Überspringen von Intros.',
   author: 'NINA',
   permissions: ['activeTab', 'storage', 'scripting', 'tabs', 'identity', 'alarms', 'notifications'],
+  oauth2: main.oauth2,
   host_permissions: main.host_permissions.filter((h) =>
-    !/sponsor\.ajay\.app|returnyoutubedislikeapi|googleapis\.com|accounts\.google\.com/.test(h)),
+    !/sponsor.ajay.app|returnyoutubedislikeapi|generativelanguage/.test(h)),
   background: { service_worker: 'background.js' },
   content_scripts: contentScripts,
   options_ui: { page: 'ui/options.html', open_in_tab: true },

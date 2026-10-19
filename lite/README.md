@@ -2,7 +2,7 @@
 
 Abgespeckte NINA-Version mit nur drei Dingen:
 
-- **Meine Serien** – Serien-Tracking und Bibliothek (Crunchyroll, Netflix, Prime Video, Disney+, Joyn, AniList-Anbindung)
+- **Meine Serien** – Serien-Tracking und Bibliothek (Crunchyroll, Netflix, Prime Video, Disney+, Joyn, AniList-Anbindung); Anmeldung mit dem Google-Konto sichert das Tracking in Google Drive
 - **Mehr Geschwindigkeit** – Popup am Toolbar-Symbol (bis 4x, auf jeder Webseite) und Geschwindigkeitsmenüs in den Playern
 - **Auto-Skip** – Intros, Recaps und Werbung werden übersprungen
 
@@ -20,5 +20,6 @@ Die Version kommt aus der `manifest.json` der Haupt-Erweiterung. Das Manifest wi
 Service Workers) und `lite/ui/` (Einstellungsseite). Ändert sich die Geschwindigkeits-Logik in `background.js`, bitte
 `lite/background.js` nachziehen.
 
-Lite hat keinen festen `key` und damit eine eigene Erweiterungs-ID. Es kann neben NINA installiert sein, sollte aber
-nicht gleichzeitig mit NINA auf denselben Seiten laufen.
+Lite verwendet denselben `key` (= dieselbe Erweiterungs-ID) und denselben Google-OAuth-Client wie NINA. Dadurch funktioniert die
+Google-Anmeldung (Sync des Seiten-Trackings über Google Drive) ohne eigenen Client – Lite und NINA lassen sich aber nicht
+gleichzeitig installieren.
