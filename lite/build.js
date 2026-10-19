@@ -23,6 +23,8 @@ const rd = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 const read = (p) => JSON.parse(rd(p));
 
 const main = read('manifest.json');
+// Lite has its own version number (releases tagged lite-v<version>)
+const LITE_VERSION = '3.3.4';
 
 // content scripts Lite keeps
 const KEEP_JS = new Set([
@@ -52,7 +54,7 @@ const manifest = {
   manifest_version: 3,
   name: 'NINA Lite',
   short_name: 'NINA Lite',
-  version: main.version,
+  version: LITE_VERSION,
   key: main.key,
   description: 'Meine Serien (Serien-Tracking & Bibliothek), schnellere Wiedergabe auf jeder Webseite und automatisches Überspringen von Intros.',
   author: 'NINA',
@@ -195,8 +197,8 @@ need('icons/icon16.png'); need('icons/icon.png');
 if (missing.length) throw new Error('missing in Lite build: ' + [...new Set(missing)].join(', '));
 
 // ── zip (tar -a writes a zip with forward slashes; ships with Windows 10+, macOS, Linux) ──
-const zip = path.join(ROOT, `NINA-Lite-${main.version}.zip`);
+const zip = path.join(ROOT, `NINA-Lite-${LITE_VERSION}.zip`);
 fs.rmSync(zip, { force: true });
 execFileSync(process.platform === 'win32' ? path.join(process.env.SystemRoot || 'C:/Windows', 'System32', 'tar.exe') : 'tar', ['-a', '-c', '-f', zip, '-C', OUT, ...fs.readdirSync(OUT)], { stdio: 'inherit' });
 const count = (function walk(d) { return fs.readdirSync(d, { withFileTypes: true }).reduce((n, e) => n + (e.isDirectory() ? walk(path.join(d, e.name)) : 1), 0); })(OUT);
-console.log(`NINA Lite ${main.version}: ${count} files → ${path.relative(ROOT, zip)} (${Math.round(fs.statSync(zip).size / 1024)} KB)`);
+console.log(`NINA Lite ${LITE_VERSION}: ${count} files → ${path.relative(ROOT, zip)} (${Math.round(fs.statSync(zip).size / 1024)} KB)`);

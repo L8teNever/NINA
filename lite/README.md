@@ -15,7 +15,7 @@ node lite/build.js
 ```
 
 Erzeugt `dist/NINA-Lite/` (zum Laden als entpackte Erweiterung) und `NINA-Lite-<Version>.zip`.
-Die Version kommt aus der `manifest.json` der Haupt-Erweiterung. Das Manifest wird aus der des Hauptprojekts abgeleitet
+Die Version steht in `lite/build.js` (`LITE_VERSION`), unabhängig von der Haupt-Erweiterung. Das Manifest wird aus der des Hauptprojekts abgeleitet
 (gleiche Seiten, gleiche Skripte – nur ohne die entfernten). Eigen sind nur `lite/background.js` (gekürzte Kopie des
 Service Workers) und `lite/ui/` (Einstellungsseite). Ändert sich die Geschwindigkeits-Logik in `background.js`, bitte
 `lite/background.js` nachziehen.
