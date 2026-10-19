@@ -422,26 +422,101 @@ function chromeToken(interactive) {
   });
 }
 
+// The login window of launchWebAuthFlow never opens in some Android browsers
+// (Lemur), the call just hangs. There the Google login runs in a normal tab:
+// Google redirects to https://<id>.chromiumapp.org/#access_token=… — that page
+// doesn't exist, but the tab's URL still shows up in tabs.onUpdated, where the
+// token is taken and the tab closed. The listener is top-level so it also
+// works when the service worker was restarted while the user was logging in;
+// the result goes to storage, which the waiting promise (and the settings
+// page) watch. "state" ties the redirect to a login NINA started.
+const G_PENDING = 'nina_google_auth_pending';       // session: { state }
+const G_RESULT = 'nina_google_auth_result';         // local: { state, ok, error }
+
+function saveRedirect(url, state) {
+  const params = new URLSearchParams((url || '').split('#')[1] || '');
+  const token = params.get('access_token');
+  if (state && params.get('state') !== state) return { error: 'Ungültige Antwort von Google' };
+  if (!token) return { error: params.get('error') || 'Anmeldung abgebrochen' };
+  const expiresAt = Date.now() + (parseInt(params.get('expires_in'), 10) || 3600) * 1000;
+  return { token, expiresAt };
+}
+
+chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
+  const url = info.url || (tab && (tab.url || tab.pendingUrl)) || '';
+  if (!chrome.identity || !url.startsWith(chrome.identity.getRedirectURL())) return;
+  chrome.storage.session.get([G_PENDING], async (r) => {
+    const pending = r[G_PENDING];
+    if (!pending) return;
+    await chrome.storage.session.remove(G_PENDING);
+    chrome.tabs.remove(tabId, () => void chrome.runtime.lastError);
+    const res = saveRedirect(url, pending.state);
+    if (res.token) {
+      await chrome.storage.local.set({ [G_WEB_TOKEN]: { token: res.token, expiresAt: res.expiresAt }, nina_drive_connected: true });
+    }
+    await chrome.storage.local.set({ [G_RESULT]: { state: pending.state, ok: !!res.token, error: res.error || '' } });
+  });
+});
+
+async function tabAuthFlow(url, state, interactive) {
+  await chrome.storage.session.set({ [G_PENDING]: { state } });
+  const tab = await chrome.tabs.create({ url, active: interactive });
+  return new Promise((resolve, reject) => {
+    const finish = (err) => {
+      clearTimeout(timer);
+      chrome.storage.onChanged.removeListener(onChange);
+      chrome.tabs.onRemoved.removeListener(onRemoved);
+      if (err) reject(err); else chrome.storage.local.get([G_WEB_TOKEN], (s) => resolve(s[G_WEB_TOKEN].token));
+    };
+    const onChange = (changes, area) => {
+      const v = area === 'local' && changes[G_RESULT] && changes[G_RESULT].newValue;
+      if (!v || v.state !== state) return;
+      finish(v.ok ? null : new Error(v.error));
+    };
+    const onRemoved = (id) => {
+      if (id !== tab.id) return;
+      // closed by us after the redirect: the result follows via storage
+      setTimeout(() => chrome.storage.session.get([G_PENDING], (r) => {
+        if (r[G_PENDING] && r[G_PENDING].state === state) { chrome.storage.session.remove(G_PENDING); finish(new Error('Anmeldung abgebrochen')); }
+      }), 1500);
+    };
+    const timer = setTimeout(() => {
+      chrome.tabs.remove(tab.id, () => void chrome.runtime.lastError);
+      chrome.storage.session.remove(G_PENDING);
+      finish(new Error(interactive ? 'Zeitüberschreitung bei der Anmeldung' : 'Stille Anmeldung nicht möglich'));
+    }, interactive ? 5 * 60000 : 20000);
+    chrome.storage.onChanged.addListener(onChange);
+    chrome.tabs.onRemoved.addListener(onRemoved);
+  });
+}
+
+function withTimeout(promise, ms, message) {
+  let t;
+  return Promise.race([promise, new Promise((_, reject) => { t = setTimeout(() => reject(new Error(message)), ms); })]).finally(() => clearTimeout(t));
+}
+
 async function webToken(interactive) {
   const store = await chrome.storage.local.get([G_WEB_TOKEN]);
   const cached = store[G_WEB_TOKEN];
   if (cached && cached.token && cached.expiresAt > Date.now() + 60000) return cached.token;
   const clientId = ((await chrome.storage.sync.get([G_WEB_CLIENT]))[G_WEB_CLIENT] || '').trim() || G_DEFAULT_WEB_CLIENT;
+  const state = crypto.randomUUID();
   const url = 'https://accounts.google.com/o/oauth2/v2/auth?' + new URLSearchParams({
     client_id: clientId,
     response_type: 'token',
     redirect_uri: chrome.identity.getRedirectURL(),
     scope: G_SCOPES.join(' '),
     include_granted_scopes: 'true',
+    state,
     ...(interactive ? { prompt: 'select_account' } : { prompt: 'none' })
   });
-  const redirect = await chrome.identity.launchWebAuthFlow({ url, interactive });
-  const params = new URLSearchParams((redirect || '').split('#')[1] || '');
-  const token = params.get('access_token');
-  if (!token) throw new Error(params.get('error') || 'Anmeldung abgebrochen');
-  const expiresAt = Date.now() + (parseInt(params.get('expires_in'), 10) || 3600) * 1000;
-  await chrome.storage.local.set({ [G_WEB_TOKEN]: { token, expiresAt } });
-  return token;
+  if (IS_ANDROID) return tabAuthFlow(url, state, interactive);
+  const redirect = await withTimeout(chrome.identity.launchWebAuthFlow({ url, interactive }),
+    interactive ? 5 * 60000 : 15000, 'Keine Antwort vom Login-Fenster');
+  const res = saveRedirect(redirect, state);
+  if (!res.token) throw new Error(res.error);
+  await chrome.storage.local.set({ [G_WEB_TOKEN]: { token: res.token, expiresAt: res.expiresAt } });
+  return res.token;
 }
 
 async function googleToken(interactive) {

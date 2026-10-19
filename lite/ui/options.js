@@ -90,6 +90,13 @@
     });
   });
 
+  chrome.storage.onChanged.addListener((changes, area) => {
+    const v = area === 'local' && changes.nina_google_auth_result && changes.nina_google_auth_result.newValue;
+    if (!v) return;
+    if (v.ok) chrome.storage.local.get(['nina_google_web_token'], (s) => s.nina_google_web_token && showAccount(s.nina_google_web_token.token));
+    else paintDrive('error', v.error);
+  });
+
   // web client for phone browsers
   const redirect = chrome.identity && chrome.identity.getRedirectURL ? chrome.identity.getRedirectURL() : '';
   $('g-redirect').textContent = redirect || '(in diesem Browser nicht verfügbar)';
