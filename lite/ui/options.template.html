@@ -17,7 +17,13 @@
       .m-tabs::-webkit-scrollbar { display: none; }
       .m-tab { flex: none; padding: 10px 16px; border-radius: 999px; border: 1px solid rgba(148,163,184,.25); background: transparent; color: #94a3b8; font-size: 14px; font-weight: 600; white-space: nowrap; text-decoration: none; }
       .m-tab.active { background: #004f56; border-color: transparent; color: #e0f7f9; }
-      body > .flex-1 { min-width: 0; width: 100%; }
+      /* phones: let the page itself scroll (100vh is taller than the visible area in mobile browsers) */
+      html, body { height: auto !important; min-height: 0 !important; overflow: visible !important; }
+      body { display: block !important; }
+      #sidebar { display: none !important; }
+      body > .flex-1 { display: block !important; height: auto !important; min-width: 0; width: 100%; }
+      #settingsContainer { overflow: visible !important; height: auto !important; }
+      .m-tabs { position: sticky; top: 0; z-index: 20; background: var(--m3-background-dark, #111214); }
       #settingsContainer { padding: 6px 12px 14px !important; }
       .settings-row { flex-wrap: wrap; gap: 10px; }
       .settings-row-copy { flex: 1 1 200px; min-width: 0; }
