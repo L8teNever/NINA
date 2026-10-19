@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NINA Lite - Einstellungen</title>
+  <link rel="stylesheet" href="tailwind.min.css">
+  <link rel="stylesheet" href="sidepanel-custom.css">
+  <link rel="stylesheet" href="options.css">
+  <style>
+<!--@STYLE-->
+  </style>
+</head>
+<body class="bg-m3-background-light dark:bg-m3-background-dark text-slate-800 dark:text-slate-100 font-sans transition-colors duration-300 min-h-screen overflow-hidden flex select-none">
+
+  <svg class="ms-sprite" aria-hidden="true" focusable="false">
+    <symbol id="ms-bolt" viewBox="0 0 24 24"><path d="M11 21h-1l1-7H7.5c-.88 0-.33-.75-.14-1.13C10.49 10.54 13.48 6.57 14 4h1l-1 7h3.5c.49 0 .56.33.47.51C13.82 14.07 11.54 18.43 11 21z"/></symbol>
+    <symbol id="ms-play" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></symbol>
+    <symbol id="ms-link" viewBox="0 0 24 24"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></symbol>
+  </svg>
+
+  <div id="sidebar" class="flex flex-col h-screen shrink-0 relative z-20">
+    <div class="p-6 flex items-center gap-3">
+      <img src="../icons/icon.png" class="w-8 h-8 object-contain" alt="NINA">
+      <h1 class="text-xl font-bold tracking-wide text-slate-800 dark:text-slate-100">NINA Lite</h1>
+    </div>
+
+    <div class="flex-1 overflow-y-auto py-2 custom-scrollbar" id="sidebar-nav">
+      <a href="#cat-playback" class="sidebar-link" data-target="cat-playback">
+        <svg class="ms-icon" aria-hidden="true"><use href="#ms-bolt"></use></svg>
+        <span>Wiedergabe &amp; Skipper</span>
+      </a>
+      <a href="library.html" target="_blank" class="sidebar-link sidebar-link-external">
+        <svg class="ms-icon" aria-hidden="true"><use href="#ms-play"></use></svg>
+        <span>Meine Serien ↗</span>
+      </a>
+      <a href="#cat-anilist" class="sidebar-link" data-target="cat-anilist">
+        <svg class="ms-icon" aria-hidden="true"><use href="#ms-link"></use></svg>
+        <span>AniList</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="flex-1 flex flex-col h-screen relative bg-m3-background-light dark:bg-m3-background-dark">
+    <div class="flex-1 overflow-y-auto px-8 py-6 custom-scrollbar" id="settingsContainer">
+      <div class="max-w-3xl mx-auto space-y-10 pb-20">
+
+        <section id="cat-playback" class="setting-section is-active">
+          <header class="settings-group-header">
+            <svg class="ms-icon" aria-hidden="true"><use href="#ms-bolt"></use></svg>
+            <h2>Wiedergabe &amp; Skipper</h2>
+          </header>
+
+          <div class="settings-card">
+            <div class="settings-card-title">Geschwindigkeit</div>
+            <div class="setting-item settings-nested space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-medium text-slate-700 dark:text-slate-200">Vorspulen (Gedrückthalten)</span>
+                <span id="ffSpeedVal" class="opt-chip">2.00x</span>
+              </div>
+              <input type="range" id="ffSpeedSlider" min="1.0" max="10.0" step="0.1" value="2.0" class="w-full slider-aqua">
+              <p class="text-xs text-slate-500 dark:text-slate-400">Die normale Geschwindigkeit stellst du im Popup des Toolbar-Symbols ein (bis 4x, auf jeder Webseite).</p>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <div class="settings-card-title">Intros &amp; Werbung</div>
+            <div class="setting-item">
+              <div class="settings-row">
+                <div class="settings-row-copy">
+                  <span class="title">Auto-Skip Intros</span>
+                  <span class="desc">Überspringt Intros, Recaps &amp; Werbung automatisch.</span>
+                </div>
+                <label class="md-switch">
+                  <input type="checkbox" id="toggleAutoSkip" checked>
+                  <span class="md-switch-track"></span>
+                </label>
+              </div>
+              <div id="autoSkipDelaySliderBlock" class="settings-nested space-y-2">
+                <div class="flex items-center justify-between text-xs">
+                  <span class="font-medium text-m3-outline-light dark:text-m3-outline-dark">Verzögerung: <span id="autoSkipDelayVal" class="font-bold text-m3-primary-light dark:text-m3-primary-dark text-sm">Sofort</span></span>
+                </div>
+                <input type="range" id="autoSkipDelaySlider" min="0" max="10" step="1" value="0" class="w-full slider-aqua">
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <div class="settings-card-title">Vollbild</div>
+            <div class="setting-item settings-row">
+              <div class="settings-row-copy">
+                <span class="title">Vollbild bei der nächsten Folge beibehalten</span>
+                <span class="desc">Schaust du im Vollbild und die nächste Folge startet, geht sie wieder in Vollbild (Netflix, Disney+, Crunchyroll, …; nicht auf YouTube). Ohne Klick kann Chrome nur das Fenster auf Vollbild schalten – der erste Klick/Tastendruck macht daraus echtes Vollbild.</span>
+              </div>
+              <label class="md-switch">
+                <input type="checkbox" data-sync-bool="nina_keep_fullscreen" checked>
+                <span class="md-switch-track"></span>
+              </label>
+            </div>
+          </div>
+        </section>
+
+<!--@ANILIST-->
+
+      </div>
+    </div>
+  </div>
+
+  <script src="crunchyroll-settings.js"></script>
+  <script src="anilist-settings.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>

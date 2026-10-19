@@ -1,0 +1,380 @@
+// background.js — NINA Lite service worker.
+// Trimmed copy of the speed / library parts of the main extension's
+// background.js (no new tab, notes, Drive, AI text, hotkeys). When the main
+// file's speed handling changes, mirror it here.
+
+importScripts('lib/anilist-bg.js', 'lib/library-core.js', 'lib/library-providers.js', 'lib/view-log-bg.js');
+
+const STREAMING_HOSTS = [
+  'joyn.de', 'youtube.com', 'youtu.be', 'netflix.com',
+  'primevideo.com', 'amazon.de', 'amazon.com', 'amazon.co.uk',
+  'disneyplus.com', 'crunchyroll.com', 'dazn.com', 'twitch.tv',
+  'ardmediathek.de', 'zdf.de', 'zdfmediathek.de', 'rtl.de',
+  'rtlplus.com', 'tvnow.de', 'mubi.com', 'tv.apple.com',
+  'paramount.com', 'paramountplus.com', 'peacocktv.com',
+  'hbo.com', 'max.com', 'hulu.com', 'vimeo.com', 'dailymotion.com',
+  'ard.de', '3sat.de', 'arte.tv', 'funimation.com', 'hidive.com',
+  'wakanim.tv',
+];
+
+function isStreamingUrl(url) {
+  if (!url || !/^https?:/i.test(url)) return false;
+  try {
+    const host = new URL(url).hostname;
+    return STREAMING_HOSTS.some((h) => host === h || host.endsWith('.' + h));
+  } catch (_) {
+    return false;
+  }
+}
+
+// Toolbar icon: opens ui/popup.html (manifest action.default_popup).
+
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  if (changeInfo.status !== 'complete') return;
+  if (!tab || !tab.url || !isStreamingUrl(tab.url)) return;
+
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId, allFrames: true },
+      world: 'MAIN',
+      files: ['content/speed-patch.js', 'content/audio-patch.js'],
+    });
+  } catch (_) {}
+
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId, allFrames: true },
+      files: ['content/frame-speed.js'],
+    });
+  } catch (_) {}
+
+  // Process speed reset / persistence logic
+  const url = tab.url;
+  const platform = getPlatformFromUrl(url);
+  if (!platform) return;
+
+  const videoId = extractIdFromUrl(url, platform);
+  const rawTitle = tab.title || '';
+  const cleanedTitle = cleanTitle(rawTitle, platform);
+  const showName = getShowName(cleanedTitle);
+
+  chrome.storage.local.get(['tab_speeds'], (res) => {
+    const tabSpeeds = res.tab_speeds || {};
+    const current = tabSpeeds[tabId];
+
+    if (current) {
+      let speed = current.speed;
+      let shouldUpdate = false;
+
+      if (platform === 'youtube') {
+        if (videoId && current.videoId !== videoId) {
+          speed = 1.0;
+          shouldUpdate = true;
+        }
+      } else if (platform === 'crunchyroll') {
+        // Crunchyroll's tab title only holds the episode name, not the show,
+        // so a title compare would reset on every episode. universal.js
+        // detects series changes from the page's /series/ link instead.
+      } else {
+        const currentSeries = getSeriesName(current.showName);
+        const newSeries = getSeriesName(showName);
+        if (newSeries && currentSeries && currentSeries !== newSeries) {
+          speed = 1.0;
+          shouldUpdate = true;
+        }
+      }
+
+      tabSpeeds[tabId] = {
+        speed: speed,
+        volume: current.volume !== undefined ? current.volume : 1.0,
+        showName: showName || current.showName || '',
+        videoId: videoId || current.videoId || '',
+        platform: platform,
+        url: url,
+        crSeries: current.crSeries
+      };
+
+      chrome.storage.local.set({ tab_speeds: tabSpeeds });
+    } else {
+      tabSpeeds[tabId] = {
+        speed: 1.0,
+        volume: 1.0,
+        showName: showName || '',
+        videoId: videoId || '',
+        platform: platform,
+        url: url
+      };
+      chrome.storage.local.set({ tab_speeds: tabSpeeds });
+    }
+  });
+});
+
+chrome.tabs.onRemoved.addListener((tabId) => {
+  chrome.storage.local.get(['tab_speeds'], (res) => {
+    const tabSpeeds = res.tab_speeds || {};
+    if (tabSpeeds[tabId]) {
+      delete tabSpeeds[tabId];
+      chrome.storage.local.set({ tab_speeds: tabSpeeds });
+    }
+  });
+});
+
+// ── Speed & volume on ANY website ────────────────────────────────────────────
+// Streaming sites get the patch scripts via the manifest. Every other http(s)
+// page gets them injected as soon as the side panel sets a speed or volume
+// for that tab (and again after it navigates, while a value is set). The same
+// scripts then apply it: speed-patch (playbackRate), audio-patch (gain up to
+// 600 %), frame-speed (bridge from tab_speeds).
+const patchedTabs = new Set();
+
+async function injectPlaybackPatches(tabId) {
+  if (patchedTabs.has(tabId)) return;
+  patchedTabs.add(tabId);
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId, allFrames: true },
+      world: 'MAIN',
+      files: ['content/speed-patch.js', 'content/audio-patch.js'],
+    });
+    await chrome.scripting.executeScript({
+      target: { tabId, allFrames: true },
+      files: ['content/frame-speed.js'],
+    });
+  } catch (_) {
+    patchedTabs.delete(tabId); // e.g. chrome:// pages, Web Store
+  }
+}
+
+const hasPlaybackSettings = (s) => !!s && ((s.volume !== undefined && Math.abs(s.volume - 1) > 0.001) || (s.speed !== undefined && Math.abs(s.speed - 1) > 0.001));
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== 'local' || !changes.tab_speeds) return;
+  const now = changes.tab_speeds.newValue || {};
+  const before = changes.tab_speeds.oldValue || {};
+  for (const id of Object.keys(now)) {
+    const tabId = Number(id);
+    if (patchedTabs.has(tabId) || !hasPlaybackSettings(now[id])) continue;
+    const a = now[id], b = before[id] || {};
+    if (a.volume === b.volume && a.speed === b.speed) continue;
+    chrome.tabs.get(tabId, (tab) => {
+      if (chrome.runtime.lastError || !tab || !/^https?:/i.test(tab.url || '') || isStreamingUrl(tab.url)) return;
+      injectPlaybackPatches(tabId);
+    });
+  }
+});
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status === 'loading') { patchedTabs.delete(tabId); return; }
+  if (changeInfo.status !== 'complete' || !tab || !/^https?:/i.test(tab.url || '') || isStreamingUrl(tab.url)) return;
+  chrome.storage.local.get(['tab_speeds'], (res) => {
+    if (hasPlaybackSettings((res.tab_speeds || {})[tabId])) injectPlaybackPatches(tabId);
+  });
+});
+chrome.tabs.onRemoved.addListener((tabId) => patchedTabs.delete(tabId));
+
+// Broadcast speed, volume, and fast-forward updates to all frames in all active streaming tabs
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== 'local') return;
+
+  const speedChange = changes.joyn_speed;
+  const volumeChange = changes.joyn_volume;
+  const ffSpeedChange = changes.joyn_ff_speed;
+
+  if (speedChange || volumeChange || ffSpeedChange) {
+    chrome.tabs.query({}, (tabs) => {
+      const msg = {
+        type: 'USC_SPEED_UPDATE',
+        speed: speedChange ? speedChange.newValue : undefined,
+        volume: volumeChange ? volumeChange.newValue : undefined,
+        ffSpeed: ffSpeedChange ? ffSpeedChange.newValue : undefined,
+      };
+
+      for (const tab of tabs) {
+        if (isStreamingUrl(tab.url)) {
+          chrome.tabs.sendMessage(tab.id, msg).catch(() => {
+            // Ignore error for tabs where the content script isn't loaded
+          });
+        }
+      }
+    });
+  }
+});
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  // NINA card on a streaming site → "Meine Serien" (a show's page)
+  if (message.type === 'NINA_OPEN_LIBRARY') {
+    const hash = message.hash ? '#' + String(message.hash).replace(/[^\w%:\-./]/g, '') : '';
+    chrome.tabs.create({ url: chrome.runtime.getURL('ui/library.html') + hash });
+    sendResponse({ ok: true });
+    return false;
+  }
+
+  if (message.type === 'NINA_OPEN_OPTIONS') {
+    const hash = message.hash ? '#' + String(message.hash).replace(/[^\w-]/g, '') : '';
+    chrome.tabs.create({ url: chrome.runtime.getURL('ui/options.html') + hash });
+    sendResponse({ ok: true });
+    return false;
+  }
+
+  if (message.type === 'NINA_WINDOW_FULLSCREEN') {
+    const windowId = sender.tab && sender.tab.windowId;
+    if (windowId === undefined) { sendResponse({ ok: false }); return false; }
+    chrome.storage.session.get(['nina_prev_window_state'], (res) => {
+      const prev = res.nina_prev_window_state || {};
+      chrome.windows.get(windowId, (win) => {
+        if (chrome.runtime.lastError || !win) { sendResponse({ ok: false }); return; }
+        if (message.on) {
+          if (win.state !== 'fullscreen') {
+            prev[windowId] = win.state;
+            chrome.storage.session.set({ nina_prev_window_state: prev });
+          }
+          chrome.windows.update(windowId, { state: 'fullscreen' }, () => sendResponse({ ok: !chrome.runtime.lastError }));
+        } else {
+          const state = prev[windowId];
+          delete prev[windowId];
+          chrome.storage.session.set({ nina_prev_window_state: prev });
+          if (win.state !== 'fullscreen' || !state) { sendResponse({ ok: true }); return; }
+          chrome.windows.update(windowId, { state }, () => sendResponse({ ok: !chrome.runtime.lastError }));
+        }
+      });
+    });
+    return true;
+  }
+
+  if (message.type === 'GET_TAB_SETTINGS') {
+    const tabId = sender.tab ? sender.tab.id : null;
+    if (tabId) {
+      chrome.storage.local.get(['tab_speeds', 'joyn_ff_speed'], (res) => {
+        const tabSpeeds = res.tab_speeds || {};
+        const settings = tabSpeeds[tabId] || { speed: 1.0, volume: 1.0 };
+        const ffSpeed = parseFloat(res.joyn_ff_speed) || 2.0;
+        sendResponse({
+          tabId: tabId,
+          speed: settings.speed,
+          volume: settings.volume,
+          ffSpeed: ffSpeed
+        });
+      });
+      return true; // Keep channel open for async response
+    } else {
+      sendResponse(null);
+    }
+    return;
+  }
+
+});
+
+function normalizeTitleForMatching(title) {
+  if (!title) return '';
+  let t = title.toLowerCase();
+  // Insert space between letters and numbers (e.g. S01E01 -> S 01 E 01)
+  t = t.replace(/([a-z])(\d)/g, '$1 $2').replace(/(\d)([a-z])/g, '$1 $2');
+  // Remove quotes
+  t = t.replace(/['"’“”„]/g, '');
+  // Normalize season/episode keywords with numbers
+  t = t.replace(/\b(staffel|season|st|s)\.?\s*0*(\d+)\b/g, 'season $2');
+  t = t.replace(/\b(folge|episode|ep|flg|e)\.?\s*0*(\d+)\b/g, 'episode $2');
+  // Replace non-alphanumeric chars with space
+  t = t.replace(/[\s\-_|:()[\].,;!?]+/g, ' ');
+  return t.trim();
+}
+
+function cleanShowName(name) {
+  if (!name) return '';
+  return name
+    .replace(/\b(dub|sub|sync|synchro|synchronisation|synchronisiert|german|deutsch|eng|english|omav|original)\b/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function getPlatformFromUrl(url) {
+  if (!url) return null;
+  try {
+    const hostname = new URL(url).hostname.toLowerCase();
+    if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) {
+      return 'youtube';
+    } else if (hostname.includes('netflix.com')) {
+      return 'netflix';
+    } else if (hostname.includes('crunchyroll.com')) {
+      return 'crunchyroll';
+    } else if (hostname.includes('disneyplus.com')) {
+      return 'disneyplus';
+    } else if (hostname.includes('primevideo.com') || hostname.includes('amazon.')) {
+      if (hostname.includes('primevideo.com') || 
+          new URL(url).pathname.includes('/video/') || 
+          new URL(url).pathname.includes('/dp/') || 
+          new URL(url).pathname.includes('/gp/product/')) {
+        return 'primevideo';
+      }
+    }
+  } catch (_) {}
+  return null;
+}
+
+function extractIdFromUrl(url, platform) {
+  if (!url || !platform) return null;
+  try {
+    const urlObj = new URL(url);
+    if (platform === 'youtube') {
+      if (urlObj.pathname.startsWith('/shorts/')) {
+        return urlObj.pathname.split('/shorts/')[1].split(/[?#]/)[0];
+      }
+      return urlObj.searchParams.get('v');
+    } else if (platform === 'netflix') {
+      const match = urlObj.pathname.match(/\/watch\/(\d+)/);
+      return match ? match[1] : null;
+    } else if (platform === 'crunchyroll') {
+      const match = urlObj.pathname.match(/\/watch\/([a-z0-9]+)/i);
+      return match ? match[1] : null;
+    } else if (platform === 'disneyplus') {
+      const match = urlObj.pathname.match(/\/(video|play)\/([a-z0-9-]+)/i);
+      return match ? match[2] : null;
+    } else if (platform === 'primevideo') {
+      const asin = urlObj.searchParams.get('asin') || urlObj.searchParams.get('itemId') || urlObj.searchParams.get('gti');
+      if (asin) return asin;
+      const match = urlObj.pathname.match(/\/(?:detail|play|watch|dp|gp\/video\/detail|gp\/video\/play|video\/detail|video\/play|gp\/product)\/(?:[a-zA-Z0-9_=-]+\/)*(amzn1\.dv\.gti\.[a-fA-F0-9-]+|[a-zA-Z0-9]{10,30})/);
+      return match ? match[1] : null;
+    }
+  } catch (_) {}
+  return null;
+}
+
+function cleanTitle(title, platform) {
+  if (!title) return '';
+  let t = title;
+  if (platform === 'youtube') {
+    t = t.replace(/\s*-\s*YouTube$/i, '');
+  } else if (platform === 'netflix') {
+    t = t.replace(/^Netflix\s*-\s*/i, '').replace(/\s*\|\s*Netflix$/i, '');
+  } else if (platform === 'crunchyroll') {
+    t = t.replace(/\s*-\s*Watch on Crunchyroll$/i, '');
+  } else if (platform === 'disneyplus') {
+    t = t.replace(/^Watch\s+/i, '').replace(/\s*\|\s*Disney\+$/i, '');
+  } else if (platform === 'primevideo') {
+    t = t.replace(/^(?:Amazon\.[a-z.]{2,6}:\s*|Prime Video:\s*)/i, '');
+    t = t.replace(/\s*[-|]\s*Prime Video$/i, '');
+    t = t.replace(/\s+(?:ansehen|watch|online\s+leihen|kaufen)\s*$/i, '');
+  }
+  return t.trim();
+}
+
+function getShowName(cleanTitle) {
+  if (!cleanTitle) return '';
+  const parts = cleanTitle.split(/[:\-|–]/);
+  if (parts.length > 0) {
+    return cleanShowName(normalizeTitleForMatching(parts[0]));
+  }
+  return '';
+}
+
+function getSeriesName(showName) {
+  if (!showName) return '';
+  let s = showName.toLowerCase();
+  // Strip common season/episode/volume/book/volume indicators followed by numbers
+  s = s.replace(/\b(?:season|staffel|st|s|book|buch|vol|volume)\s*\d+\b/g, '');
+  s = s.replace(/\b(?:episode|folge|ep|e|flg)\s*\d+\b/g, '');
+  // Strip standalone numbers (often episode/season/year numbers)
+  s = s.replace(/\b\d+\b/g, '');
+  // Clean up extra spaces
+  return s.replace(/\s+/g, ' ').trim();
+}

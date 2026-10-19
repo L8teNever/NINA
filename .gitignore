@@ -44,3 +44,6 @@ test-profile/
 
 # Lokale Verknüpfung zur Zusatz-Erweiterung NINA-AniWorld (eigenes Repo)
 NINA-AniWorld
+
+# NINA-Lite Build-Ausgabe
+dist/
