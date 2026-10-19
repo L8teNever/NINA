@@ -430,7 +430,7 @@ function chromeToken(interactive) {
 // works when the service worker was restarted while the user was logging in;
 // the result goes to storage, which the waiting promise (and the settings
 // page) watch. "state" ties the redirect to a login NINA started.
-const G_PENDING = 'nina_google_auth_pending';       // session: { state }
+const G_PENDING = 'nina_google_auth_pending';       // local: { state, until }
 const G_RESULT = 'nina_google_auth_result';         // local: { state, ok, error }
 
 function saveRedirect(url, state) {
@@ -442,28 +442,46 @@ function saveRedirect(url, state) {
   return { token, expiresAt };
 }
 
-chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
-  const url = info.url || (tab && (tab.url || tab.pendingUrl)) || '';
-  if (!chrome.identity || !url.startsWith(chrome.identity.getRedirectURL())) return;
-  chrome.storage.session.get([G_PENDING], async (r) => {
-    const pending = r[G_PENDING];
-    if (!pending) return;
-    await chrome.storage.session.remove(G_PENDING);
-    chrome.tabs.remove(tabId, () => void chrome.runtime.lastError);
+// Several sources, because browsers differ in what they report for a page
+// that fails to load (the redirect host doesn't exist): tab updates, the
+// navigation events (also fire for error pages) and a poll during the login.
+let redirectBusy = false;
+async function handleRedirect(tabId, url) {
+  if (redirectBusy || !url || !chrome.identity || !url.startsWith(chrome.identity.getRedirectURL())) return;
+  redirectBusy = true;
+  try {
+    const { [G_PENDING]: pending } = await chrome.storage.local.get([G_PENDING]);
+    if (!pending || pending.until < Date.now()) return;
+    await chrome.storage.local.remove(G_PENDING);
+    if (tabId >= 0) chrome.tabs.remove(tabId, () => void chrome.runtime.lastError);
     const res = saveRedirect(url, pending.state);
-    if (res.token) {
-      await chrome.storage.local.set({ [G_WEB_TOKEN]: { token: res.token, expiresAt: res.expiresAt }, nina_drive_connected: true });
-    }
-    await chrome.storage.local.set({ [G_RESULT]: { state: pending.state, ok: !!res.token, error: res.error || '' } });
-  });
+    const patch = { [G_RESULT]: { state: pending.state, ok: !!res.token, error: res.error || '' } };
+    if (res.token) Object.assign(patch, { [G_WEB_TOKEN]: { token: res.token, expiresAt: res.expiresAt }, nina_drive_connected: true });
+    await chrome.storage.local.set(patch);
+  } finally {
+    redirectBusy = false;
+  }
+}
+chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
+  handleRedirect(tabId, info.url || (tab && (tab.url || tab.pendingUrl)) || '');
 });
+if (chrome.webNavigation) {
+  const filter = { url: [{ hostSuffix: 'chromiumapp.org' }] };
+  for (const evName of ['onBeforeNavigate', 'onCommitted', 'onErrorOccurred']) {
+    if (chrome.webNavigation[evName]) chrome.webNavigation[evName].addListener((d) => { if (d.frameId === 0) handleRedirect(d.tabId, d.url); }, filter);
+  }
+}
 
 async function tabAuthFlow(url, state, interactive) {
-  await chrome.storage.session.set({ [G_PENDING]: { state } });
+  await chrome.storage.local.set({ [G_PENDING]: { state, until: Date.now() + 10 * 60000 } });
   const tab = await chrome.tabs.create({ url, active: interactive });
+  const poll = setInterval(() => {
+    chrome.tabs.get(tab.id, (t) => { if (!chrome.runtime.lastError && t) handleRedirect(t.id, t.url || t.pendingUrl || ''); });
+  }, 700);
   return new Promise((resolve, reject) => {
     const finish = (err) => {
       clearTimeout(timer);
+      clearInterval(poll);
       chrome.storage.onChanged.removeListener(onChange);
       chrome.tabs.onRemoved.removeListener(onRemoved);
       if (err) reject(err); else chrome.storage.local.get([G_WEB_TOKEN], (s) => resolve(s[G_WEB_TOKEN].token));
@@ -476,13 +494,13 @@ async function tabAuthFlow(url, state, interactive) {
     const onRemoved = (id) => {
       if (id !== tab.id) return;
       // closed by us after the redirect: the result follows via storage
-      setTimeout(() => chrome.storage.session.get([G_PENDING], (r) => {
-        if (r[G_PENDING] && r[G_PENDING].state === state) { chrome.storage.session.remove(G_PENDING); finish(new Error('Anmeldung abgebrochen')); }
+      setTimeout(() => chrome.storage.local.get([G_PENDING], (r) => {
+        if (r[G_PENDING] && r[G_PENDING].state === state) { chrome.storage.local.remove(G_PENDING); finish(new Error('Anmeldung abgebrochen')); }
       }), 1500);
     };
     const timer = setTimeout(() => {
       chrome.tabs.remove(tab.id, () => void chrome.runtime.lastError);
-      chrome.storage.session.remove(G_PENDING);
+      chrome.storage.local.remove(G_PENDING);
       finish(new Error(interactive ? 'Zeitüberschreitung bei der Anmeldung' : 'Stille Anmeldung nicht möglich'));
     }, interactive ? 5 * 60000 : 20000);
     chrome.storage.onChanged.addListener(onChange);

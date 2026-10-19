@@ -24,7 +24,7 @@ const read = (p) => JSON.parse(rd(p));
 
 const main = read('manifest.json');
 // Lite has its own version number (releases tagged lite-v<version>)
-const LITE_VERSION = '3.3.8';
+const LITE_VERSION = '3.3.9';
 
 // content scripts Lite keeps
 const KEEP_JS = new Set([
@@ -58,7 +58,7 @@ const manifest = {
   key: main.key,
   description: 'Meine Serien (Serien-Tracking & Bibliothek), schnellere Wiedergabe auf jeder Webseite und automatisches Überspringen von Intros.',
   author: 'NINA',
-  permissions: ['activeTab', 'storage', 'scripting', 'tabs', 'identity', 'alarms', 'notifications'],
+  permissions: ['activeTab', 'storage', 'scripting', 'tabs', 'identity', 'alarms', 'notifications', 'webNavigation'],
   oauth2: main.oauth2,
   host_permissions: main.host_permissions.filter((h) =>
     !/sponsor.ajay.app|returnyoutubedislikeapi|generativelanguage/.test(h)),
