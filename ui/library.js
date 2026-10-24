@@ -30,7 +30,7 @@
     theme: 'system', seed: 186, reduceMotion: false, startPage: 'home', sort: 'recent',
     sources: { crunchyroll: true, prime: true, disney: true, joyn: true, netflix: true },
     providers: { tvmaze: true, anilist: true, tmdb: false },
-    tmdbKey: '', autoPosters: true,
+    tmdbKey: '', autoPosters: true, posterQuality: 'auto',
     pauseDays: 30,          // no progress for that long -> "Pausiert"
     anilistSync: false,     // push status / rating to AniList
     siteBadges: true,       // badges on posters on the streaming sites
@@ -85,11 +85,29 @@
   const LOG_KEY = 'nina_view_log';   // viewing dates (lib/view-log-bg.js)
   let shows = [];
   let page = 'home';
-  let libFilter = 'all', libPlatform = 'all', libQuery = '';
+  let libFilter = 'all', libPlatform = 'all', libQuery = '';   // filters are kept in the settings (synced via Drive)
+  let driveLast = null, driveBusy = false;                      // local nina_drive_last_sync
   let showSeason = null, summaryOpen = false;
 
   const enabledProviders = () => Object.keys(PROVIDERS).filter((p) => settings.providers[p] && (p !== 'tmdb' || settings.tmdbKey));
   const hueOf = C.hueOf;
+  const isPhone = () => (typeof matchMedia === 'function' && matchMedia('(max-width: 760px)').matches) || (typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent));
+  const isLowQuality = () => settings.posterQuality === 'low' || (settings.posterQuality !== 'high' && isPhone());
+
+  function posterUrl(url) {
+    if (!url || typeof url !== 'string') return '';
+    if (!isLowQuality()) return url;
+    return url
+      .replace(/\/t\/p\/(w500|w780|original)\//, '/t/p/w185/')
+      .replace('/original_untouched/', '/medium_portrait/')
+      .replace(/\/cover\/(large|extraLarge)\//, '/cover/medium/');
+  }
+
+  function backdropUrl(url) {
+    if (!url || typeof url !== 'string') return '';
+    if (!isLowQuality()) return url;
+    return posterUrl(url).replace(/\/t\/p\/(w1280|original)\//, '/t/p/w780/');
+  }
 
   // ── Color: Material 3 tonal palette from one hue (HSL approximation) ──
   function applyTheme() {
@@ -380,7 +398,13 @@
         }
       }
       const refs = new Set([...Object.keys(items).filter((r) => !r.startsWith('local:')), ...Object.entries(lookup).filter(([k, r]) => k !== '__v' && r && !String(r).startsWith('local:')).map(([, r]) => r)]);
-      for (const ref of refs) {
+      const refList = [...refs].sort((a, b) => {
+        const sa = shows.find((s) => s.ref === a || (s.aliases && s.aliases.includes(a)));
+        const sb = shows.find((s) => s.ref === b || (s.aliases && s.aliases.includes(b)));
+        const score = (s) => (s ? ((s.status === 'watching' || s.status === 'rewatching') ? 3 : s.wl ? 2 : 1) : 0);
+        return score(sb) - score(sa);
+      });
+      for (const ref of refList) {
         const p = ref.split(':')[0] === 'tmdbmovie' ? 'tmdb' : ref.split(':')[0];
         if (!prov.includes(p)) continue;
         const m = meta[ref];
@@ -628,7 +652,7 @@
   // ── Small builders ─────────────────────────────────────────────────────
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const art = (g, extra = '') => g.poster
-    ? `<div class="art has-img" style="--h:${g.hue}">${extra}<img src="${esc(g.poster)}" alt="" loading="lazy" referrerpolicy="no-referrer"></div>`
+    ? `<div class="art has-img" style="--h:${g.hue}">${extra}<img src="${esc(posterUrl(g.poster))}" alt="" loading="lazy" referrerpolicy="no-referrer"></div>`
     : `<div class="art" style="--h:${g.hue}">${extra}<div class="shape"><span>${esc((g.title.trim()[0] || '?').toUpperCase())}</span></div></div>`;
   const pfChip = (g) => g.platforms.length
     ? g.platforms.slice(0, 2).map((p) => `<span class="pf-chip" style="color:${PLATFORMS[p.platform].color}">${esc(PLATFORMS[p.platform].name)}</span>`).join(' ') + (g.platforms.length > 2 ? ` <span class="pf-chip">+${g.platforms.length - 2}</span>` : '')
@@ -802,7 +826,7 @@
               return `
               <div class="cal-item" data-show="${esc(g.key)}" title="${esc(g.title)}">
                 <div class="cal-poster">
-                  ${g.poster ? `<img src="${esc(g.poster)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<span class="cal-ph" style="--h:${g.hue}">${esc((g.title[0] || '?').toUpperCase())}</span>`}
+                  ${g.poster ? `<img src="${esc(posterUrl(g.poster))}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<span class="cal-ph" style="--h:${g.hue}">${esc((g.title[0] || '?').toUpperCase())}</span>`}
                 </div>
                 <div class="cal-content">
                   <div class="cal-top-row">
@@ -1059,7 +1083,7 @@
               ${highlights.map((hl) => `
                 <div class="stats-hl-card" data-show="${esc(hl.show.key)}" title="Klicken, um Serie zu öffnen">
                   <div class="stats-hl-art">
-                    ${hl.show.poster ? `<img src="${esc(hl.show.poster)}" alt="" loading="lazy">` : `<div class="stats-hl-ph">${I.tv}</div>`}
+                    ${hl.show.poster ? `<img src="${esc(posterUrl(hl.show.poster))}" alt="" loading="lazy">` : `<div class="stats-hl-ph">${I.tv}</div>`}
                   </div>
                   <div class="stats-hl-body">
                     <span class="stats-hl-tag" style="background:${hl.tagBg};color:${hl.tagCol}">${hl.tag}</span>
@@ -1126,6 +1150,7 @@
           <div class="set-row"><div class="txt">TMDB-API-Schlüssel<small>Kostenlos nach Anmeldung unter <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener" style="color:var(--primary)">themoviedb.org → Einstellungen → API</a>. „API Key“ oder „API Read Access Token“ einfügen.</small>
             <div style="display:flex;gap:8px;margin-top:10px"><input class="field" id="tmdb-key" type="password" placeholder="Schlüssel einfügen" value="${esc(settings.tmdbKey)}" autocomplete="off" spellcheck="false"><button class="btn tonal" id="tmdb-test">Prüfen</button></div></div></div>
           <div class="set-row"><div class="txt">Bilder &amp; Infos für erfasste Titel<small>Was NINA beim Schauen erfasst, automatisch bei den Datenquellen suchen (Poster, Folgenzahl, nächste Folge)</small></div>${sw('autoPosters', settings.autoPosters)}</div>
+          <div class="set-row"><div class="txt">Cover-Qualität<small>Auf dem Handy und langsamen Netzen sparsamere Auflösung laden, damit alle Cover schnell und zuverlässig erscheinen</small></div>${seg('posterQuality', [['auto', 'Auto (Handy: schnell)'], ['low', 'Sparsam'], ['high', 'Original']])}</div>
           <div class="set-row"><div class="txt">Infos neu laden<small>Gespeicherte Poster und Zuordnungen vergessen und neu suchen</small></div><button class="btn outline" id="refresh-meta">Neu laden</button></div>
         </div>
 
@@ -1145,6 +1170,7 @@
 
         <div class="set-group"><h3>Daten</h3>
           <div class="set-row"><div class="txt">Bibliothek exportieren<small>Alle Titel und erfassten Folgen als JSON-Datei</small></div><button class="btn outline" id="export">Exportieren</button></div>
+          <div class="set-row"><div class="txt">Google Drive<small>Speichert alles: Listen, Status, Bewertungen, Favoriten, Folgen &amp; wie weit, Sehdaten, Kalender, Filter. ${driveLast && driveLast.at ? 'Zuletzt: ' + new Date(driveLast.at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : 'Noch nicht abgeglichen'}</small></div><button class="btn tonal" id="drive-now" ${driveBusy ? 'disabled' : ''}>${driveBusy ? 'Lädt hoch …' : 'Jetzt prüfen &amp; hochladen'}</button></div>
           <div class="set-row"><div class="txt">Erfassung &amp; Sync<small>Was erfasst wird, Google Drive, Schwellwert für „Gesehen“</small></div><button class="btn tonal" data-open="cat-platforms">NINA-Einstellungen</button></div>
         </div>
       </div>`;
@@ -1379,7 +1405,7 @@
 
         return `<div class="fmc-card ${m.watched ? 'watched' : ''}" data-movie-open="${esc(m.key)}" title="Film-Seite öffnen">
           <div class="fmc-poster">
-            ${m.poster ? `<img src="${esc(m.poster)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : art(m)}
+            ${m.poster ? `<img src="${esc(posterUrl(m.poster))}" alt="" loading="lazy" referrerpolicy="no-referrer">` : art(m)}
             <span class="film-mark">Film</span>
           </div>
           <div class="fmc-content">
@@ -1584,7 +1610,7 @@
 
           return `<div class="rel-movie-card ${isCur ? 'current' : ''} ${isWatched ? 'watched' : ''}" data-rel-show="${esc(cardTarget)}" data-rel-ref="${esc(m.ref)}" data-rel-title="${esc(m.title)}" title="${esc(m.title)}">
             <div class="rel-movie-poster">
-              ${m.poster ? `<img src="${esc(m.poster)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<div class="rel-movie-ph">${I.movie}</div>`}
+              ${m.poster ? `<img src="${esc(posterUrl(m.poster))}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<div class="rel-movie-ph">${I.movie}</div>`}
               <span class="rel-movie-num">${idx + 1}</span>
               ${isCur ? '<span class="rel-badge-cur">Aktuell</span>' : ''}
               ${isWatched ? '<span class="rel-badge-status done">' + I.check + 'Gesehen</span>' : isWl ? '<span class="rel-badge-status wl">' + I.bookmark + 'Merkliste</span>' : ''}
@@ -1692,11 +1718,11 @@
         : (g.total ? `0/${g.total} gesehen` : 'Noch nichts gesehen');
 
     return `<div class="page show-page">
-      ${backdrop ? `<div class="show-backdrop"><img src="${esc(backdrop)}" alt="" referrerpolicy="no-referrer"></div>` : ''}
+      ${backdrop ? `<div class="show-backdrop"><img src="${esc(backdropUrl(backdrop))}" alt="" referrerpolicy="no-referrer"></div>` : ''}
       <button type="button" class="text-btn back-btn" data-act="back">${I.back}Zurück</button>
       <div class="show-top">
         <div class="show-poster">
-          ${g.poster ? `<img src="${esc(g.poster)}" alt="" referrerpolicy="no-referrer">` : art(g)}
+          ${g.poster ? `<img src="${esc(posterUrl(g.poster))}" alt="" referrerpolicy="no-referrer">` : art(g)}
         </div>
 
         <div class="show-main">
@@ -2232,9 +2258,9 @@
       if (rm) return removeItem(rm.dataset.remove);
     }
     const f = t.closest('[data-f]');
-    if (f) { libFilter = f.dataset.f; return render(); }
+    if (f) { libFilter = f.dataset.f; saveFilters(); return render(); }
     const pf = t.closest('[data-pf]');
-    if (pf) { libPlatform = pf.dataset.pf; return render(); }
+    if (pf) { libPlatform = pf.dataset.pf; saveFilters(); return render(); }
     const segBtn = t.closest('.segmented[data-set] button');
     if (segBtn) {
       const key = segBtn.parentElement.dataset.set;
@@ -2246,6 +2272,7 @@
     if (open) return chrome.tabs.create({ url: chrome.runtime.getURL('ui/options.html#' + open.dataset.open) });
     if (t.closest('#al-lib-import-btn')) return runLibraryAniListImport();
     if (t.closest('#export')) return exportData();
+    if (t.closest('#drive-now')) return driveUploadNow();
     if (t.closest('#tmdb-test')) return testTmdb();
     if (t.closest('#refresh-meta')) {
       meta = {}; lookup = { __v: LOOKUP_VER };
@@ -2310,6 +2337,30 @@
     if (e.key === 'Escape') closeSearch();
     if (e.key === '/' && !e.target.closest('input')) { e.preventDefault(); openSearch(); }
   });
+
+  function saveFilters() {
+    settings.libFilter = libFilter;
+    settings.libPlatform = libPlatform;
+    chrome.storage.sync.set({ [SET_KEY]: settings });
+  }
+  // "Jetzt prüfen & hochladen": merge with Drive and upload every file (lib/library-drive-sync.js)
+  function driveUploadNow() {
+    if (driveBusy) return;
+    driveBusy = true;
+    render();
+    chrome.runtime.sendMessage({ type: 'NINA_DRIVE_PULL', force: true }, (res) => {
+      void chrome.runtime.lastError;
+      driveBusy = false;
+      if (!res) snack('Keine Antwort vom Hintergrund – bitte noch mal versuchen');
+      else if (res.skipped) snack('Google Drive ist nicht verbunden – in den NINA-Einstellungen anmelden');
+      else if (res.error) snack('Drive-Fehler: ' + res.error);
+      else {
+        driveLast = res;
+        snack('Gespeichert: ' + res.items + ' Titel, ' + res.episodes + ' Folgen' + (res.pulled ? ', ' + res.pulled + ' vom anderen Gerät übernommen' : ''));
+      }
+      render();
+    });
+  }
 
   function saveSetting(key, value) {
     settings[key] = value;
@@ -2434,7 +2485,7 @@
                 ${shows.filter((g) => g.watched > 0 || (g.item && g.item.fav)).slice(0, 6).map((g) => `
                   <div class="search-quick-card" data-show="${esc(g.key)}" title="${esc(g.title)}">
                     <div class="search-quick-art">
-                      ${g.poster ? `<img src="${esc(g.poster)}" alt="" loading="lazy">` : `<div class="search-quick-ph">${I.tv}</div>`}
+                      ${g.poster ? `<img src="${esc(posterUrl(g.poster))}" alt="" loading="lazy">` : `<div class="search-quick-ph">${I.tv}</div>`}
                     </div>
                     <div class="search-quick-info">
                       <span class="search-quick-title">${esc(g.title)}</span>
@@ -2547,7 +2598,7 @@
           return `
           <div class="search-result-card" data-ref="${esc(r.ref)}" ${ownMatch ? `data-show="${esc(ownMatch.key)}" title="Klicken, um in Bibliothek zu öffnen"` : ''}>
             <div class="search-result-poster">
-              ${r.poster ? `<img src="${esc(r.poster)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<div class="search-result-ph" style="--h:${hueOf(r.name)}">${esc((r.name[0] || '?').toUpperCase())}</div>`}
+              ${r.poster ? `<img src="${esc(posterUrl(r.poster))}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<div class="search-result-ph" style="--h:${hueOf(r.name)}">${esc((r.name[0] || '?').toUpperCase())}</div>`}
               ${r.score ? `<span class="search-poster-score">${I.star} ${r.score}</span>` : ''}
             </div>
             <div class="search-result-content">
@@ -2615,6 +2666,9 @@
       sources: { ...DEFAULTS.sources, ...(s.sources || {}) },
       providers: { ...DEFAULTS.providers, ...(s.providers || {}) }
     };
+    libFilter = settings.libFilter || 'all';
+    libPlatform = settings.libPlatform || 'all';
+    driveLast = (await getLocal(['nina_drive_last_sync'])).nina_drive_last_sync || null;
     P.setTmdbKey(settings.tmdbKey);
     applyTheme();
     initViewDialog();
@@ -2623,10 +2677,14 @@
     enrich();
   });
   chrome.storage.onChanged.addListener((c, area) => {
+    if (area === 'local' && c.nina_drive_last_sync) {
+      driveLast = c.nina_drive_last_sync.newValue || null;
+      if (page === 'settings' && !driveBusy) render();
+    }
     if (area === 'local' && c.nina_anilist_import_progress) {
       updateLibImportUI(c.nina_anilist_import_progress.newValue);
     }
-    if (area === 'local' && (c.nina_cr_watch_status || c.nina_stream_watch_status || c[STRUCT_KEY] || c.nina_partner_platforms || c.nina_partner_alias || c[LOG_KEY] || c.nina_library_local_items)) load().then(() => { render(true); enrich(); });
+    if (area === 'local' && (c.nina_cr_watch_status || c.nina_stream_watch_status || c[STRUCT_KEY] || c.nina_partner_platforms || c.nina_partner_alias || c[LOG_KEY] || c.nina_library_local_items || c[LOOKUP_KEY] || c[META_KEY])) load().then(() => { render(true); enrich(); });
     if (area === 'sync') {
       if (c[SET_KEY] && c[SET_KEY].newValue) { settings = { ...settings, ...c[SET_KEY].newValue }; applyTheme(); }
       // added / changed on another PC or on a streaming site
