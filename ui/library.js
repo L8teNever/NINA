@@ -13,6 +13,9 @@
 //         "nina_library_lookup"   tracked show -> online ref
 //         "nina_stream_struct"    season sizes seen on the services
 //         "nina_stream_pages"     show pages / episode links seen on the services (start an episode)
+//   Cache Storage "nina-library"  show pages' full details (cast, episodes, links …) and the
+//                                 covers / pictures, so everything shows at once, also offline;
+//                                 opening a show checks the services again and replaces what changed
 
 (function () {
   'use strict';
@@ -147,6 +150,71 @@
     await new Promise((r) => chrome.storage.local.set({ [key]: next }, r));
     return next;
   }
+
+  const sameJson = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+
+  // ── Saved details + pictures (Cache Storage, no 10 MB limit like storage.local) ──
+  const CACHE = 'nina-library';
+  const BASE = 'https://nina-library.invalid/';
+  const openCache = () => (typeof caches !== 'undefined' ? caches.open(CACHE) : Promise.reject(new Error('no cache')));
+  const store = {
+    async get(key) {
+      try { const r = await (await openCache()).match(BASE + encodeURIComponent(key)); return r ? r.json() : null; } catch (_) { return null; }
+    },
+    async put(key, value) {
+      try { await (await openCache()).put(BASE + encodeURIComponent(key), new Response(JSON.stringify(value), { headers: { 'Content-Type': 'application/json' } })); } catch (_) {}
+    }
+  };
+  // pictures: each one shown is kept; next time it comes from the device. The services' CDNs allow
+  // CORS, others (no CORS) simply load from the web as before.
+  const IMG_MAX = 1500;
+  const imgUrls = new Map();     // url -> blob: URL (this page)
+  const imgTried = new Set();
+  let imgKeys = null;            // urls in the cache
+  async function cachedKeys() {
+    if (!imgKeys) {
+      try { imgKeys = new Set((await (await openCache()).keys()).map((r) => r.url).filter((u) => !u.startsWith(BASE))); } catch (_) { imgKeys = new Set(); }
+    }
+    return imgKeys;
+  }
+  async function useCachedImage(img, url) {
+    try {
+      const keys = await cachedKeys();
+      const c = await openCache();
+      if (imgUrls.has(url)) { img.src = imgUrls.get(url); return; }
+      if (keys.has(url)) {
+        const r = await c.match(url);
+        if (r) {
+          const blobUrl = URL.createObjectURL(await r.blob());
+          imgUrls.set(url, blobUrl);
+          if (!(img.complete && img.naturalWidth) && img.getAttribute('src') === url) img.src = blobUrl;
+          return;
+        }
+      }
+      if (imgTried.has(url)) return;
+      imgTried.add(url);
+      const r = await fetch(url, { mode: 'cors', credentials: 'omit' });
+      if (!r.ok || r.type === 'opaque' || !/^image\//.test(r.headers.get('content-type') || '')) return;
+      await c.put(url, r);
+      keys.add(url);
+      if (keys.size > IMG_MAX) {   // oldest out
+        const old = [...keys].slice(0, keys.size - IMG_MAX);
+        for (const u of old) { keys.delete(u); c.delete(u); }
+      }
+    } catch (_) {}
+  }
+  new MutationObserver((list) => {
+    for (const m of list) for (const n of m.addedNodes) {
+      if (n.nodeType !== 1) continue;
+      const imgs = n.tagName === 'IMG' ? [n] : n.querySelectorAll('img');
+      for (const img of imgs) {
+        const url = img.getAttribute('src') || '';
+        if (!/^https:\/\//.test(url)) continue;
+        if (imgUrls.has(url)) img.src = imgUrls.get(url);
+        else useCachedImage(img, url);
+      }
+    }
+  }).observe(document.documentElement, { childList: true, subtree: true });
 
   // ── Franchise Movie-to-Series Grouping ─────────────────────────────────
   const normTitleRaw = (s) => String(s || '')
@@ -1215,22 +1283,70 @@
   // ── Show page (#show/<key>) ────────────────────────────────────────────
   const fullCache = new Map();    // ref -> full details
   const seasonCache = new Map();  // ref|n -> episodes
+  const checked = new Set();      // refs checked against the services since the page opened
   function loadFull(ref) {
     if (!ref || ref.startsWith('local:')) return null;
-    if (!fullCache.has(ref)) {
-      fullCache.set(ref, P.full(ref).then((f) => { fullCache.set(ref, f); if (page === 'show') render(true); return f; })
-        .catch((err) => { fullCache.set(ref, { error: err.message }); if (page === 'show') render(true); }));
+    if (!checked.has(ref)) {
+      checked.add(ref);
+      store.get('full/' + ref).then((saved) => {
+        // saved details show at once (unless the fresh ones were faster)
+        if (saved && saved.f && !(fullCache.get(ref) || {}).live) {
+          fullCache.set(ref, { ...saved.f, savedSeasons: saved.s || {} });
+          if (page === 'show') render(true);
+        }
+        refreshFull(ref, saved);
+      });
+      if (meta[ref]) refreshMeta(ref);   // only titles in the library / tracked ones
     }
     const v = fullCache.get(ref);
-    return v && typeof v.then === 'function' ? 'loading' : v;
+    return !v ? 'loading' : v;
+  }
+  // fetch the details again; only what differs from the saved copy is written / redrawn
+  function refreshFull(ref, saved) {
+    P.full(ref).then((f) => {
+      const { loadSeason, ...rest } = f;
+      const plain = { ...rest, lazySeasons: !!loadSeason };   // TMDB loads each season on its own
+      const prev = fullCache.get(ref);
+      fullCache.set(ref, { ...f, live: true, savedSeasons: (saved && saved.s) || {} });
+      if (!saved || !sameJson(saved.f, plain)) {
+        store.put('full/' + ref, { f: plain, s: (saved && saved.s) || {}, at: Date.now() });
+        if (page === 'show') render(true);
+      } else if (!prev || loadSeason) {
+        if (page === 'show') render(true);   // seasons can load now
+      }
+    }).catch((err) => {
+      // offline / service down: keep the saved copy if there is one
+      if (!fullCache.get(ref)) { fullCache.set(ref, { error: err.message }); if (page === 'show') render(true); }
+    });
+  }
+  // the poster / episode counts / next episode (nina_library_meta) are checked again on open too
+  async function refreshMeta(ref) {
+    try {
+      const fresh = await P.details(ref);
+      const old = meta[ref] || {};
+      const { fetchedAt, ...oldPlain } = old;
+      if (sameJson({ ...oldPlain, ...fresh }, oldPlain)) return;
+      meta[ref] = { ...old, ...fresh, fetchedAt: Date.now() };
+      chrome.storage.local.set({ [META_KEY]: meta });
+      rebuild();
+      render(true);
+    } catch (_) {}
   }
   function seasonEpisodes(g, full, n) {
     if (!full || full === 'loading' || full.error) return null;
-    if (!full.loadSeason) return full.episodes.filter((e) => e.season === n);
+    if (!full.loadSeason && !full.lazySeasons) return (full.episodes || []).filter((e) => e.season === n);
     const k = g.ref + '|' + n;
+    const saved = full.savedSeasons && full.savedSeasons[n];
+    if (!full.loadSeason) return saved || null;   // saved copy until the fresh details are there
     if (!seasonCache.has(k)) {
-      seasonCache.set(k, 'loading');
-      full.loadSeason(n).then((eps) => { seasonCache.set(k, eps); render(true); }).catch(() => seasonCache.set(k, []));
+      seasonCache.set(k, saved || 'loading');
+      full.loadSeason(n).then((eps) => {
+        seasonCache.set(k, eps);
+        if (saved && sameJson(saved, eps)) return;
+        full.savedSeasons = { ...(full.savedSeasons || {}), [n]: eps };
+        store.get('full/' + g.ref).then((rec) => rec && store.put('full/' + g.ref, { ...rec, s: { ...(rec.s || {}), [n]: eps } }));
+        render(true);
+      }).catch(() => { if (!saved) seasonCache.set(k, []); });
     }
     const v = seasonCache.get(k);
     return v === 'loading' ? null : v;
@@ -2172,6 +2288,7 @@
       const retryFull = t.closest('[data-act="retry-full"]');
       if (retryFull) {
         fullCache.delete(retryFull.dataset.ref);
+        checked.delete(retryFull.dataset.ref);
         return render(true);
       }
       if (t.closest('[data-act="back"]')) {
