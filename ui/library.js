@@ -99,11 +99,11 @@
 
   function posterUrl(url) {
     if (!url || typeof url !== 'string') return '';
-    if (!isLowQuality()) return url;
-    return url
+    const u = !isLowQuality() ? url : url
       .replace(/\/t\/p\/(w500|w780|original)\//, '/t/p/w185/')
       .replace('/original_untouched/', '/medium_portrait/')
       .replace(/\/cover\/(large|extraLarge)\//, '/cover/medium/');
+    return imgUrls.get(u) || u;   // saved on the device (see "Saved details + pictures")
   }
 
   function backdropUrl(url) {
@@ -177,17 +177,20 @@
     }
     return imgKeys;
   }
+  // a picture on screen is never swapped (that made covers flash): the saved copy is used from the
+  // next render on, or right away when loading it from the web fails (offline)
   async function useCachedImage(img, url) {
     try {
       const keys = await cachedKeys();
       const c = await openCache();
-      if (imgUrls.has(url)) { img.src = imgUrls.get(url); return; }
       if (keys.has(url)) {
         const r = await c.match(url);
         if (r) {
           const blobUrl = URL.createObjectURL(await r.blob());
           imgUrls.set(url, blobUrl);
-          if (!(img.complete && img.naturalWidth) && img.getAttribute('src') === url) img.src = blobUrl;
+          const fallback = () => { if (img.getAttribute('src') === url) img.src = blobUrl; };
+          if (img.complete && !img.naturalWidth) fallback();
+          else img.addEventListener('error', fallback, { once: true });
           return;
         }
       }
@@ -209,9 +212,8 @@
       const imgs = n.tagName === 'IMG' ? [n] : n.querySelectorAll('img');
       for (const img of imgs) {
         const url = img.getAttribute('src') || '';
-        if (!/^https:\/\//.test(url)) continue;
-        if (imgUrls.has(url)) img.src = imgUrls.get(url);
-        else useCachedImage(img, url);
+        if (!/^https:\/\//.test(url) || imgUrls.has(url)) continue;
+        useCachedImage(img, url);
       }
     }
   }).observe(document.documentElement, { childList: true, subtree: true });
@@ -2034,7 +2036,26 @@
   }
 
   // ── Router / render ────────────────────────────────────────────────────
+  // a redraw between press and release swallowed the click (it had to be clicked twice)
+  let pressed = false, renderLater = false;
+  document.addEventListener('pointerdown', () => { pressed = true; }, true);
+  const release = () => {
+    if (!pressed) return;
+    pressed = false;
+    if (renderLater) setTimeout(() => { if (renderLater && !pressed) { renderLater = false; render(true); } }, 120);
+  };
+  document.addEventListener('pointerup', release, true);
+  document.addEventListener('pointercancel', release, true);
+  let lastHtml = '';
+  function setMain(html, soft) {
+    if (soft && html === lastHtml) return false;   // nothing changed: leave the page alone (hover, images …)
+    lastHtml = html;
+    $('main').innerHTML = html;
+    return true;
+  }
   function render(soft) {
+    if (soft && pressed) { renderLater = true; return; }
+    if (!soft) renderLater = false;
     const hash = decodeURIComponent(location.hash.slice(1));
     const y = window.scrollY;
     if (hash.startsWith('show/')) {
@@ -2043,7 +2064,7 @@
       const row = document.querySelector('.ep-row');
       const rowX = row ? row.scrollLeft : 0;
       const openMenus = ['status-menu', 'season-menu'].filter((id) => $(id) && !$(id).hidden);
-      $('main').innerHTML = showPage(hash.slice(5));
+      if (!setMain(showPage(hash.slice(5)), soft)) return;
       if (soft) {
         window.scrollTo(0, y);
         const p = $('main').querySelector('.page'); if (p) p.style.animation = 'none';
@@ -2056,7 +2077,7 @@
     for (const a of document.querySelectorAll('.rail-item')) a.classList.toggle('active', a.dataset.page === page);
     // background updates must not rebuild the settings form or a field being typed in
     if (soft && (page === 'settings' || (document.activeElement && document.activeElement.closest('#main input')))) return;
-    $('main').innerHTML = PAGES[page]();
+    if (!setMain(PAGES[page](), soft)) return;
     if (soft) { window.scrollTo(0, y); const p = $('main').querySelector('.page'); if (p) p.style.animation = 'none'; }
     if (page === 'library') {
       $('lib-sort').value = settings.sort;
@@ -2801,7 +2822,11 @@
     if (area === 'local' && c.nina_anilist_import_progress) {
       updateLibImportUI(c.nina_anilist_import_progress.newValue);
     }
-    if (area === 'local' && (c.nina_cr_watch_status || c.nina_stream_watch_status || c[STRUCT_KEY] || c.nina_partner_platforms || c.nina_partner_alias || c[LOG_KEY] || c.nina_library_local_items || c[LOOKUP_KEY] || c[META_KEY])) load().then(() => { render(true); enrich(); });
+    if (area === 'local') {
+      // this page's own writes of the online details come back here too: they are already in memory
+      const foreignMeta = (c[META_KEY] && !sameJson(c[META_KEY].newValue || {}, meta)) || (c[LOOKUP_KEY] && !sameJson(c[LOOKUP_KEY].newValue || {}, lookup));
+      if (foreignMeta || c.nina_cr_watch_status || c.nina_stream_watch_status || c[STRUCT_KEY] || c.nina_partner_platforms || c.nina_partner_alias || c[LOG_KEY] || c.nina_library_local_items) load().then(() => { render(true); enrich(); });
+    }
     if (area === 'sync') {
       if (c[SET_KEY] && c[SET_KEY].newValue) { settings = { ...settings, ...c[SET_KEY].newValue }; applyTheme(); }
       // added / changed on another PC or on a streaming site
