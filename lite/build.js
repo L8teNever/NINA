@@ -24,7 +24,7 @@ const read = (p) => JSON.parse(rd(p));
 
 const main = read('manifest.json');
 // Lite has its own version number (releases tagged lite-v<version>)
-const LITE_VERSION = '3.5.5';
+const LITE_VERSION = '3.5.6';
 
 // content scripts Lite keeps
 const KEEP_JS = new Set([

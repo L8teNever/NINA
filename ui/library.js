@@ -89,6 +89,7 @@
   let shows = [];
   let page = 'home';
   let libFilter = 'all', libPlatform = 'all', libQuery = '';   // filters are kept in the settings (synced via Drive)
+  let calMode = 'next';                                        // calendar: 'next' (Demnächst) | 'past' (Vergangen)
   let driveLast = null, driveBusy = false;                      // local nina_drive_last_sync
   let showSeason = null, summaryOpen = false;
 
@@ -478,9 +479,9 @@
         const p = ref.split(':')[0] === 'tmdbmovie' ? 'tmdb' : ref.split(':')[0];
         if (!prov.includes(p)) continue;
         const m = meta[ref];
-        if (m && Date.now() - (m.fetchedAt || 0) < 12 * 3600e3) continue;
+        if (m && m.aired && Date.now() - (m.fetchedAt || 0) < 12 * 3600e3) continue;   // no aired list yet: fetch once for the calendar
         try {
-          meta[ref] = { ...(await P.details(ref)), fetchedAt: Date.now() };
+          meta[ref] = { ...withAired(meta[ref], await P.details(ref)), fetchedAt: Date.now() };
           chrome.storage.local.set({ [META_KEY]: meta });
           softRender();
         } catch (_) {}
@@ -780,6 +781,41 @@
     clearTimeout(snack.t);
     snack.t = setTimeout(() => s.classList.remove('show'), 2600);
   }
+  // episodes that already aired: what the services report as recent + a "next" that has passed,
+  // kept per title in meta.aired (newest first, 120 days)
+  function withAired(old, fresh) {
+    const now = Date.now(), from = now - 120 * 864e5;
+    const { recent, ...rest } = fresh;
+    const seen = new Set(), aired = [];
+    const add = (e) => {
+      if (!e || !e.at || e.at > now || e.at < from) return;
+      const k = (e.season || 0) + '|' + e.episode;
+      if (seen.has(k)) return;
+      seen.add(k); aired.push(e);
+    };
+    for (const e of recent || []) add(e);
+    if (old && old.next) add(old.next);
+    if (fresh.next) add(fresh.next);
+    for (const e of (old && old.aired) || []) add(e);
+    aired.sort((a, b) => b.at - a.at);
+    return { ...rest, aired: aired.slice(0, 60) };   // always set: marks the entry as checked for aired episodes
+  }
+  function aired(days = 30) {
+    const now = Date.now(), from = now - days * 864e5;
+    const out = [];
+    for (const g of shows) {
+      if (!g.meta || g.status === 'dropped') continue;
+      const seen = new Set();
+      for (const e of [...(g.meta.aired || []), ...(g.meta.next ? [g.meta.next] : [])]) {
+        if (!e || !e.at || e.at > now || e.at < from) continue;
+        const k = (e.season || 0) + '|' + e.episode;
+        if (seen.has(k)) continue;
+        seen.add(k);
+        out.push({ g, ep: e });
+      }
+    }
+    return out.sort((a, b) => b.ep.at - a.ep.at);
+  }
   function upcoming(days = 30) {
     const now = Date.now() - 6 * 3600e3, until = Date.now() + days * 864e5;
     return shows.filter((g) => g.meta && g.meta.next && g.meta.next.at >= now && g.meta.next.at <= until && g.status !== 'dropped')
@@ -852,47 +888,56 @@
     },
 
     calendar() {
-      const list = upcoming(30);
+      const past = calMode === 'past';
+      const list = past ? aired(30) : upcoming(30).map((g) => ({ g, ep: g.meta.next }));
       const byDay = new Map();
       const today = new Date(); today.setHours(0, 0, 0, 0);
-      for (const g of list) {
-        const k = new Date(g.meta.next.at).toDateString();
-        if (!byDay.has(k)) byDay.set(k, { at: g.meta.next.at, shows: [] });
-        byDay.get(k).shows.push(g);
+      for (const x of list) {
+        const k = new Date(x.ep.at).toDateString();
+        if (!byDay.has(k)) byDay.set(k, { at: x.ep.at, items: [] });
+        byDay.get(k).items.push(x);
       }
+      const seen = (g, ep) => {
+        if (ep.season == null) return false;   // AniList counts per cour: no safe match
+        const i = g.absInfo.get(C.canonAbs(g, ep.season, ep.episode));
+        return !!(i && i.status === 'watched');
+      };
       return `<div class="page">
         <div class="page-head">
           <div>
             <h1 class="headline">Kalender</h1>
-            <span class="muted">${list.length} anstehende Folgen in den nächsten 30 Tagen</span>
+            <span class="muted">${past ? list.length + ' erschienene Folgen in den letzten 30 Tagen' : list.length + ' anstehende Folgen in den nächsten 30 Tagen'}</span>
           </div>
+        </div>
+        <div class="chips" style="margin-bottom:18px">
+          <button class="chip ${past ? '' : 'on'}" data-cal="next">${I.clock}Demnächst</button>
+          <button class="chip ${past ? 'on' : ''}" data-cal="past">${I.repeat}Vergangen</button>
         </div>
         ${list.length ? [...byDay.values()].map((day) => {
           const d = new Date(day.at);
           const dMidnight = new Date(d); dMidnight.setHours(0, 0, 0, 0);
           const dayDiff = Math.round((dMidnight - today) / 864e5);
-          const isToday = dayDiff === 0;
-          const isTomorrow = dayDiff === 1;
+          const tag = dayDiff === 0 ? ['today', 'Heute'] : dayDiff === 1 ? ['tomorrow', 'Morgen'] : dayDiff === -1 ? ['tomorrow', 'Gestern'] : null;
           const weekday = d.toLocaleDateString('de-DE', { weekday: 'short' });
           const month = d.toLocaleDateString('de-DE', { month: 'short' });
           return `
           <div class="cal-day">
-            <div class="cal-date ${isToday ? 'today' : isTomorrow ? 'tomorrow' : ''}">
+            <div class="cal-date ${tag ? tag[0] : ''}">
               <span class="cal-day-num">${d.getDate()}</span>
               <div class="cal-day-meta">
                 <span>${esc(weekday)}</span>
                 <span>${esc(month)}</span>
               </div>
-              ${isToday ? '<span class="cal-tag today">Heute</span>' : isTomorrow ? '<span class="cal-tag tomorrow">Morgen</span>' : ''}
+              ${tag ? `<span class="cal-tag ${tag[0]}">${tag[1]}</span>` : ''}
             </div>
-            <div class="cal-list">${day.shows.map((g) => {
-              const next = g.meta.next;
-              const nextD = new Date(next.at);
-              const timeStr = nextD.getHours() || nextD.getMinutes()
-                ? nextD.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' Uhr'
+            <div class="cal-list">${day.items.map(({ g, ep }) => {
+              const epD = new Date(ep.at);
+              const timeStr = epD.getHours() || epD.getMinutes()
+                ? epD.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' Uhr'
                 : '';
               const pfObj = g.platforms.length ? PLATFORMS[g.platforms[0].platform] : null;
               const pfLabel = pfObj ? pfObj.name : (g.meta && g.meta.network) || (g.item && g.item.network) || '';
+              const done = past && seen(g, ep);
               return `
               <div class="cal-item" data-show="${esc(g.key)}" title="${esc(g.title)}">
                 <div class="cal-poster">
@@ -905,15 +950,18 @@
                   </div>
                   <div class="cal-title">${esc(g.title)}</div>
                   <div class="cal-bottom-row">
-                    <span class="cal-ep-badge">${next.season ? 'S' + next.season + ' · ' : ''}Folge ${next.episode}</span>
-                    ${next.name ? `<span class="cal-ep-title" title="${esc(next.name)}">${esc(next.name)}</span>` : ''}
+                    <span class="cal-ep-badge">${ep.season ? 'S' + ep.season + ' · ' : ''}Folge ${ep.episode}</span>
+                    ${done ? `<span class="cal-ep-badge cal-seen">${I.check}Gesehen</span>` : ''}
+                    ${ep.name ? `<span class="cal-ep-title" title="${esc(ep.name)}">${esc(ep.name)}</span>` : ''}
                   </div>
                 </div>
               </div>`;
             }).join('')}</div>
           </div>`;
         }).join('')
-        : `<div class="empty"><div class="big">${I.calendar}</div>Keine anstehenden Folgen bekannt.<br>Laufende Serien in deiner Bibliothek erscheinen hier mit ihren nächsten Folgen.<br><button class="btn" style="margin-top:16px" data-act="search">${I.add}Hinzufügen</button></div>`}
+        : past
+          ? `<div class="empty"><div class="big">${I.calendar}</div>In den letzten 30 Tagen ist bei deinen Serien nichts erschienen – oder es ist noch nicht bekannt.<br>Erschienene Folgen sammeln sich hier, sobald NINA die Serien-Daten abgleicht.</div>`
+          : `<div class="empty"><div class="big">${I.calendar}</div>Keine anstehenden Folgen bekannt.<br>Laufende Serien in deiner Bibliothek erscheinen hier mit ihren nächsten Folgen.<br><button class="btn" style="margin-top:16px" data-act="search">${I.add}Hinzufügen</button></div>`}
       </div>`;
     },
 
@@ -1324,7 +1372,7 @@
   // the poster / episode counts / next episode (nina_library_meta) are checked again on open too
   async function refreshMeta(ref) {
     try {
-      const fresh = await P.details(ref);
+      const fresh = withAired(meta[ref], await P.details(ref));
       const old = meta[ref] || {};
       const { fetchedAt, ...oldPlain } = old;
       if (sameJson({ ...oldPlain, ...fresh }, oldPlain)) return;
@@ -2397,6 +2445,8 @@
     }
     const f = t.closest('[data-f]');
     if (f) { libFilter = f.dataset.f; saveFilters(); return render(); }
+    const cal = t.closest('[data-cal]');
+    if (cal) { calMode = cal.dataset.cal; settings.calMode = calMode; chrome.storage.sync.set({ [SET_KEY]: settings }); return render(); }
     const pf = t.closest('[data-pf]');
     if (pf) { libPlatform = pf.dataset.pf; saveFilters(); return render(); }
     const segBtn = t.closest('.segmented[data-set] button');
@@ -2806,6 +2856,7 @@
     };
     libFilter = settings.libFilter || 'all';
     libPlatform = settings.libPlatform || 'all';
+    calMode = settings.calMode === 'past' ? 'past' : 'next';
     driveLast = (await getLocal(['nina_drive_last_sync'])).nina_drive_last_sync || null;
     P.setTmdbKey(settings.tmdbKey);
     applyTheme();
